@@ -1,0 +1,226 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==============================
+// ✅ Management Staffs Schema
+// ==============================
+model ManagementStaff {
+  id              String    @id @unique @default(uuid())
+  email           String    @unique
+  password        String
+  employeeId      String?   @unique
+  role            Role
+  phone           String?
+  name            String
+  profile_img_url String?
+  address         String?
+  emailVerified   Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  // Relation: One staff can create multiple tickets
+  supportTickets SupportTicket[]
+  LeaveRequest   LeaveRequest[]
+  createBatch    CreateBatch[]
+  Student        Student[]
+
+  @@index([id])
+  @@index([email])
+  @@index([employeeId])
+  @@index([emailVerified])
+  @@map("ManagementStaff") // Mapping to actual table name
+}
+
+enum Role {
+  admin
+  counsellor
+  staff
+  guest
+}
+
+// ==============================
+// ✅ Support Ticket Schema
+// ==============================
+model SupportTicket {
+  id                  String          @id @default(uuid())
+  management_staff_id String // Foreign key referencing ManagementStaff
+  management_staff    ManagementStaff @relation(fields: [management_staff_id], references: [id]) // No Cascade
+  role                Role
+  query               String // Reason for raising the ticket
+  status              TicketStatus    @default(open)
+  attachments         String? // JSON array of file URLs (optional)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deletedAt           DateTime? // Soft delete column
+
+  @@index([management_staff_id])
+  @@index([status])
+  @@map("SupportTicket") // Mapping to actual table name
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+// ==============================
+// ✅ Apply Leave Schema
+// ==============================
+model LeaveRequest {
+  id                  String          @id @default(uuid()) // Unique Leave ID
+  management_staff_id String // Foreign key referencing ManagementStaff
+  management_staff    ManagementStaff @relation(fields: [management_staff_id], references: [id]) // No Cascade
+  role                Role
+  leave_type          LeaveType
+  from_date           DateTime // Leave start date
+  to_date             DateTime // Leave end date
+  reason              String // Reason for leave
+  status              LeaveStatus     @default(PENDING) // Leave approval status
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deletedAt           DateTime? // Soft delete column
+
+  @@index([management_staff_id])
+  @@index([status])
+  @@map("LeaveRequest") // Mapping to actual table name
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  EARNED
+  UNPAID
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// ==============================
+// ✅ Student Model
+// ==============================
+model Student {
+  id                   String    @id @default(uuid())
+  lms_id               String    @db.VarChar(20)
+  name                 String    @db.VarChar(191)
+  phone                String?   @db.VarChar(191) // Nullable
+  alt_phone            String?   @db.VarChar(191) // Nullable
+  Dob                  String?
+  email                String    @unique @db.VarChar(191)
+  profile_img_url      String?
+  password             String?   @db.VarChar(191) // Nullable
+  roll_number          String    @unique @db.VarChar(191)
+  Qualification        String?   @db.VarChar(30)
+  Yop                  String?
+  Profession           String?   @db.VarChar(20)
+  C_Name               String?   @db.VarChar(100)
+  address              String?   @db.VarChar(191) // Nullable
+  City                 String?   @db.VarChar(20)
+  Pincode              String?
+  Global_Certification String?   @db.VarChar(20)
+  Course               String?   @db.VarChar(50)
+  Fees                 Int?
+  Batch_time           String?   @db.VarChar(20)
+  Demo                 String?   @db.VarChar(20)
+  Joining_Date         DateTime? @db.Date
+  Know_about_iie       String?   @db.VarChar(20)
+  Frd_Name             String?   @db.VarChar(100)
+  Branch               String?   @db.VarChar(20)
+  Follow_up            DateTime? @db.Date
+  Status               String?   @db.VarChar(20)
+  Remarks              String?   @db.VarChar(100)
+
+  // Relation fields
+  counsellor_id   String          @db.VarChar(191)
+  counsellor_name String          @db.VarChar(191) // Not a relation, just a stored field
+  counsellor      ManagementStaff @relation(fields: [counsellor_id], references: [id])
+
+  Walkin_By       String?   @db.VarChar(20)
+  Walkin_Date     DateTime? @db.Date
+  DateTime        DateTime? @default(now()) @updatedAt
+  emailVerified   Boolean   @default(false) // Tinyint(1) mapped to Boolean
+  preferred_batch String    @db.VarChar(191)
+  course_id       String    @db.VarChar(191)
+  createdAt       DateTime  @default(now()) @db.DateTime(3)
+  updatedAt       DateTime  @updatedAt @db.DateTime(3)
+  deletedAt       DateTime? // Nullable for soft delete
+
+  // Many-to-Many Relation with CreateBatch (Explicit)
+  batches BatchStudent[]
+
+  @@map("Student") // Mapping to actual table name
+}
+
+// ==============================
+// ✅ Create Batch Schema
+// ==============================
+model CreateBatch {
+  id            String  @id @unique @default(uuid())
+  batch_number  String  @unique
+  batchName     String?
+  from_date     String
+  to_date       String
+  course        String
+  slot          String
+  session_sheet String? // JSON array of file URLs (optional)
+
+  // Mentor Relation (One Mentor -> Many Batches)
+  mentor_id String
+  mentor    ManagementStaff @relation(fields: [mentor_id], references: [id])
+
+  // Students Relation (Many-to-Many)
+  students BatchStudent[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([id])
+  @@index([mentor_id]) // Index for faster lookups
+  @@map("CreateBatch") // Mapping to actual table name
+}
+
+// ==============================
+// ✅ Join Table for Many-to-Many Relation
+// ==============================
+model BatchStudent {
+  batch_id   String
+  student_id String
+
+  batch   CreateBatch @relation(fields: [batch_id], references: [id])
+  student Student     @relation(fields: [student_id], references: [id])
+
+  createdAt DateTime  @default(now()) // Automatically stores created time
+  deletedAt DateTime? // Nullable field for soft delete
+
+  @@id([batch_id, student_id]) // Composite Primary Key
+}
+
+// model BatchStudent {
+//   batch_id   String
+//   student_id String
+
+//   batch   CreateBatch @relation(fields: [batch_id], references: [id])
+//   student Student     @relation(fields: [student_id], references: [id])
+
+//   @@id([batch_id, student_id]) // Composite Primary Key
+// }

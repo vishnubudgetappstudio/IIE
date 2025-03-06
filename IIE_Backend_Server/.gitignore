@@ -1,0 +1,14 @@
+# Ignore Firebase service account keys
+serviceAccountKey.json
+
+# Node.js dependencies
+node_modules/
+
+# Build files (if any)
+dist/
+
+# TypeScript build
+*.tsbuildinfo
+
+# Environment variables
+.env
