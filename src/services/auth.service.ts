@@ -1,9 +1,10 @@
 import bcrypt from "bcrypt";
 import { prisma } from "../config/database";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { jwtGenerateToken } from "../utils/jwtTokenGenerate";
+import { sendEmail } from "../config/nodemailer";
 
+// Load environment variables from .env file
 dotenv.config();
 
 interface LoginResponse {
@@ -96,4 +97,71 @@ export const loginService = async (
       token,
     },
   };
+};
+
+export const forgotPasswordManagementStaff = async (email: string) => {
+  const user = await prisma.managementStaff.findUnique({
+    where: { email, deletedAt: null },
+  });
+  if (!user) throw new Error("User not found");
+
+  // Generate OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Soft Delete Previous OTP from DB (optional)
+  await prisma.storedOTPDetail.updateMany({
+    data: { deletedAt: new Date() },
+    where: { email: email, deletedAt: null },
+  });
+
+  // Store OTP in DB (optional) or send via email
+  await prisma.storedOTPDetail.create({
+    data: {
+      email: user.email,
+      otp: otp,
+    },
+  });
+
+  // Send email
+  await sendEmail(email, "Password Reset OTP", `Your OTP is: ${otp}`);
+
+  return { email: user.email, otp: otp };
+};
+
+export const verifyOTPService = async (email: string, otp: string) => {
+  const user = await prisma.managementStaff.findUnique({
+    where: { email, deletedAt: null },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const storedOTP = await prisma.storedOTPDetail.findFirst({
+    where: { email: user.email, otp: otp, deletedAt: null },
+  });
+
+  if (!storedOTP) throw new Error("Invalid OTP");
+
+  return { email: storedOTP.email, otp: storedOTP.otp };
+};
+
+export const resetPasswordManagementStaff = async (
+  email: string,
+  newPassword: string
+) => {
+  const user = await prisma.managementStaff.findUnique({
+    where: { email, deletedAt: null },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update password in DB
+  const updatePassword = await prisma.managementStaff.update({
+    where: { email },
+    data: { password: hashedPassword },
+  });
+
+  return { email: updatePassword.email };
 };

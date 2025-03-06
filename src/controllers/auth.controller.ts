@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { loginService, registerCounsellor } from "../services/auth.service";
+import {
+  forgotPasswordManagementStaff,
+  loginService,
+  registerCounsellor,
+  resetPasswordManagementStaff,
+  verifyOTPService,
+} from "../services/auth.service";
 // import { registerCounsellor } from "../services/auth.service";
 
 // Define Validation Schema
@@ -32,13 +38,61 @@ const loginSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters long" }),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email format"),
+});
+
+const verifyOTPSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  otp: z.string().min(6, "OTP must be at least 6 characters long"),
+});
+
+const resetPasswordSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  new_password: z
+    .string()
+    .min(8, "New Password must be at least 8 characters long")
+    .regex(/[a-z]/, "New Password must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "New Password must contain at least one uppercase letter")
+    .regex(/\d/, "New Password must contain at least one number")
+    .regex(
+      /[@$!%*?&]/,
+      "New Password must contain at least one special character (@$!%*?&)"
+    ),
+  confirm_password: z
+    .string()
+    .min(8, "Confirm Password must be at least 8 characters long")
+    .regex(
+      /[a-z]/,
+      "Confirm Password must contain at least one lowercase letter"
+    )
+    .regex(
+      /[A-Z]/,
+      "Confirm Password must contain at least one uppercase letter"
+    )
+    .regex(/\d/, "Confirm Password must contain at least one number")
+    .regex(
+      /[@$!%*?&]/,
+      "Confirm Password must contain at least one special character (@$!%*?&)"
+    ),
+});
+
 //signup controller
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
     // Validate Request Body
-    const validatedData = signupSchema.parse(req.body);
+    const validatedData = signupSchema.safeParse(req.body);
 
-    const { email, name, password, address, phone } = validatedData;
+    if (!validatedData?.success) {
+      const formattedErrors = validatedData?.error.format();
+
+      // Extract meaningful messages
+      Object.values(formattedErrors)
+        .flat()
+        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+    }
+
+    const { email, name, password, address, phone } = req.body;
 
     // Register Counsellor
     const response = await registerCounsellor(
@@ -96,5 +150,92 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       message: error.message || "Login failed ",
       // error: error.message || "Invalid credentials",
     });
+  }
+};
+
+export const forgotPasswordManagementStaffController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    // Validate Request Body
+    const validatedData = forgotPasswordSchema.safeParse(req.body);
+
+    if (!validatedData?.success) {
+      const formattedErrors = validatedData?.error.format();
+
+      // Extract meaningful messages
+      Object.values(formattedErrors)
+        .flat()
+        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+    }
+
+    const { email } = req.body;
+
+    const result = await forgotPasswordManagementStaff(email);
+    res.json({ status: true, data: result, message: "OTP sent to email" });
+  } catch (error: any) {
+    res.status(400).json({ status: false, message: error.message });
+  }
+};
+
+export const verifyOTPController = async (req: Request, res: Response) => {
+  try {
+    // Validate Request Body
+    const validatedData = verifyOTPSchema.safeParse(req.body);
+
+    if (!validatedData?.success) {
+      const formattedErrors = validatedData?.error.format();
+
+      // Extract meaningful messages
+      Object.values(formattedErrors)
+        .flat()
+        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+    }
+
+    const { email, otp } = req.body;
+    const result = await verifyOTPService(email, otp);
+    res.json({ status: true, data: result, message: "OTP Verify Successful" });
+  } catch (error: any) {
+    res.status(400).json({ status: false, data: {}, message: error.message });
+  }
+};
+
+export const resetPasswordManagementStaffController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    // Validate Request Body
+    const validatedData = resetPasswordSchema.safeParse(req.body);
+
+    if (!validatedData?.success) {
+      const formattedErrors = validatedData?.error.format();
+
+      // Extract meaningful messages
+      Object.values(formattedErrors)
+        .flat()
+        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+    }
+
+    const { email, new_password, confirm_password } = req.body;
+
+    // Check if newPassword and confirmPassword match
+    if (new_password !== confirm_password) {
+      res.status(400).json({
+        status: false,
+        data: {},
+        message: "Passwords do not match",
+      });
+      return;
+    }
+    const result = await resetPasswordManagementStaff(email, new_password);
+    res.json({
+      status: true,
+      data: result,
+      message: "Password reset successfully",
+    });
+  } catch (error: any) {
+    res.status(400).json({ status: false, data: {}, message: error.message });
   }
 };

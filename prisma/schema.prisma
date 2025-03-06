@@ -215,12 +215,11 @@ model BatchStudent {
   @@id([batch_id, student_id]) // Composite Primary Key
 }
 
-// model BatchStudent {
-//   batch_id   String
-//   student_id String
-
-//   batch   CreateBatch @relation(fields: [batch_id], references: [id])
-//   student Student     @relation(fields: [student_id], references: [id])
-
-//   @@id([batch_id, student_id]) // Composite Primary Key
-// }
+model StoredOTPDetail {
+  id        String    @id @default(uuid())
+  email     String
+  otp       String    @unique
+  createdAt DateTime  @default(now()) // Automatically stores created time
+  updatedAt DateTime  @updatedAt // Automatically updates updated time
+  deletedAt DateTime? // Nullable field for soft delete
+}
