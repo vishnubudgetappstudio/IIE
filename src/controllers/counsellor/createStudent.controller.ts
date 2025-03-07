@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { z } from "zod";
 import { createNewStudentService } from "../../services/counsellor/createStudent.service";
@@ -20,7 +20,8 @@ export const createNewStudentSchema = z.object({
 
 export const createNewStudentController = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     // Validate user authentication
@@ -32,10 +33,19 @@ export const createNewStudentController = async (
     const { userId, name: counsellor_name } = req.user;
 
     // Validate Request Body
-    const validatePayload = createNewStudentSchema.parse(req.body);
+    const validatePayload = createNewStudentSchema.safeParse(req.body);
+
+    if (!validatePayload?.success) {
+      const formattedErrors = validatePayload?.error.format();
+
+      // Extract meaningful messages
+      Object.values(formattedErrors)
+        .flat()
+        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+    }
 
     // Extract data from request body
-    const { name, email, roll_number, course_id } = validatePayload;
+    const { name, email, roll_number, course_id } = req.body;
 
     //call create student service
     const response = await createNewStudentService(
@@ -53,14 +63,8 @@ export const createNewStudentController = async (
       ...response,
       message: "Create New Student successfully",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error Create New Student:", error);
-
-    res.status(400).json({
-      status: false,
-      data: {},
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
-    return;
+    next(error);
   }
 };

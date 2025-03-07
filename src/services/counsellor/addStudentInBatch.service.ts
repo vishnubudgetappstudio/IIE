@@ -1,14 +1,10 @@
 import { prisma } from "../../config/database";
 import { z } from "zod";
+import { AppError } from "../../utils/errorHandler";
 
-const addStudentToBatchSchema = z.object({
-  batchId: z.string().uuid("Invalid Batch ID format"),
-  studentId: z.string().uuid("Invalid Student ID format"),
-});
+
 
 export const addStudentToBatch = async (batchId: string, studentId: string) => {
-  // Validate the input
-  addStudentToBatchSchema.parse({ batchId, studentId });
 
   // Check if batch exists
   const batch = await prisma.createBatch.findUnique({
@@ -16,7 +12,8 @@ export const addStudentToBatch = async (batchId: string, studentId: string) => {
   });
 
   if (!batch) {
-    throw new Error("Batch not found");
+    // throw new Error("Batch not found");
+    throw new AppError({ statusCode: 404, data: {}, message: "Batch not found" });
   }
 
   // Check if student exists
@@ -25,7 +22,8 @@ export const addStudentToBatch = async (batchId: string, studentId: string) => {
   });
 
   if (!student) {
-    throw new Error("Student not found");
+    // throw new Error("Student not found");
+    throw new AppError({ statusCode: 404, data: {}, message: "Student not found" });
   }
 
   // Check if student is already in the batch
@@ -34,7 +32,8 @@ export const addStudentToBatch = async (batchId: string, studentId: string) => {
   });
 
   if (existingEntry) {
-    throw new Error("Student is already in this batch");
+    // throw new Error("Student is already in this batch");
+    throw new AppError({ statusCode: 409, data: {}, message: "This Student is already in this Batch" });
   }
 
   // Add student to batch

@@ -1,4 +1,5 @@
 import { prisma } from "../../config/database";
+import { AppError } from "../../utils/errorHandler";
 
 interface CreateNewStudentResponse {
   data: {
@@ -23,12 +24,22 @@ export const createNewStudentService = async (
   preferred_batch?: string
 ): Promise<CreateNewStudentResponse> => {
   // Check if student email already exists
-  const existingStudent = await prisma.student.findUnique({
-    where: { email: email },
+  const existingStudentEmail = await prisma.student.findUnique({
+    where: { email: email, roll_number: roll_number },
   });
 
-  if (existingStudent) {
-    throw new Error("This Student Email already registered");
+  if (existingStudentEmail) {
+    throw new AppError({ statusCode: 409, data: {}, message: "This Student Email already registered" });
+  }
+
+  // Check if student roll number already exists
+  const existingStudentRollNumber = await prisma.student.findUnique({
+    where: { roll_number: roll_number },
+  });
+
+  if (existingStudentRollNumber) {
+    throw new AppError({ statusCode: 409, data: {}, message: "This Student Roll Number already registered" });
+
   }
 
   // Create Counsellor in Database

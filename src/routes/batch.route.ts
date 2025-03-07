@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post("/create-new-batch", createNewBatch);
 router.get('/all-batches', getAllBatchesListController);
-router.get("/:batchId/students", getBatchStudentsController);
+router.get("/students", getBatchStudentsController);
 router.post("/add-student", addStudentToBatchController);
 
 export default router;

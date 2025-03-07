@@ -1,4 +1,5 @@
 import { prisma } from "../../config/database";
+import { AppError } from "../../utils/errorHandler";
 
 interface CreateNewBatchResponse {
   data: {
@@ -29,7 +30,7 @@ export const createNewBatchService = async (
   });
 
   if (existingBatch) {
-    throw new Error("This Batch Number already registered");
+    throw new AppError({ statusCode: 409, data: {}, message: "This Batch Number already registered" });
   }
 
   const studentIdsArray = students_id.split(",").map((id: string) => id.trim());
@@ -40,7 +41,7 @@ export const createNewBatchService = async (
   });
 
   if (!existingStaffMentor) {
-    throw new Error("This Mentor does not exist");
+    throw new AppError({ statusCode: 404, data: {}, message: "This Mentor does not exist" });
   }
 
   // Create Counsellor in Database

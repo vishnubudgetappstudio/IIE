@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
+import { AppError } from "../utils/errorHandler";
 
 dotenv.config();
 
@@ -40,12 +41,7 @@ export const verifyToken = (
     console.log("Extracted Token:", token);
 
     if (!token) {
-      res.status(401).json({
-        success: false,
-        data: {},
-        message: "Access Denied. No token provided.",
-      });
-      return;
+      throw new AppError({ statusCode: 401, data: {}, message: "Access Denied. No token provided." });
     }
 
     // Verify the token
@@ -56,8 +52,6 @@ export const verifyToken = (
     req.user = decoded; // Attach user data to request
     next(); // Proceed to next middleware
   } catch (error) {
-    res
-      .status(403)
-      .json({ success: false, data: {}, message: "Invalid or expired token." });
+    throw new AppError({ statusCode: 403, data: {}, message: "Invalid or expired token." });
   }
 };

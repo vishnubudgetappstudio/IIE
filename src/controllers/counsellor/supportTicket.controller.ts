@@ -1,29 +1,45 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { createSupportTicket } from "../../services/counsellor/supportTicket.service";
+import { AppError } from "../../utils/errorHandler";
+import { z } from "zod";
+
+const raiseSupportTicketSchema = z.object({
+  query: z.string().min(5, "Query must be at least 5 characters long"),
+});
 
 export const raiseSupportTicket = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
-    const { query, attachments } = req.body;
-    // `verifyToken` middleware ensures `req.user` exists
-    const userId = req.user?.userId;
-    console.log({userId})
-    if (!userId) {
-      res
-        .status(401)
-        .json({ status: false, message: "Unauthorized: Invalid token" });
-      return;
+    // Validate Request Body
+    const validatedData = raiseSupportTicketSchema.safeParse(req.body);
+
+    if (!validatedData?.success) {
+      const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
+
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
     }
+
+    const { query } = req.body;
+
+    const userId = req.user?.userId;
 
     if (!query || query.trim().length === 0) {
-      res.status(400).json({ status: false, message: "Query is required" });
-      return;
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: "Query is required", // Set message from Zod error
+      });
     }
 
-    const ticket = await createSupportTicket(userId, query, attachments);
+    const ticket = await createSupportTicket(userId, query);
 
     res.status(201).json({
       status: true,
@@ -33,12 +49,6 @@ export const raiseSupportTicket = async (
     return;
   } catch (error: unknown) {
     console.error("Error creating support ticket:", error);
-
-    res.status(500).json({
-      status: false,
-      message: "Error creating support ticket",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-    return;
+    next();
   }
 };

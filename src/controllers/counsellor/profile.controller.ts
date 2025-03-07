@@ -1,27 +1,42 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { getCounsellorProfile } from "../../services/counsellor/profile.service";
 import { AuthRequest } from "../../middlewares/auth.middleware";
+import { AppError } from "../../utils/errorHandler";
+import { z } from "zod";
+
+// Define a validation schema for batchId
+const managementStaffIdSchema = z.string().uuid({ message: "Invalid batch ID format" });
 
 // Get Profile Controller
 export const getProfile = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
-    // `verifyToken` middleware ensures `req.user` exists
     const userId = req.user?.userId;
-    if (!userId) {
-      res
-        .status(401)
-        .json({ status: false, message: "Unauthorized: Invalid token" });
-      return;
+
+    // Validate ManagementStaffId
+    const validatedManagementStaffId = managementStaffIdSchema.safeParse(userId);
+
+    if (!validatedManagementStaffId?.success) {
+      const firstErrorMessage = validatedManagementStaffId.error.errors[0].message; // Get first error message
+
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
     }
 
     // Fetch the counsellor profile
     const profile = await getCounsellorProfile(userId);
     if (!profile) {
-      res.status(404).json({ status: false, message: "Profile not found" });
-      return;
+      throw new AppError({
+        statusCode: 404,
+        data: {}, // Always send an empty object
+        message: "Profile not found",
+      });
     }
 
     // Send successful response
@@ -38,13 +53,6 @@ export const getProfile = async (
     return;
   } catch (error) {
     console.error("Error fetching profile:", error);
-
-    res.status(500).json({
-      status: false,
-      data: {},
-      message: "Error fetching profile",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-    return;
+    next(error);
   }
 };

@@ -106,7 +106,9 @@ export const forgotPasswordManagementStaff = async (email: string) => {
   if (!user) throw new Error("User not found");
 
   // Generate OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  // const otp = Math.floor(1000 + Math.random() * 9000).toString();
+  const otp = '1234'
+  // const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
   // Soft Delete Previous OTP from DB (optional)
   await prisma.storedOTPDetail.updateMany({

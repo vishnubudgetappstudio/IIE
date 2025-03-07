@@ -1,20 +1,21 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { getStaff_Student_BatchService } from "../../services/counsellor/getStaff_Student_Batch.service";
+import { AppError } from "../../utils/errorHandler";
 
 export const getStaff_Student_BatchController = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     const { search } = req.query; // Extract search param
 
     if (!search) {
-      res.status(400).json({
-        status: false,
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
         message: "Search parameter is required",
       });
-
-      return;
     }
 
     // Call service function to fetch data
@@ -28,11 +29,7 @@ export const getStaff_Student_BatchController = async (
     return;
   } catch (error) {
     console.error("Error fetching data:", error);
-    res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    next(error);
     return;
   }
 };

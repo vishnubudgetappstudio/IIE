@@ -1,6 +1,16 @@
 import { prisma } from "../../config/database";
+import { AppError } from "../../utils/errorHandler";
 
 export const getAllBatches = async (page: number, limit: number) => {
+
+  if (page < 1 || limit < 1) {
+    throw new AppError({
+      statusCode: 400, // Bad Request
+      message: "Page and limit must be greater than zero.",
+      data: {},
+    });
+  }
+
   const skip = (page - 1) * limit;
 
   // Fetch batches with pagination
@@ -28,6 +38,12 @@ export const getAllBatches = async (page: number, limit: number) => {
         },
       },
     },
+  }).catch(err => {
+    throw new AppError({
+      statusCode: 500, // Internal Server Error
+      data: [],
+      message: "Failed to retrieve batches",
+    });
   });
 
   // Get total count

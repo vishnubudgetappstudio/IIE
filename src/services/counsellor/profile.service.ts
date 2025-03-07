@@ -8,8 +8,8 @@ export const getCounsellorProfile = async (management_staff_id: string) => {
     where: { id: management_staff_id },
     select: {
       id: true,
-      name: true,
       email: true,
+      profile_img_url: true,
       phone: true,
       address: true,
       role: true,

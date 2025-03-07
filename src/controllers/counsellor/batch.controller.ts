@@ -1,7 +1,8 @@
-import { Response } from "express";
+import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { z } from "zod";
 import { createNewBatchService } from "../../services/counsellor/batch.service";
+import { AppError } from "../../utils/errorHandler";
 
 const createNewBatchSchema = z.object({
   batch_number: z
@@ -28,13 +29,13 @@ const createNewBatchSchema = z.object({
 
 export const createNewBatch = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     // Validate user authentication
     if (!req.user) {
-      res.status(401).json({ success: false, message: "Unauthorized access" });
-      return;
+      throw new AppError({ statusCode: 401, data: {}, message: "Unauthorized access" });
     }
 
     // Validate Request Body
@@ -74,11 +75,6 @@ export const createNewBatch = async (
     return;
   } catch (error) {
     console.error("Error Creating Batch:", error);
-    res.status(400).json({
-      status: false,
-      data: {},
-      // message: "Error Creating Batch",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+    next(error);
   }
 };

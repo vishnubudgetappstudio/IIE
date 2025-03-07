@@ -7,6 +7,7 @@ import {
   resetPasswordManagementStaff,
   verifyOTPService,
 } from "../services/auth.service";
+import { AppError } from "../utils/errorHandler";
 // import { registerCounsellor } from "../services/auth.service";
 
 // Define Validation Schema
@@ -84,12 +85,13 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     const validatedData = signupSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
-      const formattedErrors = validatedData?.error.format();
+      const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
 
-      // Extract meaningful messages
-      Object.values(formattedErrors)
-        .flat()
-        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
     }
 
     const { email, name, password, address, phone } = req.body;
@@ -124,12 +126,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const validatedData = loginSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
-      const formattedErrors = validatedData?.error.format();
+      const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
 
-      // Extract meaningful messages
-      Object.values(formattedErrors)
-        .flat()
-        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
     }
 
     const { email, password } = req.body;
@@ -162,12 +165,13 @@ export const forgotPasswordManagementStaffController = async (
     const validatedData = forgotPasswordSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
-      const formattedErrors = validatedData?.error.format();
+      const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
 
-      // Extract meaningful messages
-      Object.values(formattedErrors)
-        .flat()
-        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
     }
 
     const { email } = req.body;
@@ -185,12 +189,13 @@ export const verifyOTPController = async (req: Request, res: Response) => {
     const validatedData = verifyOTPSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
-      const formattedErrors = validatedData?.error.format();
+      const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
 
-      // Extract meaningful messages
-      Object.values(formattedErrors)
-        .flat()
-        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
     }
 
     const { email, otp } = req.body;
@@ -210,12 +215,13 @@ export const resetPasswordManagementStaffController = async (
     const validatedData = resetPasswordSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
-      const formattedErrors = validatedData?.error.format();
+      const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
 
-      // Extract meaningful messages
-      Object.values(formattedErrors)
-        .flat()
-        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
     }
 
     const { email, new_password, confirm_password } = req.body;

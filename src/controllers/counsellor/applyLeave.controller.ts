@@ -1,42 +1,56 @@
-import { Response } from "express";
+import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { applyLeave } from "../../services/counsellor/applyLeave.service";
+import { AppError } from "../../utils/errorHandler";
+import { z } from "zod";
+
+
+export const leaveRequestSchema = z.object({
+  leave_type: z.enum(["Sick", "Casual", "Earned", "Unpaid", "Other"], {
+    message: "Invalid leave type. Allowed values: Sick, Casual, Earned, Unpaid, Other",
+  }),
+  leave_mode: z.enum(["Full_Day", "Half_Day"], { message: "Invalid leave mode. Allowed values: Full_Day, Half_Day", }),
+  from_date: z.string().min(1, "From date is required"),
+  to_date: z.string().min(1, "To date is required"),
+  reason: z.string().min(1, "Reason is required"),
+});
 
 export const requestLeave = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     // Validate user authentication
     if (!req.user) {
-      res.status(401).json({ success: false, message: "Unauthorized access" });
-      return;
+      throw new AppError({ statusCode: 401, data: {}, message: "Unauthorized access" });
+    }
+
+    // Validate Request Body
+    const validatedData = leaveRequestSchema.safeParse(req.body);
+
+    if (!validatedData.success) {
+      const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Send empty object as per your structure
+        message: firstErrorMessage,
+      });
     }
 
     // Extract request body
-    const { leave_type, from_date, to_date, reason } = req.body;
-
-    // Validate required fields
-    if (!leave_type || !from_date || !to_date || !reason) {
-      res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
-      return;
-    }
+    const { leave_type, leave_mode, from_date, to_date, reason } = req.body;
 
     // Ensure from_date is before to_date
     if (new Date(from_date) > new Date(to_date)) {
-      res.status(400).json({
-        success: false,
-        message: "Start date must be before end date",
-      });
-      return;
+      throw new AppError({ statusCode: 400, data: {}, message: "Start date must be before End date" });
     }
 
     // Apply leave
     const leave = await applyLeave(
       req.user.userId,
       leave_type,
+      leave_mode,
       new Date(from_date),
       new Date(to_date),
       reason
@@ -50,13 +64,7 @@ export const requestLeave = async (
     return;
   } catch (error) {
     console.error("Error applying leave:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-    return;
+    next(error);
   }
 };
 

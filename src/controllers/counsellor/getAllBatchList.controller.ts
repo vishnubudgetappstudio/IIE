@@ -1,9 +1,10 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { getAllBatches } from "../../services/counsellor/getAllBatchs.service";
 
 export const getAllBatchesListController = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     // Extract query params
@@ -26,12 +27,7 @@ export const getAllBatchesListController = async (
     return;
   } catch (error) {
     console.error("Error fetching data:", error);
-    res.status(400).json({
-      status: false,
-      data: [],
-      // message: "Internal Server Error",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+    next(error);
     return;
   }
 };

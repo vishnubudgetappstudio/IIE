@@ -32,8 +32,8 @@ model ManagementStaff {
   deletedAt       DateTime?
 
   // Relation: One staff can create multiple tickets
-  supportTickets SupportTicket[]
-  LeaveRequest   LeaveRequest[]
+  supportTickets SupportTicketDetails[]
+  LeaveRequest   LeaveManagementStaff[]
   createBatch    CreateBatch[]
   Student        Student[]
 
@@ -54,21 +54,20 @@ enum Role {
 // ==============================
 // ✅ Support Ticket Schema
 // ==============================
-model SupportTicket {
-  id                  String          @id @default(uuid())
+model SupportTicketDetails {
+  id                  String                 @id @default(uuid())
   management_staff_id String // Foreign key referencing ManagementStaff
-  management_staff    ManagementStaff @relation(fields: [management_staff_id], references: [id]) // No Cascade
-  role                Role
+  management_staff    ManagementStaff        @relation(fields: [management_staff_id], references: [id]) // No Cascade
+  role                RaiseSupportTicketRole
   query               String // Reason for raising the ticket
-  status              TicketStatus    @default(open)
-  attachments         String? // JSON array of file URLs (optional)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  status              TicketStatus           @default(open)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
   deletedAt           DateTime? // Soft delete column
 
   @@index([management_staff_id])
   @@index([status])
-  @@map("SupportTicket") // Mapping to actual table name
+  @@map("SupportTicketDetails") // Mapping to actual table name
 }
 
 enum TicketStatus {
@@ -78,41 +77,55 @@ enum TicketStatus {
   closed
 }
 
+enum RaiseSupportTicketRole {
+  admin
+  counsellor
+  staff
+  guest
+  student
+}
+
 // ==============================
 // ✅ Apply Leave Schema
 // ==============================
-model LeaveRequest {
+model LeaveManagementStaff {
   id                  String          @id @default(uuid()) // Unique Leave ID
   management_staff_id String // Foreign key referencing ManagementStaff
   management_staff    ManagementStaff @relation(fields: [management_staff_id], references: [id]) // No Cascade
   role                Role
   leave_type          LeaveType
+  leave_mode          LeaveMode
   from_date           DateTime // Leave start date
   to_date             DateTime // Leave end date
   reason              String // Reason for leave
-  status              LeaveStatus     @default(PENDING) // Leave approval status
+  status              LeaveStatus     @default(Pending) // Leave approval status
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   deletedAt           DateTime? // Soft delete column
 
   @@index([management_staff_id])
   @@index([status])
-  @@map("LeaveRequest") // Mapping to actual table name
+  @@map("LeaveManagementStaff") // Mapping to actual table name
 }
 
 enum LeaveType {
-  SICK
-  CASUAL
-  EARNED
-  UNPAID
-  OTHER
+  Sick
+  Casual
+  Earned
+  Unpaid
+  Other
+}
+
+enum LeaveMode {
+  Half_Day
+  Full_Day
 }
 
 enum LeaveStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
+  Pending
+  Approved
+  Rejected
+  Cancelled
 }
 
 // ==============================
