@@ -78,3 +78,102 @@ export const createNewBatchService = async (
     },
   };
 };
+
+
+export const addStudentsToBatchService = async (batch_id: string, student_ids: string[]) => {
+  // Check if the batch exists
+  const batchExists = await prisma.createBatch.findUnique({
+    where: { id: batch_id, deletedAt: null },
+  });
+
+  if (!batchExists) {
+    throw new AppError({ statusCode: 404, message: "Batch not found", data: {} });
+  }
+
+  // Find students who are already in the batch
+  const existingStudents = await prisma.batchStudent.findMany({
+    where: {
+      batch_id,
+      student_id: { in: student_ids }, // Check if any of the provided students already exist in this batch
+    },
+    select: { student_id: true },
+  });
+
+  // Extract existing student IDs from the query result
+  const existingStudentIds = new Set(existingStudents.map((s) => s.student_id));
+
+  // Identify new students (not already in the batch)
+  const newStudents = student_ids.filter((id) => !existingStudentIds.has(id));
+
+  // If any student already exists, throw an AppError
+  if (existingStudentIds.size > 0) {
+    throw new AppError({
+      statusCode: 409,
+      message: `The following students are already in the batch: ${[...existingStudentIds].join(", ")}`,
+      data: {},
+    });
+  }
+
+  // Insert only new students
+  if (newStudents.length > 0) {
+    await prisma.batchStudent.createMany({
+      data: newStudents.map((student_id) => ({ batch_id, student_id })),
+    }).catch((err) => {
+      console.error("Error in addStudentsToBatch Service:", err);
+      throw new AppError({ statusCode: 500, message: "Internal Server Error", data: {} });
+    });
+  }
+
+  return {
+    addedStudents: newStudents, // Successfully added student IDs
+  };
+};
+
+export const removeStudentsFromBatchService = async (batch_id: string, student_ids: string[]) => {
+  // Check if the batch exists
+  const batchExists = await prisma.createBatch.findUnique({
+    where: { id: batch_id, deletedAt: null },
+  });
+
+  if (!batchExists) {
+    throw new AppError({ statusCode: 404, message: "Batch not found", data: {} });
+  }
+
+  // Check if the students exist in the batch and are not already deleted
+  const existingStudents = await prisma.batchStudent.findMany({
+    where: {
+      batch_id,
+      student_id: { in: student_ids },
+      deletedAt: null, // Ensure we are not updating already deleted records
+    },
+    select: { student_id: true },
+  });
+
+  // Extract the IDs of students who are actually present in the batch
+  const existingStudentIds = existingStudents.map((s) => s.student_id);
+
+  // If no students found, throw a 404 error
+  if (existingStudentIds.length === 0) {
+    throw new AppError({
+      statusCode: 404,
+      message: "No matching students found in the batch",
+      data: {},
+    });
+  }
+
+  // Update `deletedAt` for the found students (soft delete)
+  await prisma.batchStudent.updateMany({
+    where: {
+      batch_id,
+      student_id: { in: existingStudentIds },
+    },
+    data: { deletedAt: new Date() },
+  }).catch((error) => {
+    console.error("Error in removeStudentsFromBatch Service:", error);
+    throw new AppError({ statusCode: 500, message: "Internal Server Error", data: {} });
+  });
+
+  return {
+    removedStudents: existingStudentIds, // Successfully removed student IDs
+  };
+};

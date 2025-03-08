@@ -1,7 +1,7 @@
 import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { z } from "zod";
-import { createNewBatchService } from "../../services/counsellor/batch.service";
+import { addStudentsToBatchService, createNewBatchService, removeStudentsFromBatchService } from "../../services/counsellor/batch.service";
 import { AppError } from "../../utils/errorHandler";
 
 const createNewBatchSchema = z.object({
@@ -25,6 +25,17 @@ const createNewBatchSchema = z.object({
     .string()
     .uuid({ message: "Invalid mentor ID format (must be a UUID)" }),
   students_id: z.string().optional(),
+});
+
+// Define Schema for Batch and Multiple Student IDs
+const addStudentsToBatchSchema = z.object({
+  batch_id: z.string().uuid("Invalid Batch ID format"),
+  student_ids: z.array(z.string().uuid("Invalid Student ID format")).min(1, "At least one student ID is required"),
+});
+
+const removeStudentsFromBatchSchema = z.object({
+  batch_id: z.string().uuid("Invalid Batch ID format"),
+  student_ids: z.array(z.string().uuid("Invalid Student ID format")).nonempty("Student IDs are required"),
 });
 
 export const createNewBatch = async (
@@ -75,6 +86,69 @@ export const createNewBatch = async (
     return;
   } catch (error) {
     console.error("Error Creating Batch:", error);
+    next(error);
+  }
+};
+
+
+export const addStudentsToBatchController = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Validate Request Body
+    const validatedData = addStudentsToBatchSchema.safeParse(req.body);
+
+    if (!validatedData.success) {
+      throw new AppError({
+        statusCode: 400,
+        data: {},
+        message: validatedData.error.errors[0].message, // Get first error message
+      });
+    }
+
+    const { batch_id, student_ids } = validatedData.data;
+
+    // Call Service Function to Add Students
+    const { addedStudents } = await addStudentsToBatchService(batch_id, student_ids);
+
+    res.status(201).json({
+      status: true,
+      data: addedStudents,
+      message: `${addedStudents?.length} students added successfully`,
+    });
+  } catch (error: any) {
+    console.error("Error Adding Students to Batch:", error);
+    next(error);
+  }
+};
+
+export const removeStudentsFromBatchController = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Validate Request Body
+    const validatedData = removeStudentsFromBatchSchema.safeParse(req.body);
+
+    if (!validatedData.success) {
+      const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
+      throw new AppError({ statusCode: 400, data: {}, message: firstErrorMessage });
+    }
+
+    const { batch_id, student_ids } = validatedData.data;
+
+    const { removedStudents } = await removeStudentsFromBatchService(batch_id, student_ids);
+
+    res.status(200).json({
+      status: true,
+      data: removedStudents,
+      message: `${removedStudents?.length} Students removed successfully`
+    });
+  } catch (error: any) {
+    console.error("Error Removing Students From Batch:", error);
     next(error);
   }
 };

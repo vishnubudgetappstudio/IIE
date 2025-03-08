@@ -4,7 +4,7 @@ import profileRoutes from "./profile.route";
 import supportTicketRoutes from "./supportTicket.route";
 import applyLeaveRoutes from "./applyLeave.route";
 import addNewStudentRoutes from "./student.route";
-import createBatchRoutes from "./batch.route";
+import batchRoutes from "./batch.route";
 import getStaff_Student_BatchRoutes from "./getStaff_Student_Batch.route";
 import { verifyToken } from "../middlewares/auth.middleware";
 
@@ -19,7 +19,7 @@ router.use("/profile", profileRoutes); // Profile route
 router.use("/rise-support-ticket", supportTicketRoutes); // Support ticket route
 router.use("/apply-leave", applyLeaveRoutes); // Apply Leave route
 router.use("/add-new-student", addNewStudentRoutes); // Create New Student route
-router.use("/batch", createBatchRoutes); // Create New Batch route
+router.use("/batch", batchRoutes); // Create New Batch route
 router.use("/get-staff-student-batch", getStaff_Student_BatchRoutes); // Create New Batch route
 
 export default router;
