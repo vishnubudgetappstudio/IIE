@@ -57,7 +57,7 @@ export const requestLeave = async (
     );
 
     res.status(201).json({
-      success: true,
+      status: true,
       data: leave,
       message: "Leave request submitted successfully",
     });
