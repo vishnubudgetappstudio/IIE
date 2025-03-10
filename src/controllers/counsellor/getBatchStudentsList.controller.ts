@@ -19,6 +19,10 @@ export const getBatchStudentsController = async (
     const searchQuery = (req.query.search as string) ?? undefined; // Extract search query
     const batchId = (req.query.batch_id as string);
 
+    if (page < 1 || limit < 1) {
+      throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: {} });
+    }
+
     // Validate batchId
     const validatedBatchId = batchIdSchema.safeParse(batchId);
 
@@ -33,7 +37,7 @@ export const getBatchStudentsController = async (
     }
 
     // Fetch batch and students with optional search
-    const { students, currentPage, totalPages, totalStudents } = await getBatchStudents(
+    const { students, currentPage, totalPages, perPage, totalStudents } = await getBatchStudents(
       batchId,
       page,
       limit,
@@ -49,7 +53,8 @@ export const getBatchStudentsController = async (
     res.status(200).json({
       status: true,
       data: students,
-      currentPage,
+      page: currentPage,
+      limit: perPage,
       totalPages,
       totalStudents,
       message: "Students fetched successfully",

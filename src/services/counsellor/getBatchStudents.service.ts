@@ -37,6 +37,7 @@ export const getBatchStudents = async (
                 roll_number: true,
                 email: true,
                 phone: true,
+                profile_img_url: true,
               },
             },
           },
@@ -68,8 +69,9 @@ export const getBatchStudents = async (
 
   return {
     students,
-    currentPage: page,
-    totalPages: Math.ceil(totalStudents / limit),
+    currentPage,
+    perPage,
+    totalPages: Math.ceil(totalStudents / perPage),
     totalStudents,
   };
 };

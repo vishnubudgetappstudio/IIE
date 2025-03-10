@@ -14,7 +14,7 @@ export const jwtGenerateToken = (
     process.env.JWT_SECRET as string,
     {
       algorithm: "HS512", // More secure than HS256
-      expiresIn: 86400, // 1 day = 24 * 60 * 60 = 86400 seconds
+      // expiresIn: 86400, // 1 day = 24 * 60 * 60 = 86400 seconds
     }
   );
 };

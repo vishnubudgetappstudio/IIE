@@ -180,6 +180,7 @@ model Student {
   // Many-to-Many Relation with CreateBatch (Explicit)
   batches BatchStudent[]
 
+  @@index([name, roll_number, email, phone])
   @@map("Student") // Mapping to actual table name
 }
 
@@ -200,7 +201,7 @@ model CreateBatch {
   mentor_id String
   mentor    ManagementStaff @relation(fields: [mentor_id], references: [id])
 
-  // Students Relation (Many-to-Many)
+  // Student Relation (Many-to-Many)
   students BatchStudent[]
 
   createdAt DateTime  @default(now())
@@ -226,6 +227,7 @@ model BatchStudent {
   deletedAt DateTime? // Nullable field for soft delete
 
   @@id([batch_id, student_id]) // Composite Primary Key
+	@@map("BatchStudent")
 }
 
 model StoredOTPDetail {
@@ -235,4 +237,6 @@ model StoredOTPDetail {
   createdAt DateTime  @default(now()) // Automatically stores created time
   updatedAt DateTime  @updatedAt // Automatically updates updated time
   deletedAt DateTime? // Nullable field for soft delete
+
+  @@index([email])
 }
