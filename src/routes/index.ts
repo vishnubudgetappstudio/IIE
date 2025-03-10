@@ -7,11 +7,13 @@ import addNewStudentRoutes from "./student.route";
 import batchRoutes from "./batch.route";
 import getStaff_Student_BatchRoutes from "./getStaff_Student_Batch.route";
 import { verifyToken } from "../middlewares/auth.middleware";
+import s3Routes from "./s3/s3.route";
 
 const router = Router();
 
 //Authorization routes:
 router.use("/auth", authRoutes);
+router.use("/s3", s3Routes); //upload files and profile images
 
 // Secure all protected routes
 router.use(verifyToken);
@@ -21,5 +23,6 @@ router.use("/apply-leave", applyLeaveRoutes); // Apply Leave route
 router.use("/add-new-student", addNewStudentRoutes); // Create New Student route
 router.use("/batch", batchRoutes); // Create New Batch route
 router.use("/get-staff-student-batch", getStaff_Student_BatchRoutes); // Create New Batch route
+
 
 export default router;
