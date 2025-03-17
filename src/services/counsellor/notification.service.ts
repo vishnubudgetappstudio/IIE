@@ -74,7 +74,7 @@ export const createNotificationService = async (data: CreateNotificationData) =>
         }
 
         // Create notification and recipients
-        return await prisma.notification.create({
+        const newNotification = await prisma.notification.create({
             data: {
                 title: data.title,
                 message: data.message,
@@ -85,7 +85,6 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                 time: data.time as string,
                 senderId: data.senderId,
             },
-            include: { recipients: true }
         });
         // return await prisma.notification.create({
         //     data: {
@@ -104,7 +103,11 @@ export const createNotificationService = async (data: CreateNotificationData) =>
         //     include: { recipients: true },
         // });
 
-        return;
+        return {
+            data: {
+                
+            }
+        };
 
     } catch (error) {
         console.log({ error })

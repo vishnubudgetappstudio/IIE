@@ -37,8 +37,6 @@ export const createNewBatchService = async (
 
   const studentIdsArray = students_id ? students_id?.split(",").map((id: string) => id.trim()) : [];
 
-  console.log({ studentIdsArray })
-
   // Check if staff(mentor) already exists
   const existingStaffMentor = await prisma.managementStaff.findUnique({
     where: { id: mentor_id, role: "staff", deletedAt: null },
@@ -154,6 +152,8 @@ export const removeStudentsFromBatchService = async (batch_id: string, student_i
     select: { student_id: true },
   });
 
+  console.log({ existingStudents })
+
   // Extract the IDs of students who are actually present in the batch
   const existingStudentIds = existingStudents.map((s) => s.student_id);
 
@@ -171,6 +171,7 @@ export const removeStudentsFromBatchService = async (batch_id: string, student_i
     where: {
       batch_id,
       student_id: { in: existingStudentIds },
+      deletedAt: null
     },
     data: { deletedAt: new Date() },
   }).catch((error) => {
@@ -286,9 +287,10 @@ export const getBatchStudentsService = async (
                 name: {
                   startsWith: searchQuery, // Removed mode, it defaults to case-sensitive
                 },
+                deletedAt: null
               },
             }
-            : undefined, // If no search, keep it undefined
+            : { deletedAt: null }, // If no search, keep it undefined
           select: {
             student: {
               select: {
@@ -300,7 +302,7 @@ export const getBatchStudentsService = async (
                 roll_number: true,
                 course_id: true,
                 Course: true,
-                profile_img_url: true
+                profile_img_url: true,
               },
             },
           },
@@ -311,13 +313,15 @@ export const getBatchStudentsService = async (
     prisma.batchWithStudent.count({
       where: {
         batch_id: batchId,
+        deletedAt: null,
         student: searchQuery
           ? {
             name: {
               startsWith: searchQuery, // Removed mode to match Prisma's strict typing
             },
+            deletedAt: null,
           }
-          : undefined,
+          : { deletedAt: null },
       },
     }),
   ]);
