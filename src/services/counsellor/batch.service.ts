@@ -322,7 +322,7 @@ export const getBatchStudentsService = async (
 
   // If batch is not found, throw an error
   if (!batch) {
-    throw new AppError({ statusCode: 404, message: "Batch not found", data: {} });
+    throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
   }
 
   // Extract student data

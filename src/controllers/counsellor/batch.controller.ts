@@ -224,7 +224,7 @@ export const getBatchStudentsController = async (
 
       throw new AppError({
         statusCode: 400,
-        data: {}, // Always send an empty object
+        data: [], // Always send an empty object
         message: firstErrorMessage, // Set message from Zod error
       });
     }
@@ -239,7 +239,7 @@ export const getBatchStudentsController = async (
 
     // If no students are found, return 404
     if (!students.length) {
-      throw new AppError({ statusCode: 404, message: "Batch Students not found", data: {} });
+      throw new AppError({ statusCode: 404, message: "Batch Students not found", data: [] });
     }
 
     // Return the batch details with student list
