@@ -24,7 +24,7 @@ export const createNewBatchService = async (
   session_sheet: object,
   slot: "morning" | "evening",
   mentor_id: string,
-  students_id: string
+  students_id?: string
 ): Promise<CreateNewBatchResponse> => {
   // Check if batch number already exists
   const existingBatch = await prisma.batchDetail.findUnique({
@@ -35,7 +35,9 @@ export const createNewBatchService = async (
     throw new AppError({ statusCode: 409, data: {}, message: "This Batch Number already registered" });
   }
 
-  const studentIdsArray = students_id.split(",").map((id: string) => id.trim());
+  const studentIdsArray = students_id ? students_id?.split(",").map((id: string) => id.trim()) : [];
+
+  console.log({ studentIdsArray })
 
   // Check if staff(mentor) already exists
   const existingStaffMentor = await prisma.managementStaff.findUnique({
@@ -58,7 +60,7 @@ export const createNewBatchService = async (
       slot: slot,
       mentor: { connect: { id: mentor_id } },
       students: {
-        create: studentIdsArray.map((student_id) => ({
+        create: studentIdsArray?.map((student_id) => ({
           student: { connect: { id: student_id } },
         })),
       },
