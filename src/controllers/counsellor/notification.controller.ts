@@ -30,7 +30,7 @@ export const createNotificationController = async (
             studentIds: student_ids,
         });
 
-        res.status(201).json({ success: true, data: notification });
+        res.status(201).json({ success: true, data: notification, message: "Notification sent successfully" });
     } catch (error) {
         next(error);
     }

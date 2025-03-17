@@ -1,6 +1,7 @@
 import { NotificationType } from "@prisma/client";
 import { prisma } from "../../config/database";
 import { AppError } from "../../utils/errorHandler";
+import { join } from "path";
 
 interface CreateNotificationData {
     senderId: string;
@@ -53,14 +54,17 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                         batches: {
                             some: {
                                 batch_id: { in: batchIdsArray }, // Using Prisma relation
+                                deletedAt: null // Exclude soft deleted records
                             },
-                        }
+                        },
+                        deletedAt: null
                     },
                     select: { id: true },
                 });
                 const batchMentor = await prisma.batchDetail.findMany({
                     where: {
-                        id: { in: batchIdsArray }
+                        id: { in: batchIdsArray },
+                        deletedAt: null, // Exclude soft deleted records
                     },
                     select: { mentor_id: true }
                 })
@@ -86,26 +90,29 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                 senderId: data.senderId,
             },
         });
-        // return await prisma.notification.create({
-        //     data: {
-        //         title: data.title,
-        //         message: data.message,
-        //         image: data.image,
-        //         type: data.type as NotificationType,
-        //         category: data.category,
-        //         date: data.date as string,
-        //         time: data.time as string,
-        //         senderId: data.senderId,
-        //         recipients: {
-        //             create: recipients,
-        //         },
-        //     },
-        //     include: { recipients: true },
-        // });
+
+        await prisma.notificationRecipient.createMany({
+            data: recipients.map((r) => ({
+                notificationId: newNotification.id,
+                studentId: r.studentId,
+                managementStaffId: r.managementStaffId,
+                receiverRole: r.receiverRole,
+                status: "Pending",
+                createdAt: new Date(),
+            })),
+        });
 
         return {
             data: {
-                
+                title: newNotification.title,
+                message: newNotification.message,
+                image: newNotification.image,
+                category: newNotification.category,
+                date: newNotification.date as string,
+                time: newNotification.time as string,
+                batch_id: batchIdsArray.length ? batchIdsArray.join(',') : "",
+                student_id: studentIdsArray.length ? studentIdsArray.join(',') : "",
+
             }
         };
 
