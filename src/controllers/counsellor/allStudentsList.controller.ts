@@ -7,9 +7,9 @@ import { getAllStudentsList } from "../../services/counsellor/allStudentsList.se
  */
 export const getAllStudentsController = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const page = parseInt(req.query.page as string) ?? 1;
-        const limit = parseInt(req.query.limit as string) ?? 10;
-        const searchQuery = (req.query.search as string) ?? undefined; // Extract search query
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const searchQuery = (req.query.search as string) || undefined; // Extract search query
 
         if (page < 1 || limit < 1) {
             throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: {} });

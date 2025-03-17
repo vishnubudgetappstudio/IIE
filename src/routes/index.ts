@@ -9,6 +9,7 @@ import getStaff_Student_BatchRoutes from "./getStaff_Student_Batch.route";
 import { verifyToken } from "../middlewares/auth.middleware";
 import s3Routes from "./s3/s3.route";
 import { getAllStudentsController } from "../controllers/counsellor/allStudentsList.controller";
+import notificationRoutes from "./notification.route";
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use("/add-new-student", addNewStudentRoutes); // Create New Student route
 router.use("/batch", batchRoutes); // Create New Batch route
 router.use("/get-staff-student-batch", getStaff_Student_BatchRoutes); // Create New Batch route
 router.get("/all-students", getAllStudentsController);// Get students with pagination & search
+router.use("/notification", notificationRoutes);// Get students with pagination & search
 
 
 export default router;

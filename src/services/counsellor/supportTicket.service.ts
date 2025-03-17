@@ -11,10 +11,7 @@ export const createSupportTicket = async (
       query,
     },
     select: {
-      id: true,
       query: true,
-      status: true,
-      createdAt: true,
     },
   });
 };

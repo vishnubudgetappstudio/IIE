@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/database"; // Import DB connection
 import Routes from "./routes";
 import errorHandler from "./utils/errorHandler";
+import "./utils/notificationScheduler";
 
 dotenv.config();
 

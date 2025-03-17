@@ -6,8 +6,8 @@ export const applyLeave = async (
   management_staff_id: string,
   leave_type: LeaveType,
   leave_mode: LeaveMode,
-  from_date: Date,
-  to_date: Date,
+  from_date: string,
+  to_date: string,
   reason: string
 ) => {
   return await prisma.leaveManagementStaff.create({
@@ -20,7 +20,16 @@ export const applyLeave = async (
       leave_type,
       leave_mode,
     },
+    select: {
+      reason: true,
+      leave_type: true,
+      leave_mode: true,
+      from_date: true,
+      to_date: true,
+    }
   }).catch(err => {
+    console.log({ err });
+
     throw new AppError({
       statusCode: 500,
       data: {},

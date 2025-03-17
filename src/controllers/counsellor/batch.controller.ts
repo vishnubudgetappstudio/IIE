@@ -1,8 +1,15 @@
 import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { z } from "zod";
-import { addStudentsToBatchService, createNewBatchService, removeStudentsFromBatchService } from "../../services/counsellor/batch.service";
+import { 
+  addStudentsToBatchService, 
+  createNewBatchService, 
+  getAllBatchesService, 
+  getBatchStudentsService, 
+  removeStudentsFromBatchService 
+} from "../../services/counsellor/batch.service";
 import { AppError } from "../../utils/errorHandler";
+import { BatchSlotsType } from "@prisma/client";
 
 const createNewBatchSchema = z.object({
   batch_number: z
@@ -17,10 +24,11 @@ const createNewBatchSchema = z.object({
   course: z
     .string()
     .min(3, { message: "Course name must be at least 3 characters long" }),
-  session_sheet: z.string().optional(),
+  session_sheet_url: z.string().optional(), // Validates as a URL string
+  session_sheet: z.record(z.string(), z.any()).optional(), // Validates as a JSON object
   slot: z.enum(["morning", "evening"], {
     message: "Slot must be 'morning' or 'evening'",
-  }), // ✅ Fixed Enum Validation
+  }), // Fixed Enum Validation
   mentor_id: z
     .string()
     .uuid({ message: "Invalid mentor ID format (must be a UUID)" }),
@@ -37,6 +45,9 @@ const removeStudentsFromBatchSchema = z.object({
   batch_id: z.string().uuid("Invalid Batch ID format"),
   student_ids: z.array(z.string().uuid("Invalid Student ID format")).nonempty("Student IDs are required"),
 });
+
+// Define a validation schema for batchId
+const batchIdSchema = z.string().uuid({ message: "Invalid batch ID format" });
 
 export const createNewBatch = async (
   req: AuthRequest,
@@ -60,6 +71,7 @@ export const createNewBatch = async (
       mentor_id,
       to_date,
       slot,
+      session_sheet_url,
       session_sheet,
       students_id,
     } = validatePayload;
@@ -70,7 +82,8 @@ export const createNewBatch = async (
       from_date,
       to_date,
       course,
-      session_sheet!,
+      session_sheet_url as string,
+      session_sheet as {},
       slot,
       mentor_id,
       students_id!
@@ -149,6 +162,99 @@ export const removeStudentsFromBatchController = async (
     });
   } catch (error: any) {
     console.error("Error Removing Students From Batch:", error);
+    next(error);
+  }
+};
+
+export const getAllBatchesListController = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Extract query params
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const slot = req.query.slot as BatchSlotsType || 'all';
+
+    // Fetch batches from service
+    const { batches, total } = await getAllBatchesService(page, limit, slot);
+
+    res.status(200).json({
+      status: true,
+      data: batches,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      message: "Batch list get Successfully",
+    });
+
+    return;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    next(error);
+    return;
+  }
+};
+
+
+
+export const getBatchStudentsController = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Extract query params
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const searchQuery = (req.query.search as string) || undefined; // Extract search query
+    const batchId = (req.query.batch_id as string);
+
+    if (page < 1 || limit < 1) {
+      throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: {} });
+    }
+
+    // Validate batchId
+    const validatedBatchId = batchIdSchema.safeParse(batchId);
+
+    if (!validatedBatchId?.success) {
+      const firstErrorMessage = validatedBatchId.error.errors[0].message; // Get first error message
+
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
+    }
+
+    // Fetch batch and students with optional search
+    const { students, currentPage, totalPages, perPage, totalStudents } = await getBatchStudentsService(
+      batchId,
+      page,
+      limit,
+      searchQuery
+    );
+
+    // If no students are found, return 404
+    if (!students.length) {
+      throw new AppError({ statusCode: 404, message: "Batch Students not found", data: {} });
+    }
+
+    // Return the batch details with student list
+    res.status(200).json({
+      status: true,
+      data: students,
+      page: currentPage,
+      limit: perPage,
+      totalPages,
+      totalStudents,
+      message: "Batch Students fetched successfully",
+    });
+    return;
+  } catch (error: any) {
+    console.error("Error fetching batch students:", error);
     next(error);
   }
 };

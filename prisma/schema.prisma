@@ -32,10 +32,12 @@ model ManagementStaff {
   deletedAt       DateTime?
 
   // Relation: One staff can create multiple tickets
-  supportTickets SupportTicketDetails[]
-  LeaveRequest   LeaveManagementStaff[]
-  createBatch    CreateBatch[]
-  Student        Student[]
+  supportTickets        SupportTicketDetails[]
+  LeaveRequest          LeaveManagementStaff[]
+  createBatch           BatchDetail[]
+  Student               Student[]
+  Notification          Notification[]
+  NotificationRecipient NotificationRecipient[]
 
   @@index([id])
   @@index([email])
@@ -95,8 +97,8 @@ model LeaveManagementStaff {
   role                Role
   leave_type          LeaveType
   leave_mode          LeaveMode
-  from_date           DateTime // Leave start date
-  to_date             DateTime // Leave end date
+  from_date           String // Leave start date
+  to_date             String // Leave end date
   reason              String // Reason for leave
   status              LeaveStatus     @default(Pending) // Leave approval status
   createdAt           DateTime        @default(now())
@@ -178,7 +180,8 @@ model Student {
   deletedAt       DateTime? // Nullable for soft delete
 
   // Many-to-Many Relation with CreateBatch (Explicit)
-  batches BatchStudent[]
+  batches               BatchWithStudent[]
+  NotificationRecipient NotificationRecipient[]
 
   @@index([name, roll_number, email, phone])
   @@map("Student") // Mapping to actual table name
@@ -187,22 +190,23 @@ model Student {
 // ==============================
 // ✅ Create Batch Schema
 // ==============================
-model CreateBatch {
-  id            String  @id @unique @default(uuid())
-  batch_number  String  @unique
-  batchName     String?
-  from_date     String
-  to_date       String
-  course        String
-  slot          String
-  session_sheet String? // JSON array of file URLs (optional)
+model BatchDetail {
+  id                String         @id @unique @default(uuid())
+  batch_number      String         @unique
+  batchName         String?
+  from_date         String
+  to_date           String
+  course            String
+  slot              BatchSlotsType
+  session_sheet_url String? // JSON array of file URLs (optional)
+  session_sheet     Json? // JSON array of file (optional)
 
   // Mentor Relation (One Mentor -> Many Batches)
   mentor_id String
   mentor    ManagementStaff @relation(fields: [mentor_id], references: [id])
 
   // Student Relation (Many-to-Many)
-  students BatchStudent[]
+  students BatchWithStudent[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -210,24 +214,29 @@ model CreateBatch {
 
   @@index([id])
   @@index([mentor_id]) // Index for faster lookups
-  @@map("CreateBatch") // Mapping to actual table name
+  @@map("BatchDetail") // Mapping to actual table name
+}
+
+enum BatchSlotsType {
+  morning
+  evening
 }
 
 // ==============================
 // ✅ Join Table for Many-to-Many Relation
 // ==============================
-model BatchStudent {
+model BatchWithStudent {
   batch_id   String
   student_id String
 
-  batch   CreateBatch @relation(fields: [batch_id], references: [id])
+  batch   BatchDetail @relation(fields: [batch_id], references: [id])
   student Student     @relation(fields: [student_id], references: [id])
 
   createdAt DateTime  @default(now()) // Automatically stores created time
   deletedAt DateTime? // Nullable field for soft delete
 
   @@id([batch_id, student_id]) // Composite Primary Key
-	@@map("BatchStudent")
+  @@map("BatchWithStudent")
 }
 
 model StoredOTPDetail {
@@ -239,4 +248,72 @@ model StoredOTPDetail {
   deletedAt DateTime? // Nullable field for soft delete
 
   @@index([email])
+}
+
+model Notification {
+  id          String             @id @default(uuid())
+  senderId    String // Foreign key for sender (ManagementStaff)
+  title       String
+  message     String
+  image       String?
+  type        NotificationType // Enum for notification type
+  category    String? // Optional category field
+  date        String
+  time        String
+  scheduledAt BigInt? // The exact datetime when the notification should be sent
+  status      NotificationStatus @default(Scheduled) // Default status should be "Scheduled"
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime? // Soft delete
+
+  // Relations
+  sender ManagementStaff @relation(fields: [senderId], references: [id])
+
+  // One-to-Many Relation with Recipients
+  recipients NotificationRecipient[]
+
+  @@index([senderId])
+  @@map("Notification")
+}
+
+model NotificationRecipient {
+  id                String             @id @default(uuid())
+  notificationId    String // Foreign key for Notification
+  managementStaffId String? // Foreign key for staff
+  studentId         String? // Foreign key for student
+  receiverRole      ReceiverRole // Enum: staff, guest, student
+  isRead            Boolean            @default(false) // Read status
+  status            NotificationStatus @default(Scheduled) // Default status should be "Scheduled"
+  sentAt            BigInt? // Timestamp when notification was sent
+  createdAt         DateTime           @default(now())
+
+  // Relations
+  notification    Notification     @relation(fields: [notificationId], references: [id])
+  managementStaff ManagementStaff? @relation(fields: [managementStaffId], references: [id], map: "NotificationRecipient_managementStaffId_fkey")
+  student         Student?         @relation(fields: [studentId], references: [id], map: "NotificationRecipient_studentId_fkey")
+
+  @@index([notificationId])
+  @@index([managementStaffId])
+  @@index([studentId])
+  @@map("NotificationRecipient")
+}
+
+enum NotificationStatus {
+  Scheduled // Notification is scheduled for a future time
+  Pending // Notification time has arrived but not yet sent
+  Sent // Notification has been successfully sent
+  Failed // Notification failed to send
+}
+
+enum ReceiverRole {
+  staff
+  guest
+  student
+}
+
+enum NotificationType {
+  system
+  alert
+  message
+  event
 }

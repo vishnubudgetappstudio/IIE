@@ -21,11 +21,11 @@ export const getAllStudentsList = async (
         // Define search conditions
         const searchCondition = searchQuery
             ? {
-                OR: [
-                    { name: { contains: searchQuery, } },
-                ],
+                name: {
+                    startsWith: searchQuery, // Matches names that start with the search query
+                },
             }
-            : {}; // No search filter if searchQuery is empty
+            : {};
 
         // Fetch students with pagination & search
         const students = await prisma.student.findMany({

@@ -1,7 +1,11 @@
 import express from "express";
-import { addStudentsToBatchController, createNewBatch, removeStudentsFromBatchController } from "../controllers/counsellor/batch.controller";
-import { getAllBatchesListController } from "../controllers/counsellor/getAllBatchList.controller";
-import { getBatchStudentsController } from "../controllers/counsellor/getBatchStudentsList.controller";
+import {
+    addStudentsToBatchController,
+    createNewBatch,
+    getAllBatchesListController,
+    getBatchStudentsController,
+    removeStudentsFromBatchController
+} from "../controllers/counsellor/batch.controller";
 
 const router = express.Router();
 

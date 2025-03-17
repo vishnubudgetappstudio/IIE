@@ -51,8 +51,8 @@ export const requestLeave = async (
       req.user.userId,
       leave_type,
       leave_mode,
-      new Date(from_date),
-      new Date(to_date),
+      from_date,
+      to_date,
       reason
     );
 

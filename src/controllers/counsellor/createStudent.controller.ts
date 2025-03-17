@@ -2,6 +2,7 @@ import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { z } from "zod";
 import { createNewStudentService } from "../../services/counsellor/createStudent.service";
+import { AppError } from "../../utils/errorHandler";
 
 // Student Creation Schema
 export const createNewStudentSchema = z.object({
@@ -36,12 +37,13 @@ export const createNewStudentController = async (
     const validatePayload = createNewStudentSchema.safeParse(req.body);
 
     if (!validatePayload?.success) {
-      const formattedErrors = validatePayload?.error.format();
+      const firstErrorMessage = validatePayload.error.errors[0].message; // Get first error message
 
-      // Extract meaningful messages
-      Object.values(formattedErrors)
-        .flat()
-        .filter((msg) => typeof msg === "string"); // Remove unwanted objects
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: firstErrorMessage, // Set message from Zod error
+      });
     }
 
     // Extract data from request body

@@ -13,7 +13,7 @@ export const getStaff_Student_BatchController = async (
     if (!search) {
       throw new AppError({
         statusCode: 400,
-        data: {}, // Always send an empty object
+        data: [], // Always send an empty object
         message: "Search parameter is required",
       });
     }
