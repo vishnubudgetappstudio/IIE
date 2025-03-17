@@ -21,29 +21,31 @@ export const getAllStudentsList = async (
     const perPage = searchQuery ? undefined : limit > 0 ? limit : 10;
     const skip = searchQuery ? undefined : (currentPage - 1) * perPage!;
 
-    const existingBatch = await prisma.batchDetail.findUnique({
-        where: { id: batchId }
-    })
-    
-    if (!existingBatch) {
-        throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
+    if (batchId) {
+        const existingBatch = await prisma.batchDetail.findUnique({
+            where: { id: batchId }
+        })
+
+        if (!existingBatch) {
+            throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
+        }
     }
 
     // Define search conditions
-    const searchCondition = searchQuery || batchId
-        ? {
-            OR: [
-                {
-                    name: { startsWith: searchQuery, },
-                    batches: {
-                        some: {
-                            batch_id: batchId as string,
-                        },
-                    }
-                },
-            ],
-        }
-        : {}; // No search filter if searchQuery is empty
+    const searchCondition: any = {};
+
+    if (searchQuery) {
+        searchCondition.name = {
+            startsWith: searchQuery, // Matches names that start with the search query
+        };
+    }
+
+    // If batchId is provided, filter students belonging to that batch
+    if (batchId) {
+        searchCondition.batches = {
+            some: { batch_id: batchId }, // Ensure student is part of the batch
+        };
+    }
 
     // Fetch students with pagination & search
     const students = await prisma.student.findMany({
