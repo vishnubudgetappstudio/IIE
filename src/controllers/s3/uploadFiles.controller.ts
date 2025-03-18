@@ -8,7 +8,7 @@ import { AppError } from "../../utils/errorHandler";
 export const uploadImageController = async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.file) {
-            return next(new AppError({ statusCode: 400, message: "Image file is required", data: {} }));
+            throw new AppError({ statusCode: 400, message: "Image file is required", data: {} });
         }
 
         const { fileUrl } = await uploadImageToS3(req.file);
@@ -32,7 +32,7 @@ export const uploadFilesController = async (req: Request, res: Response, next: N
         const files = req.files as Express.Multer.File[];
 
         if (!files || files.length === 0) {
-            return next(new AppError({ statusCode: 400, message: "At least one file is required", data: {} }));
+            throw new AppError({ statusCode: 400, message: "At least one file is required", data: {} });
         }
 
         const { fileUrls } = await uploadFilesToS3(files);

@@ -20,6 +20,8 @@ export const raiseSupportTicket = async (
     if (!validatedData?.success) {
       const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
 
+      console.log({ firstErrorMessage })
+
       throw new AppError({
         statusCode: 400,
         data: {}, // Always send an empty object
@@ -49,6 +51,6 @@ export const raiseSupportTicket = async (
     return;
   } catch (error: unknown) {
     console.error("Error creating support ticket:", error);
-    next();
+    next(error);
   }
 };

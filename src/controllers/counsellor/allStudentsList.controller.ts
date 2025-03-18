@@ -14,7 +14,7 @@ export const getAllStudentsController = async (req: Request, res: Response, next
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
-        const batchId = req.query.batch_id as string;
+        const batchId = req.query.batch_id as string || undefined;
         const searchQuery = (req.query.search as string) || undefined; // Extract search query
 
         if (page < 1 || limit < 1) {
@@ -39,7 +39,7 @@ export const getAllStudentsController = async (req: Request, res: Response, next
             message: "Students fetched successfully",
         });
     } catch (error) {
-        console.log("Error get All Students", error)
+        console.error("Error get All Students", error)
         next(error);
     }
 };

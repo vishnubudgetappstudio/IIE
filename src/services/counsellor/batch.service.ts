@@ -56,7 +56,7 @@ export const createNewBatchService = async (
       session_sheet_url: session_sheet_url,
       session_sheet: session_sheet,
       slot: slot,
-      mentor: { connect: { id: mentor_id } },
+      mentor: { connect: { id: mentor_id, role: "staff" } },
       students: {
         create: studentIdsArray?.map((student_id) => ({
           student: { connect: { id: student_id } },

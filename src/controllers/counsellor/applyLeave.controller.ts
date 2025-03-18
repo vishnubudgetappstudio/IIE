@@ -1,6 +1,6 @@
 import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
-import { applyLeave } from "../../services/counsellor/applyLeave.service";
+import { applyLeaveService } from "../../services/counsellor/applyLeave.service";
 import { AppError } from "../../utils/errorHandler";
 import { z } from "zod";
 
@@ -15,7 +15,7 @@ export const leaveRequestSchema = z.object({
   reason: z.string().min(1, "Reason is required"),
 });
 
-export const requestLeave = async (
+export const requestLeaveController = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -47,7 +47,7 @@ export const requestLeave = async (
     }
 
     // Apply leave
-    const leave = await applyLeave(
+    const leave = await applyLeaveService(
       req.user.userId,
       leave_type,
       leave_mode,

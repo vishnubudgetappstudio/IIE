@@ -18,9 +18,9 @@ export const verifyToken = (
   try {
     let token: string | undefined;
 
-    console.log("Headers:", req.headers);
-    console.log("Body:", req.body);
-    console.log("Query Params:", req.query);
+    // console.log("Headers:", req.headers);
+    // console.log("Body:", req.body);
+    // console.log("Query Params:", req.query);
 
     // Check Authorization header first
     const authHeader = req.header("Authorization");
@@ -37,8 +37,6 @@ export const verifyToken = (
     if (!token && req.query?.token) {
       token = req.query.token as string;
     }
-
-    console.log("Extracted Token:", token);
 
     if (!token) {
       throw new AppError({ statusCode: 401, data: {}, message: "Access Denied. No token provided." });

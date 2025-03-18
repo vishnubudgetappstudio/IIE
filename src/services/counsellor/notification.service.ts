@@ -1,7 +1,6 @@
-import { NotificationType } from "@prisma/client";
+import { NotificationCategory, NotificationType } from "@prisma/client";
 import { prisma } from "../../config/database";
 import { AppError } from "../../utils/errorHandler";
-import { join } from "path";
 
 interface CreateNotificationData {
     senderId: string;
@@ -9,7 +8,7 @@ interface CreateNotificationData {
     message: string;
     image?: string;
     type: string;
-    category?: string;
+    category?: NotificationCategory | "";
     date?: string;
     time?: string;
     batchIds?: string; // Comma-separated batch IDs
@@ -23,68 +22,89 @@ export const createNotificationService = async (data: CreateNotificationData) =>
     const batchIdsArray = data.batchIds ? data.batchIds.split(",").map(id => id.trim()).filter(id => id) : [];
     const studentIdsArray = data.studentIds ? data.studentIds.split(",").map(id => id.trim()).filter(id => id) : [];
 
-    try {
-        if (data.category === "all") {
-            // Fetch all students and staff
-            const students = await prisma.student.findMany({ select: { id: true } });
-            const staff = await prisma.managementStaff.findMany({ select: { id: true } });
+    if (data.category === "all") {
+        // Fetch all students and staff
+        const students = await prisma.student.findMany({ where: { deletedAt: null }, select: { id: true } });
+        const staff = await prisma.managementStaff.findMany({ where: { role: "staff" }, select: { id: true } });
+
+        recipients = [
+            ...students.map((s) => ({ studentId: s.id, receiverRole: "student" })),
+            ...staff.map((s) => ({ managementStaffId: s.id, receiverRole: "staff" })),
+        ];
+    } else if (data.category === "staffs") {
+        // Fetch only staff members
+        const staff = await prisma.managementStaff.findMany({ where: { role: "staff" }, select: { id: true } });
+        recipients = staff.map((s) => ({ managementStaffId: s.id, receiverRole: "staff" }));
+    } else if (data.category === "students") {
+        // Add individual students if provided
+        const students = await prisma.student.findMany({
+            where: { deletedAt: null },
+            select: { id: true }
+        })
+        recipients = students.map((s) => ({ studentId: s.id, receiverRole: "student" }));
+    } else if (data.category === "" && (data.studentIds || data.batchIds)) {
+        if (data.studentIds) {
+            recipients.push(...studentIdsArray.map((id) => ({ studentId: id, receiverRole: "student" })));
+
+        }
+        if (batchIdsArray.length) {
+            // Fetch students based on batchIds (Using Relation)
+            const batchWithStudents = await prisma.batchWithStudent.findMany({
+                where: {
+                    batch_id: { in: batchIdsArray }, // Using Prisma relation
+                    deletedAt: null, // Exclude soft deleted records
+                },
+                select: {
+                    student_id: true,
+                    batch_id: true
+                }
+            });
+
+            console.log({ batchWithStudents })
+
+            if (!batchWithStudents.length) {
+                throw new AppError({ statusCode: 404, data: {}, message: "No students found in the provided batch IDs" });
+            }
+
+            const batchMentor = await prisma.batchDetail.findMany({
+                where: {
+                    id: { in: batchIdsArray },
+                    deletedAt: null, // Exclude soft deleted records
+                    students: {
+                        some: {
+                            batch_id: { in: batchIdsArray },
+                            deletedAt: null, // Exclude soft deleted records
+                        },
+                    }
+                },
+                select: {
+                    id: true,
+                    mentor_id: true
+                }
+            });
+
+            if (!batchMentor.length) {
+                throw new AppError({ statusCode: 404, data: {}, message: "No mentor found for the provided batch IDs" });
+            }
 
             recipients = [
-                ...students.map((s) => ({ studentId: s.id, receiverRole: "student" })),
-                ...staff.map((s) => ({ managementStaffId: s.id, receiverRole: "staff" })),
-            ];
-        } else if (data.category === "staff") {
-            // Fetch only staff members
-            const staff = await prisma.managementStaff.findMany({ where: { role: "staff" }, select: { id: true } });
-            recipients = staff.map((s) => ({ managementStaffId: s.id, receiverRole: "staff" }));
-        } else if (data.category === "student") {
-            // Add individual students if provided
-            if (studentIdsArray.length > 0) {
-                recipients.push(...studentIdsArray.map((id) => ({ studentId: id, receiverRole: "student" })));
-            }
-        } else if (data.category === "" && (data.studentIds || data.batchIds)) {
-            if (data.studentIds) {
-                recipients.push(...studentIdsArray.map((id) => ({ studentId: id, receiverRole: "student" })));
-
-            }
-            if (batchIdsArray.length) {
-                // Fetch students based on batchIds (Using Relation)
-                const batchStudents = await prisma.student.findMany({
-                    where: {
-                        batches: {
-                            some: {
-                                batch_id: { in: batchIdsArray }, // Using Prisma relation
-                                deletedAt: null // Exclude soft deleted records
-                            },
-                        },
-                        deletedAt: null
-                    },
-                    select: { id: true },
-                });
-                const batchMentor = await prisma.batchDetail.findMany({
-                    where: {
-                        id: { in: batchIdsArray },
-                        deletedAt: null, // Exclude soft deleted records
-                    },
-                    select: { mentor_id: true }
-                })
-                // recipients.push(...batchStudents.map((s) => ({ studentId: s.id, receiverRole: "student" })));
-                recipients = [
-                    ...batchStudents.map((s) => ({ studentId: s.id, receiverRole: "student" })),
-                    ...batchMentor.map((m) => ({ managementStaffId: m.mentor_id, receiverRole: "staff" })),
-                ]
-                console.log({ recipients })
-            }
+                ...batchWithStudents.map((s) => ({ studentId: s.student_id, receiverRole: "student", batchId: s.batch_id })),
+                ...batchMentor.map((m) => ({ managementStaffId: m.mentor_id, receiverRole: "staff", batchId: m.id })),
+            ]
         }
+    }
 
-        // Create notification and recipients
+    // Create notification and recipients
+    try {
         const newNotification = await prisma.notification.create({
             data: {
                 title: data.title,
                 message: data.message,
                 image: data.image,
                 type: data.type as NotificationType,
-                category: data.category,
+                category: data.category ? (data.category as NotificationCategory) : null,
+                batch_ids: batchIdsArray.length ? data.batchIds as string : "",
+                student_ids: studentIdsArray.length ? data.studentIds as string : "",
                 date: data.date as string,
                 time: data.time as string,
                 senderId: data.senderId,
@@ -94,8 +114,9 @@ export const createNotificationService = async (data: CreateNotificationData) =>
         await prisma.notificationRecipient.createMany({
             data: recipients.map((r) => ({
                 notificationId: newNotification.id,
-                studentId: r.studentId,
-                managementStaffId: r.managementStaffId,
+                studentId: r.studentId || null,
+                managementStaffId: r.managementStaffId || null,
+                batchId: r.batchId || null,
                 receiverRole: r.receiverRole,
                 status: "Pending",
                 createdAt: new Date(),
@@ -103,27 +124,59 @@ export const createNotificationService = async (data: CreateNotificationData) =>
         });
 
         return {
-            data: {
-                title: newNotification.title,
-                message: newNotification.message,
-                image: newNotification.image,
-                category: newNotification.category,
-                date: newNotification.date as string,
-                time: newNotification.time as string,
-                batch_id: batchIdsArray.length ? batchIdsArray.join(',') : "",
-                student_id: studentIdsArray.length ? studentIdsArray.join(',') : "",
-
-            }
+            title: newNotification.title,
+            message: newNotification.message,
+            image: newNotification.image,
+            category: newNotification.category,
+            date: newNotification.date as string,
+            time: newNotification.time as string,
+            batch_ids: batchIdsArray.length ? batchIdsArray.join(',') : "",
+            student_ids: studentIdsArray.length ? studentIdsArray.join(',') : "",
         };
-
     } catch (error) {
-        console.log({ error })
+        console.error("Error creating notification:", error);
         throw new AppError({
             statusCode: 400,
-            data: {},
-            message: "Can't able to schedule notification",
+            message: "Can't create new notification. Something went wrong.",
         });
     }
-
-
 };
+
+// Get Notification History List
+export const getNotificationHistoryService = async ({ senderId }: { senderId: string }) => {
+
+    const history = await prisma.notification.findMany({
+        where: { senderId },
+        orderBy: { date: "desc" }, // Order by latest notification
+        select: {
+            id: true,
+            title: true,
+            message: true,
+            image: true,
+            date: true,
+            type: true,
+            category: true,
+            time: true,
+            batch_ids: true,
+            student_ids: true,
+            senderId: true,
+            createdAt: true,
+        },
+    });
+
+    const historyList = history.map((history) => (
+        {
+            id: history.id,
+            title: history.title,
+            message: history.message,
+            image: history.image,
+            date: history.date,
+            time: history.time,
+            batch_ids: history.batch_ids,
+            student_ids: history.student_ids,
+        }
+
+    ));
+    return { historyList };
+};
+

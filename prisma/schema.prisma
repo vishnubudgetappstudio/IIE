@@ -208,9 +208,10 @@ model BatchDetail {
   // Student Relation (Many-to-Many)
   students BatchWithStudent[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  deletedAt             DateTime?
+  NotificationRecipient NotificationRecipient[]
 
   @@index([id])
   @@index([mentor_id]) // Index for faster lookups
@@ -251,19 +252,21 @@ model StoredOTPDetail {
 }
 
 model Notification {
-  id          String             @id @default(uuid())
+  id          String                @id @default(uuid())
   senderId    String // Foreign key for sender (ManagementStaff)
   title       String
   message     String
   image       String?
   type        NotificationType // Enum for notification type
-  category    String? // Optional category field
+  category    NotificationCategory? // Optional category field
+  batch_ids   String // Optional: String of batch IDs
+  student_ids String // Optional: String of student IDs
   date        String
   time        String
   scheduledAt BigInt? // The exact datetime when the notification should be sent
-  status      NotificationStatus @default(Scheduled) // Default status should be "Scheduled"
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  status      NotificationStatus    @default(Scheduled) // Default status should be "Scheduled"
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
   deletedAt   DateTime? // Soft delete
 
   // Relations
@@ -281,6 +284,7 @@ model NotificationRecipient {
   notificationId    String // Foreign key for Notification
   managementStaffId String? // Foreign key for staff
   studentId         String? // Foreign key for student
+  batchId           String? // Foreign key for batch
   receiverRole      ReceiverRole // Enum: staff, guest, student
   isRead            Boolean            @default(false) // Read status
   status            NotificationStatus @default(Scheduled) // Default status should be "Scheduled"
@@ -291,10 +295,12 @@ model NotificationRecipient {
   notification    Notification     @relation(fields: [notificationId], references: [id])
   managementStaff ManagementStaff? @relation(fields: [managementStaffId], references: [id], map: "NotificationRecipient_managementStaffId_fkey")
   student         Student?         @relation(fields: [studentId], references: [id], map: "NotificationRecipient_studentId_fkey")
+  batch           BatchDetail?     @relation(fields: [batchId], references: [id], map: "NotificationRecipient_batchId_fkey")
 
   @@index([notificationId])
   @@index([managementStaffId])
   @@index([studentId])
+  @@index([batchId])
   @@map("NotificationRecipient")
 }
 
@@ -303,6 +309,12 @@ enum NotificationStatus {
   Pending // Notification time has arrived but not yet sent
   Sent // Notification has been successfully sent
   Failed // Notification failed to send
+}
+
+enum NotificationCategory {
+  all
+  staffs
+  students
 }
 
 enum ReceiverRole {

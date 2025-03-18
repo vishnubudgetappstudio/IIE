@@ -2,7 +2,7 @@ import { LeaveStatus, LeaveMode, LeaveType } from "@prisma/client";
 import { prisma } from "../../config/database";
 import { AppError } from "../../utils/errorHandler";
 
-export const applyLeave = async (
+export const applyLeaveService = async (
   management_staff_id: string,
   leave_type: LeaveType,
   leave_mode: LeaveMode,

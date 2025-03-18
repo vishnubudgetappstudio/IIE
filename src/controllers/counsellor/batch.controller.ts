@@ -194,7 +194,6 @@ export const getAllBatchesListController = async (
   } catch (error) {
     console.error("Error fetching data:", error);
     next(error);
-    return;
   }
 };
 
