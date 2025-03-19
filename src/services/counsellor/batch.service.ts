@@ -251,7 +251,14 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
     skip,
     take: limit,
     orderBy: { createdAt: "desc" }, // Order by latest created
-    where: slot === "all" ? { deletedAt: null } : { slot: slot as BatchSlotsType, deletedAt: null }, // Filters slot only if not "all" and Exclude soft deleted records
+    where: slot === "all"
+      ? {
+        deletedAt: null,
+      }
+      : {
+        slot: slot as BatchSlotsType,
+        deletedAt: null
+      }, // Filters slot only if not "all" and Exclude soft deleted records
     include: {
       management_staff_relation: {
         select: {
@@ -299,10 +306,12 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
     createdAt: batch.createdAt,
     updatedAt: batch.updatedAt,
     deletedAt: batch.deletedAt,
-    students_count: batch.batchWithStudentModel.length,
+    // ✅ Count only students where deletedAt is null
+    students_count: batch.batchWithStudentModel.filter(s => s.deletedAt === null).length,
     student_image: batch.batchWithStudentModel
+      .filter(s => s.deletedAt === null) // ✅ Include only active students
       .map((s) =>
-        s.student_relation.profile_img_url ? s.student_relation.profile_img_url : "null"
+        s.student_relation?.profile_img_url ? s.student_relation.profile_img_url : "null"
       )
       .join(","), // Extract profile_img_url only
     mentor: { ...batch.management_staff_relation, progress: null }, // Mentor stays the same
