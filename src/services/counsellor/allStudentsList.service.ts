@@ -42,14 +42,19 @@ export const getAllStudentsList = async (
 
     // If batchId is provided, filter students belonging to that batch
     if (batchId) {
-        searchCondition.batches = {
+        searchCondition.batchWithStudentModel = {
             some: { batch_id: batchId }, // Ensure student is part of the batch
         };
     }
 
+    console.log({ searchCondition })
+
     // Fetch students with pagination & search
     const students = await prisma.student.findMany({
-        where: searchCondition,
+        where: { 
+            ...searchCondition, 
+            deletedAt: null, 
+        },
         skip,
         take: perPage,
         orderBy: { createdAt: "desc" },
