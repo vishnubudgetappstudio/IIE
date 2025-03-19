@@ -15,8 +15,11 @@ export const createNewStudentSchema = z.object({
   phone: z.optional(
     z.string().regex(/^\d{10}$/, "Phone must be a valid 10-digit number")
   ),
+  alt_phone: z.optional(
+    z.string().regex(/^\d{10}$/, "Alternate Phone must be a valid 10-digit number")
+  ),
   course_id: z.string(),
-  preferred_batch: z.string().optional(),
+  preferred_batch: z.string().uuid().optional(),
 });
 
 export const createNewStudentController = async (
@@ -47,17 +50,20 @@ export const createNewStudentController = async (
     }
 
     // Extract data from request body
-    const { name, email, roll_number, course_id } = req.body;
+    const { name, email, roll_number, course_id, phone, alt_phone, preferred_batch } = req.body;
 
     //call create student service
-    const response = await createNewStudentService(
-      name,
-      email,
-      roll_number,
-      course_id,
-      userId,
-      counsellor_name
-    );
+    const response = await createNewStudentService({
+      name: name,
+      course_id: course_id,
+      email: email,
+      roll_number: roll_number,
+      phone: phone,
+      alt_phone: alt_phone,
+      counsellor_id: userId,
+      counsellor_name: counsellor_name,
+      preferred_batch: preferred_batch,
+    });
 
     // Send Success Response
     res.status(200).json({

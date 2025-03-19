@@ -48,7 +48,11 @@ export const createNotificationController = async (
         });
 
         console.log({ notification })
-        res.status(201).json({ success: true, data: notification, message: "Notification sent successfully" });
+        res.status(201).json({ 
+            status: true, 
+            data: notification, 
+            message: "Notification sent successfully" 
+        });
     } catch (error) {
         console.error("Error creating notification:", error);
         next(error);
