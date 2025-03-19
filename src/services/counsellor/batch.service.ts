@@ -303,6 +303,7 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
     createdAt: batch.createdAt,
     updatedAt: batch.updatedAt,
     deletedAt: batch.deletedAt,
+    students_count: batch.batchWithStudentModel.length,
     student_image: batch.batchWithStudentModel
       .map((s) =>
         s.student_relation.profile_img_url ? s.student_relation.profile_img_url : "null"
