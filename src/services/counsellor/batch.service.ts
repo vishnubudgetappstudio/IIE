@@ -143,11 +143,15 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
     select: { student_id: true },
   });
 
+  console.log({ existingStudents })
+
   // Extract existing student IDs from the query result
   const existingStudentIds = new Set(existingStudents.map((s) => s.student_id));
 
   // Identify new students (not already in the batch)
   const newStudents = student_ids.filter((id) => !existingStudentIds.has(id));
+
+  console.log({ newStudents })
 
   // If any student already exists, throw an AppError
   if (existingStudentIds.size > 0) {
@@ -158,13 +162,23 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
     });
   }
 
-  // Insert only new students
   if (newStudents.length > 0) {
-    await prisma.batchWithStudent.createMany({
-      data: newStudents.map((student_id) => ({ batch_id, student_id })),
-    }).catch((err) => {
+    // **Use `upsert()` to prevent duplicate key errors**
+    await Promise.all(
+      newStudents.map(async (student_id) => {
+        await prisma.batchWithStudent.upsert({
+          where: {
+            batch_id_student_id: { batch_id, student_id }, // Composite unique constraint
+          },
+          update: {
+            deletedAt: null
+          }, // If the record exists, do nothing
+          create: { batch_id, student_id },
+        });
+      })
+    ).catch((err) => {
       console.error("Error in addStudentsToBatch Service:", err);
-      throw new AppError({ statusCode: 500, message: "Internal Server Error", data: {} });
+      throw new AppError({ statusCode: 400, message: "Error adding students to batch", data: {} });
     });
   }
 
