@@ -47,8 +47,6 @@ export const getAllStudentsList = async (
         };
     }
 
-    console.log({ searchCondition })
-
     // Fetch students with pagination & search
     const students = await prisma.student.findMany({
         where: { 
