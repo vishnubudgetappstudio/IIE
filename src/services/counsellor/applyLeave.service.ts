@@ -31,9 +31,9 @@ export const applyLeaveService = async (
     console.log({ err });
 
     throw new AppError({
-      statusCode: 500,
+      statusCode: 400,
       data: {},
-      message: "Internal Server Error",
+      message: "Counsellor Leave request operation failed",
     });
   });
 };

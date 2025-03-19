@@ -70,7 +70,7 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                 where: {
                     id: { in: batchIdsArray },
                     deletedAt: null, // Exclude soft deleted records
-                    students: {
+                    batchWithStudentModel: {
                         some: {
                             batch_id: { in: batchIdsArray },
                             deletedAt: null, // Exclude soft deleted records

@@ -8,7 +8,7 @@ interface CreateNewBatchResponse {
     from_date: string;
     to_date: string;
     course: string;
-    session_sheet: string;
+    session_sheet_url: string;
     slot: string;
     mentor_id: string;
     students_id: string;
@@ -21,10 +21,9 @@ export const createNewBatchService = async (
   to_date: string,
   course: string,
   session_sheet_url: string,
-  session_sheet: object,
   slot: "morning" | "evening",
   mentor_id: string,
-  students_id?: string
+  students_id: string
 ): Promise<CreateNewBatchResponse> => {
   // Check if batch number already exists
   const existingBatch = await prisma.batchDetail.findUnique({
@@ -37,6 +36,10 @@ export const createNewBatchService = async (
 
   const studentIdsArray = students_id ? students_id?.split(",").map((id: string) => id.trim()) : [];
 
+  if (!studentIdsArray.length) {
+    throw new AppError({ statusCode: 400, data: {}, message: "Students ID is required" });
+  }
+
   // Check if staff(mentor) already exists
   const existingStaffMentor = await prisma.managementStaff.findUnique({
     where: { id: mentor_id, role: "staff", deletedAt: null },
@@ -44,6 +47,24 @@ export const createNewBatchService = async (
 
   if (!existingStaffMentor) {
     throw new AppError({ statusCode: 404, data: {}, message: "This Mentor does not exist" });
+  }
+
+  // Check if any student is already in another batch with the same slot
+  const conflictingStudents = await prisma.batchWithStudent.findMany({
+    where: {
+      student_id: { in: studentIdsArray },
+      deletedAt: null,
+      batch_detail_relation: { slot },
+    },
+    select: { student_id: true },
+  });
+
+  if (conflictingStudents.length) {
+    throw new AppError({
+      statusCode: 400,
+      data: {},
+      message: `Some students are already assigned to a batch in the ${slot} slot.`,
+    });
   }
 
   // Create Counsellor in Database
@@ -54,16 +75,18 @@ export const createNewBatchService = async (
       from_date: from_date,
       to_date: to_date,
       session_sheet_url: session_sheet_url,
-      session_sheet: session_sheet,
       slot: slot,
-      mentor: { connect: { id: mentor_id, role: "staff" } },
-      students: {
-        create: studentIdsArray?.map((student_id) => ({
-          student: { connect: { id: student_id } },
-        })),
+      management_staff_relation: { connect: { id: mentor_id, role: "staff" } },
+      batchWithStudentModel: {
+        create: studentIdsArray?.map((studentId) => ({
+          student_relation: { connect: { id: studentId } }
+        }))
       },
     },
-    include: { students: { include: { student: true } } },
+    include: { batchWithStudentModel: { include: { student_relation: true } } },
+  }).catch((error) => {
+    console.log(error);
+    throw new AppError({ statusCode: 500, message: "Failed to create new batch", data: {} });
   });
 
   return {
@@ -74,10 +97,10 @@ export const createNewBatchService = async (
       to_date: newBatch.to_date,
       slot: newBatch.slot,
       mentor_id: newBatch.mentor_id,
-      students_id: newBatch.students
+      students_id: newBatch.batchWithStudentModel
         .map((student) => student.student_id)
         .join(","),
-      session_sheet: newBatch.session_sheet as string,
+      session_sheet_url: newBatch.session_sheet_url ?? '',
     },
   };
 };
@@ -93,11 +116,29 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
     throw new AppError({ statusCode: 404, message: "Batch not found", data: {} });
   }
 
+  const sameSlot = await prisma.batchWithStudent.findMany({
+    where: {
+      batch_id,
+      student_id: { in: student_ids },
+      deletedAt: null,
+      batch_detail_relation: { slot: batchExists.slot } // Check if any of the provided students already exist in the same slot as the batch
+    }
+  });
+
+  if (sameSlot.length) {
+    throw new AppError({
+      statusCode: 400,
+      message: "Some students are already assigned to a batch in the same slot as the batch.",
+      data: {},
+    });
+  }
+
   // Find students who are already in the batch
   const existingStudents = await prisma.batchWithStudent.findMany({
     where: {
       batch_id,
-      student_id: { in: student_ids }, // Check if any of the provided students already exist in this batch
+      student_id: { in: student_ids },
+      deletedAt: null, // Check if any of the provided students already exist in this batch
     },
     select: { student_id: true },
   });
@@ -152,13 +193,11 @@ export const removeStudentsFromBatchService = async (batch_id: string, student_i
     select: { student_id: true },
   });
 
-  console.log({ existingStudents })
-
   // Extract the IDs of students who are actually present in the batch
   const existingStudentIds = existingStudents.map((s) => s.student_id);
 
   // If no students found, throw a 404 error
-  if (existingStudentIds.length === 0) {
+  if (!existingStudentIds.length) {
     throw new AppError({
       statusCode: 404,
       message: "No matching students found in the batch",
@@ -204,7 +243,7 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
     orderBy: { createdAt: "desc" }, // Order by latest created
     where: slot === "all" ? { deletedAt: null } : { slot: slot as BatchSlotsType, deletedAt: null }, // Filters slot only if not "all" and Exclude soft deleted records
     include: {
-      mentor: {
+      management_staff_relation: {
         select: {
           id: true,
           name: true,
@@ -212,9 +251,9 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
           profile_img_url: true, // Assuming this field exists
         },
       },
-      students: {
+      batchWithStudentModel: {
         include: {
-          student: {
+          student_relation: {
             select: {
               profile_img_url: true,
             },
@@ -250,12 +289,12 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
     createdAt: batch.createdAt,
     updatedAt: batch.updatedAt,
     deletedAt: batch.deletedAt,
-    student_image: batch.students
+    student_image: batch.batchWithStudentModel
       .map((s) =>
-        s.student.profile_img_url ? s.student.profile_img_url : "null"
+        s.student_relation.profile_img_url ? s.student_relation.profile_img_url : "null"
       )
       .join(","), // Extract profile_img_url only
-    mentor: { ...batch.mentor, progress: null }, // Mentor stays the same
+    mentor: { ...batch.management_staff_relation, progress: null }, // Mentor stays the same
   }));
 
   return { batches: formattedBatches, total };
@@ -277,13 +316,13 @@ export const getBatchStudentsService = async (
     prisma.batchDetail.findUnique({
       where: { id: batchId, deletedAt: null },
       select: {
-        students: {
+        batchWithStudentModel: {
           skip,
           take: perPage,
           orderBy: { createdAt: "desc" },
           where: searchQuery
             ? {
-              student: {
+              student_relation: {
                 name: {
                   startsWith: searchQuery, // Removed mode, it defaults to case-sensitive
                 },
@@ -292,7 +331,7 @@ export const getBatchStudentsService = async (
             }
             : { deletedAt: null }, // If no search, keep it undefined
           select: {
-            student: {
+            student_relation: {
               select: {
                 id: true,
                 name: true,
@@ -314,7 +353,7 @@ export const getBatchStudentsService = async (
       where: {
         batch_id: batchId,
         deletedAt: null,
-        student: searchQuery
+        student_relation: searchQuery
           ? {
             name: {
               startsWith: searchQuery, // Removed mode to match Prisma's strict typing
@@ -332,7 +371,7 @@ export const getBatchStudentsService = async (
   }
 
   // Extract student data
-  const students = batch.students.map((s) => s.student);
+  const students = batch.batchWithStudentModel.map((s) => s.student_relation);
 
   // Extract student data
   const studentsData = students.map((s) => {

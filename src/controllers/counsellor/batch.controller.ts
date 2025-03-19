@@ -25,7 +25,6 @@ const createNewBatchSchema = z.object({
     .string()
     .min(3, { message: "Course name must be at least 3 characters long" }),
   session_sheet_url: z.string().optional(), // Validates as a URL string
-  session_sheet: z.record(z.string(), z.any()).optional(), // Validates as a JSON object
   slot: z.enum(["morning", "evening"], {
     message: "Slot must be 'morning' or 'evening'",
   }), // Fixed Enum Validation
@@ -59,7 +58,7 @@ export const createNewBatch = async (
     if (!req.user) {
       throw new AppError({ statusCode: 401, data: {}, message: "Unauthorized access" });
     }
-
+    
     // Validate Request Body
     const validatePayload = createNewBatchSchema.parse(req.body);
 
@@ -72,7 +71,6 @@ export const createNewBatch = async (
       to_date,
       slot,
       session_sheet_url,
-      session_sheet,
       students_id,
     } = validatePayload;
 
@@ -83,7 +81,6 @@ export const createNewBatch = async (
       to_date,
       course,
       session_sheet_url as string,
-      session_sheet as {},
       slot,
       mentor_id,
       students_id!

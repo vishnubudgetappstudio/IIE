@@ -27,22 +27,24 @@ model ManagementStaff {
   profile_img_url String?
   address         String?
   emailVerified   Boolean   @default(false)
+  fcm_token       String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
   // Relation: One staff can create multiple tickets
-  supportTickets        SupportTicketDetails[]
-  LeaveRequest          LeaveManagementStaff[]
-  createBatch           BatchDetail[]
-  Student               Student[]
-  Notification          Notification[]
-  NotificationRecipient NotificationRecipient[]
+  supportTicketsModel        SupportTicketDetails[]
+  LeaveRequestModel          LeaveManagementStaff[]
+  batchDetailModel           BatchDetail[]
+  studentModel               Student[]
+  notificationModel          Notification[]
+  notificationRecipientModel NotificationRecipient[]
 
   @@index([id])
   @@index([email])
   @@index([employeeId])
   @@index([emailVerified])
+  @@index([fcm_token])
   @@map("ManagementStaff") // Mapping to actual table name
 }
 
@@ -57,15 +59,15 @@ enum Role {
 // ✅ Support Ticket Schema
 // ==============================
 model SupportTicketDetails {
-  id                  String                 @id @default(uuid())
-  management_staff_id String // Foreign key referencing ManagementStaff
-  management_staff    ManagementStaff        @relation(fields: [management_staff_id], references: [id]) // No Cascade
-  role                RaiseSupportTicketRole
-  query               String // Reason for raising the ticket
-  status              TicketStatus           @default(open)
-  createdAt           DateTime               @default(now())
-  updatedAt           DateTime               @updatedAt
-  deletedAt           DateTime? // Soft delete column
+  id                        String                 @id @default(uuid())
+  management_staff_id       String // Foreign key referencing ManagementStaff
+  management_staff_relation ManagementStaff        @relation(fields: [management_staff_id], references: [id]) // No Cascade
+  role                      RaiseSupportTicketRole
+  query                     String // Reason for raising the ticket
+  status                    TicketStatus           @default(open)
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  deletedAt                 DateTime? // Soft delete column
 
   @@index([management_staff_id])
   @@index([status])
@@ -91,19 +93,19 @@ enum RaiseSupportTicketRole {
 // ✅ Apply Leave Schema
 // ==============================
 model LeaveManagementStaff {
-  id                  String          @id @default(uuid()) // Unique Leave ID
-  management_staff_id String // Foreign key referencing ManagementStaff
-  management_staff    ManagementStaff @relation(fields: [management_staff_id], references: [id]) // No Cascade
-  role                Role
-  leave_type          LeaveType
-  leave_mode          LeaveMode
-  from_date           String // Leave start date
-  to_date             String // Leave end date
-  reason              String // Reason for leave
-  status              LeaveStatus     @default(Pending) // Leave approval status
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  deletedAt           DateTime? // Soft delete column
+  id                        String          @id @default(uuid()) // Unique Leave ID
+  management_staff_id       String // Foreign key referencing ManagementStaff
+  management_staff_relation ManagementStaff @relation(fields: [management_staff_id], references: [id]) // No Cascade
+  role                      Role
+  leave_type                LeaveType
+  leave_mode                LeaveMode
+  from_date                 String // Leave start date
+  to_date                   String // Leave end date
+  reason                    String // Reason for leave
+  status                    LeaveStatus     @default(Pending) // Leave approval status
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+  deletedAt                 DateTime? // Soft delete column
 
   @@index([management_staff_id])
   @@index([status])
@@ -165,9 +167,9 @@ model Student {
   Remarks              String?   @db.VarChar(100)
 
   // Relation fields
-  counsellor_id   String          @db.VarChar(191)
-  counsellor_name String          @db.VarChar(191) // Not a relation, just a stored field
-  counsellor      ManagementStaff @relation(fields: [counsellor_id], references: [id])
+  counsellor_id             String          @db.VarChar(191)
+  counsellor_name           String          @db.VarChar(191) // Not a relation, just a stored field
+  management_staff_relation ManagementStaff @relation(fields: [counsellor_id], references: [id])
 
   Walkin_By       String?   @db.VarChar(20)
   Walkin_Date     DateTime? @db.Date
@@ -180,8 +182,8 @@ model Student {
   deletedAt       DateTime? // Nullable for soft delete
 
   // Many-to-Many Relation with CreateBatch (Explicit)
-  batches               BatchWithStudent[]
-  NotificationRecipient NotificationRecipient[]
+  batchWithStudentModel      BatchWithStudent[]
+  notificationRecipientModel NotificationRecipient[]
 
   @@index([name, roll_number, email, phone])
   @@map("Student") // Mapping to actual table name
@@ -199,19 +201,18 @@ model BatchDetail {
   course            String
   slot              BatchSlotsType
   session_sheet_url String? // JSON array of file URLs (optional)
-  session_sheet     Json? // JSON array of file (optional)
 
   // Mentor Relation (One Mentor -> Many Batches)
-  mentor_id String
-  mentor    ManagementStaff @relation(fields: [mentor_id], references: [id])
+  mentor_id                 String
+  management_staff_relation ManagementStaff @relation(fields: [mentor_id], references: [id])
 
   // Student Relation (Many-to-Many)
-  students BatchWithStudent[]
+  batchWithStudentModel BatchWithStudent[]
 
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  deletedAt             DateTime?
-  NotificationRecipient NotificationRecipient[]
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
+  deletedAt                  DateTime?
+  notificationRecipientModel NotificationRecipient[]
 
   @@index([id])
   @@index([mentor_id]) // Index for faster lookups
@@ -230,8 +231,8 @@ model BatchWithStudent {
   batch_id   String
   student_id String
 
-  batch   BatchDetail @relation(fields: [batch_id], references: [id])
-  student Student     @relation(fields: [student_id], references: [id])
+  batch_detail_relation BatchDetail @relation(fields: [batch_id], references: [id])
+  student_relation      Student     @relation(fields: [student_id], references: [id])
 
   createdAt DateTime  @default(now()) // Automatically stores created time
   deletedAt DateTime? // Nullable field for soft delete
@@ -270,10 +271,10 @@ model Notification {
   deletedAt   DateTime? // Soft delete
 
   // Relations
-  sender ManagementStaff @relation(fields: [senderId], references: [id])
+  management_staff_relation ManagementStaff @relation(fields: [senderId], references: [id])
 
   // One-to-Many Relation with Recipients
-  recipients NotificationRecipient[]
+  notificationRecipientModel NotificationRecipient[]
 
   @@index([senderId])
   @@map("Notification")
