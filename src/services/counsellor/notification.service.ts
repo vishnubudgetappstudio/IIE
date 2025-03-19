@@ -170,6 +170,7 @@ export const getNotificationHistoryService = async ({ senderId }: { senderId: st
             title: history.title,
             message: history.message,
             image: history.image,
+            category: history.category,
             date: history.date,
             time: history.time,
             batch_ids: history.batch_ids,
