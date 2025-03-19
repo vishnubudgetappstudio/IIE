@@ -60,8 +60,6 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                 }
             });
 
-            console.log({ batchWithStudents })
-
             if (!batchWithStudents.length) {
                 throw new AppError({ statusCode: 404, data: {}, message: "No students found in the provided batch IDs" });
             }

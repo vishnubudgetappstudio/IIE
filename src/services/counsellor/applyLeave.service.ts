@@ -28,7 +28,7 @@ export const applyLeaveService = async (
       to_date: true,
     }
   }).catch(err => {
-    console.log({ err });
+    console.error({ err });
 
     throw new AppError({
       statusCode: 400,

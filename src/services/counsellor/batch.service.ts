@@ -85,7 +85,7 @@ export const createNewBatchService = async (
     },
     include: { batchWithStudentModel: { include: { student_relation: true } } },
   }).catch((error) => {
-    console.log(error);
+    console.error(error);
     throw new AppError({ statusCode: 500, message: "Failed to create new batch", data: {} });
   });
 
@@ -143,15 +143,11 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
     select: { student_id: true },
   });
 
-  console.log({ existingStudents })
-
   // Extract existing student IDs from the query result
   const existingStudentIds = new Set(existingStudents.map((s) => s.student_id));
 
   // Identify new students (not already in the batch)
   const newStudents = student_ids.filter((id) => !existingStudentIds.has(id));
-
-  console.log({ newStudents })
 
   // If any student already exists, throw an AppError
   if (existingStudentIds.size > 0) {
@@ -276,7 +272,7 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
       },
     },
   }).catch(err => {
-    console.log({ err });
+    console.error({ err });
 
     throw new AppError({
       statusCode: 500, // Internal Server Error

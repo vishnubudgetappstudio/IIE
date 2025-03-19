@@ -47,7 +47,6 @@ export const createNotificationController = async (
             studentIds: student_ids,
         });
 
-        console.log({ notification })
         res.status(201).json({ 
             status: true, 
             data: notification, 
