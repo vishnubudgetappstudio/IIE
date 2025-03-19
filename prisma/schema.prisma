@@ -244,12 +244,14 @@ model BatchWithStudent {
 model StoredOTPDetail {
   id        String    @id @default(uuid())
   email     String
-  otp       String    @unique
+  otp       String
+  // otp       String    @unique
   createdAt DateTime  @default(now()) // Automatically stores created time
   updatedAt DateTime  @updatedAt // Automatically updates updated time
   deletedAt DateTime? // Nullable field for soft delete
 
   @@index([email])
+	@@map("StoredOTPDetail")
 }
 
 model Notification {
