@@ -346,8 +346,12 @@ export const getBatchStudentsService = async (
                 name: {
                   startsWith: searchQuery, // Removed mode, it defaults to case-sensitive
                 },
-                deletedAt: null
-              },
+                batchWithStudentModel: {
+                  some: {
+                    deletedAt: null,
+                  }
+                }
+              }
             }
             : { deletedAt: null }, // If no search, keep it undefined
           select: {
