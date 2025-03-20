@@ -23,7 +23,7 @@ export const createSupportTicket = async ({ userId, role, query }: {
     throw new AppError({
       statusCode: 400,
       data: {},
-      message: "Invalid role provided for leave request",
+      message: "Invalid role provided for support ticket request",
     });
   }
   return prisma.supportTicketDetail.create({
