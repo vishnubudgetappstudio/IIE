@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import {
   forgotPasswordManagementStaff,
   loginService,
@@ -10,7 +10,7 @@ import { forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, v
 import { AppError } from "../utils/errorHandler";
 
 //signup controller
-export const signup = async (req: Request, res: Response) => {
+export const signup = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Validate Request Body (based on schema)
     const validatedData = signupSchema.safeParse(req.body);
@@ -38,17 +38,13 @@ export const signup = async (req: Request, res: Response) => {
 
     // Send Success Response
     res.status(201).json({ message: "Signup successful", user: response });
-  } catch (error: any) {
-    throw new AppError({
-      statusCode: 400,
-      data: {},
-      message: error.message || "Error registering counsellor",
-    });
+  } catch (error) {
+    next(error)
   }
 };
 
 //login controller
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Validate Request Body (based on schema)
     const validatedData = loginSchema.safeParse(req.body);
@@ -74,20 +70,21 @@ export const login = async (req: Request, res: Response) => {
       ...response,
       message: "Login successful",
     });
-  } catch (error: any) {
-    res.status(401).json({
-      status: false,
-      data: {},
-      message: error.message || "Login failed ",
-      // error: error.message || "Invalid credentials",
-    });
+  } catch (error) {
+    next(error)
+    // res.status(401).json({
+    //   status: false,
+    //   data: {},
+    //   message: error.message || "Login failed ",
+    // });
   }
 };
 
 //forgotPassword controller
 export const forgotPasswordManagementStaffController = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     // Validate Request Body (based on schema)
@@ -96,6 +93,8 @@ export const forgotPasswordManagementStaffController = async (
     if (!validatedData?.success) {
       const firstErrorMessage = validatedData.error.errors[0].message; // Get first error message
 
+      console.log({ firstErrorMessage })
+
       throw new AppError({
         statusCode: 400,
         data: {}, // Always send an empty object
@@ -103,17 +102,17 @@ export const forgotPasswordManagementStaffController = async (
       });
     }
 
-    const { email } = req.body;
+    const { email, role } = req.body;
 
-    const result = await forgotPasswordManagementStaff(email);
+    const result = await forgotPasswordManagementStaff({ email: email, role: role });
     res.json({ status: true, data: result, message: "OTP sent to email" });
-  } catch (error: any) {
-    res.status(400).json({ status: false, message: error.message });
+  } catch (error) {
+    next(error)
   }
 };
 
 //verify OTP controller
-export const verifyOTPController = async (req: Request, res: Response) => {
+export const verifyOTPController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Validate Request Body (based on schema)
     const validatedData = verifyOTPSchema.safeParse(req.body);
@@ -131,15 +130,16 @@ export const verifyOTPController = async (req: Request, res: Response) => {
     const { email, otp } = req.body;
     const result = await verifyOTPService(email, otp);
     res.json({ status: true, data: result, message: "OTP Verify Successful" });
-  } catch (error: any) {
-    res.status(400).json({ status: false, data: {}, message: error.message });
+  } catch (error) {
+    next(error)
   }
 };
 
 //resetPassword controller
 export const resetPasswordManagementStaffController = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   try {
     // Validate Request Body (based on schema)
@@ -155,24 +155,33 @@ export const resetPasswordManagementStaffController = async (
       });
     }
 
-    const { email, new_password, confirm_password } = req.body;
+    const { email, role, new_password, confirm_password } = req.body;
 
     // Check if newPassword and confirmPassword match
     if (new_password !== confirm_password) {
-      res.status(400).json({
-        status: false,
-        data: {},
-        message: "Passwords do not match",
+      throw new AppError({
+        statusCode: 400,
+        data: {}, // Always send an empty object
+        message: "Passwords do not match", // Set message from Zod error
       });
-      return;
+      // res.status(400).json({
+      //   status: false,
+      //   data: {},
+      //   message: "Passwords do not match",
+      // });
+      // return;
     }
-    const result = await resetPasswordManagementStaff(email, new_password);
+    const result = await resetPasswordManagementStaff({
+      email: email,
+      role: role,
+      newPassword: new_password,
+    });
     res.json({
       status: true,
       data: result,
       message: "Password reset successfully",
     });
-  } catch (error: any) {
-    res.status(400).json({ status: false, data: {}, message: error.message });
+  } catch (error) {
+    next(error);
   }
 };

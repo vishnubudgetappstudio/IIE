@@ -18,7 +18,7 @@ export const registerCounsellor = async (
 ) => {
   // Check if email already exists
   const existingUser = await prisma.managementStaff.findUnique({
-    where: { email: email },
+    where: { email: email, deletedAt: null },
   });
 
   if (existingUser) {
@@ -53,7 +53,11 @@ export const loginService = async (
   password: string
 ) => {
   if (!email || !password) {
-    throw new Error("Email and password are required.");
+    throw new AppError({
+      statusCode: 400,
+      data: {},
+      message: "Email and password are required."
+    });
   }
 
   let user: any;
@@ -62,21 +66,21 @@ export const loginService = async (
     case 'counsellor':
       // Find user in the database with selected fields (excluding unnecessary data)
       user = await prisma.managementStaff.findUnique({
-        where: { email, role: 'counsellor' },
+        where: { email, role: 'counsellor', deletedAt: null },
         select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
       });
       break;
     case 'staff':
       // Find user in the database with selected fields (excluding unnecessary data)
       user = await prisma.managementStaff.findUnique({
-        where: { email, role: 'staff' },
+        where: { email, role: 'staff', deletedAt: null },
         select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
       });
       break;
     default: // Code to execute if no cases match
       // Find user in the database with selected fields (excluding unnecessary data)
       user = await prisma.student.findUnique({
-        where: { email },
+        where: { email, deletedAt: null },
         select: { id: true, name: true, email: true, password: true }, // Select only required fields
       });
 
@@ -126,30 +130,74 @@ export const loginService = async (
   };
 };
 
-export const forgotPasswordManagementStaff = async (email: string) => {
-  const user = await prisma.managementStaff.findUnique({
-    where: { email, deletedAt: null },
-  });
+export const forgotPasswordManagementStaff = async ({ email, role }: { email: string, role: UserRole }) => {
+  let user: any;
 
-  if (!user) {
-    throw new AppError({
-      statusCode: 404,
-      data: {},
-      message: "Invalid User.",
-    });
-  };
+  switch (role) {
+    case 'counsellor':
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.managementStaff.findUnique({
+        where: { email, role: 'counsellor', deletedAt: null },
+        select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
+      });
+
+      if (!user) {
+        throw new AppError({
+          statusCode: 404,
+          data: {},
+          message: "Invalid User.",
+        });
+      };
+      break;
+    case 'staff':
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.managementStaff.findUnique({
+        where: { email, role: 'staff', deletedAt: null },
+        select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
+      });
+      if (!user) {
+        throw new AppError({
+          statusCode: 404,
+          data: {},
+          message: "Invalid User.",
+        });
+      };
+      break;
+    default: // Code to execute if no cases match
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.student.findUnique({
+        where: { email, deletedAt: null },
+        select: { id: true, name: true, email: true, password: true }, // Select only required fields
+      });
+
+      if (!user) {
+        throw new AppError({
+          statusCode: 404,
+          data: {},
+          message: "Invalid User.",
+        });
+      };
+
+      user = { ...user, role: "student" };
+  }
 
   // Generate OTP
   // const otp = Math.floor(1000 + Math.random() * 9000).toString();
-  const otp = '1234'
+  const otp = '1234';
 
-  // Soft Delete Previous OTP from DB (optional)
-  await prisma.storedOTPDetail.updateMany({
-    data: { deletedAt: new Date() },
+  const existingUserStoredTOP = await prisma.storedOTPDetail.findMany({
     where: { email: email, deletedAt: null },
-  });
+  })
 
-  // Store OTP in DB (optional) or send via email
+  if (existingUserStoredTOP.length) {
+    // Soft Delete Previous OTP from DB
+    await prisma.storedOTPDetail.updateMany({
+      where: { email: email, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  // Store OTP in DB and send via email
   await prisma.storedOTPDetail.create({
     data: {
       email: user.email,
@@ -169,20 +217,10 @@ export const forgotPasswordManagementStaff = async (email: string) => {
 };
 
 export const verifyOTPService = async (email: string, otp: string) => {
-  const user = await prisma.managementStaff.findUnique({
-    where: { email, deletedAt: null },
-  });
-
-  if (!user) {
-    throw new AppError({
-      statusCode: 404,
-      data: {},
-      message: "Invalid User.",
-    });
-  };
 
   const storedOTP = await prisma.storedOTPDetail.findFirst({
-    where: { email: user.email, otp: otp, deletedAt: null },
+    where: { email: email, otp: otp, deletedAt: null },
+    select: { email: true, otp: true, } // Select only required fields
   });
 
   if (!storedOTP) {
@@ -193,33 +231,94 @@ export const verifyOTPService = async (email: string, otp: string) => {
     });
   };
 
+  // Soft Delete OTP from DB
+  await prisma.storedOTPDetail.updateMany({
+    where: { email: storedOTP.email, otp: storedOTP.otp, deletedAt: null },
+    data: { deletedAt: new Date() },
+  });
+
   return { email: storedOTP.email, otp: storedOTP.otp };
 };
 
-export const resetPasswordManagementStaff = async (
+export const resetPasswordManagementStaff = async ({ email, role, newPassword }: {
   email: string,
+  role: UserRole,
   newPassword: string
-) => {
-  const user = await prisma.managementStaff.findUnique({
-    where: { email, deletedAt: null },
-  });
+}) => {
 
-  if (!user) {
-    throw new AppError({
-      statusCode: 404,
-      data: {},
-      message: "Invalid User.",
-    })
-  };
+  let user: any;
 
   // Hash new password
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  // Update password in DB
-  const updatePassword = await prisma.managementStaff.update({
-    where: { email },
-    data: { password: hashedPassword },
-  });
+  switch (role) {
+    case 'counsellor':
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.managementStaff.findUnique({
+        where: { email, role: 'counsellor', deletedAt: null },
+        select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
+      });
 
-  return { email: updatePassword.email };
+      if (!user) {
+        throw new AppError({
+          statusCode: 404,
+          data: {},
+          message: "Invalid User.",
+        });
+      };
+
+      // Update password
+      await prisma.managementStaff.update({
+        where: { email: user.email, role: 'counsellor', deletedAt: null },
+        data: { password: hashedPassword },
+      });
+
+      break;
+    case 'staff':
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.managementStaff.findUnique({
+        where: { email, role: 'staff', deletedAt: null },
+        select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
+      });
+
+      if (!user) {
+        throw new AppError({
+          statusCode: 404,
+          data: {},
+          message: "Invalid User.",
+        });
+      };
+
+      // Update password
+      await prisma.managementStaff.update({
+        where: { email: user.email, role: 'staff', deletedAt: null },
+        data: { password: hashedPassword },
+      });
+
+      break;
+    default: // Code to execute if no cases match
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.student.findUnique({
+        where: { email, deletedAt: null },
+        select: { id: true, name: true, email: true, password: true }, // Select only required fields
+      });
+
+      if (!user) {
+        throw new AppError({
+          statusCode: 404,
+          data: {},
+          message: "Invalid User.",
+        });
+      };
+
+      // Update password
+      await prisma.student.update({
+        where: { email: user.email, deletedAt: null },
+        data: { password: hashedPassword },
+      });
+
+      user = { ...user, role: "student" };
+  }
+
+  return { email: user.email };
 };
