@@ -16,12 +16,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendEmail = async (
+export const sendEmail = async ({ to, subject, text, html }: {
   to: string,
   subject: string,
   text?: string,
   html?: string
-) => {
+}) => {
   try {
     const mailOptions = {
       from: `"IIE" <${process.env.ADMIN_EMAIL}>`,
@@ -33,7 +33,7 @@ export const sendEmail = async (
 
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent: ", info.messageId);
-    return { success: true, message: "Email sent successfully" };
+    return { success: true, email: to, message: "Email sent successfully" };
   } catch (error) {
     console.error("Error sending email: ", error);
     return { success: false, message: "Failed to send email" };

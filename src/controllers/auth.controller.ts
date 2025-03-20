@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { z } from "zod";
 import {
   forgotPasswordManagementStaff,
   loginService,
@@ -7,81 +6,13 @@ import {
   resetPasswordManagementStaff,
   verifyOTPService,
 } from "../services/auth.service";
+import { forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, verifyOTPSchema } from "../zodSchema/auth.schema";
 import { AppError } from "../utils/errorHandler";
-// import { registerCounsellor } from "../services/auth.service";
-
-// Define Validation Schema
-const signupSchema = z.object({
-  email: z.string().email("Invalid email format"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters long")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/\d/, "Password must contain at least one number")
-    .regex(
-      /[@$!%*?&]/,
-      "Password must contain at least one special character (@$!%*?&)"
-    ),
-  name: z.string().min(2, "Name must be at least 2 characters long"),
-  phone: z.optional(
-    z.string().regex(/^\d{10}$/, "Phone must be a valid 10-digit number")
-  ),
-  address: z.optional(
-    z.string().min(5, "Address must be at least 5 characters long")
-  ),
-});
-
-const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email format" }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters long" }),
-});
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email format"),
-});
-
-const verifyOTPSchema = z.object({
-  email: z.string().email("Invalid email format"),
-  otp: z.string().min(4, "OTP must be at least 4 characters long"),
-});
-
-const resetPasswordSchema = z.object({
-  email: z.string().email("Invalid email format"),
-  new_password: z
-    .string()
-    .min(8, "New Password must be at least 8 characters long")
-    .regex(/[a-z]/, "New Password must contain at least one lowercase letter")
-    .regex(/[A-Z]/, "New Password must contain at least one uppercase letter")
-    .regex(/\d/, "New Password must contain at least one number")
-    .regex(
-      /[@$!%*?&]/,
-      "New Password must contain at least one special character (@$!%*?&)"
-    ),
-  confirm_password: z
-    .string()
-    .min(8, "Confirm Password must be at least 8 characters long")
-    .regex(
-      /[a-z]/,
-      "Confirm Password must contain at least one lowercase letter"
-    )
-    .regex(
-      /[A-Z]/,
-      "Confirm Password must contain at least one uppercase letter"
-    )
-    .regex(/\d/, "Confirm Password must contain at least one number")
-    .regex(
-      /[@$!%*?&]/,
-      "Confirm Password must contain at least one special character (@$!%*?&)"
-    ),
-});
 
 //signup controller
-export const signup = async (req: Request, res: Response): Promise<void> => {
+export const signup = async (req: Request, res: Response) => {
   try {
-    // Validate Request Body
+    // Validate Request Body (based on schema)
     const validatedData = signupSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
@@ -89,7 +20,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
       throw new AppError({
         statusCode: 400,
-        data: {}, // Always send an empty object
+        data: {}, // send an empty object
         message: firstErrorMessage, // Set message from Zod error
       });
     }
@@ -108,21 +39,18 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     // Send Success Response
     res.status(201).json({ message: "Signup successful", user: response });
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      res
-        .status(400)
-        .json({ message: "Validation failed", errors: error.errors });
-      return;
-    }
-
-    res.status(500).json({ message: error.message || "Internal Server Error" });
+    throw new AppError({
+      statusCode: 400,
+      data: {},
+      message: error.message || "Error registering counsellor",
+    });
   }
 };
 
 //login controller
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response) => {
   try {
-    // Validate Request Body
+    // Validate Request Body (based on schema)
     const validatedData = loginSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
@@ -135,10 +63,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       });
     }
 
-    const { email, password } = req.body;
+    const { email, role, password } = req.body;
 
     // Call login service
-    const response = await loginService(email, password);
+    const response = await loginService(email, role, password);
 
     // Send Success Response
     res.status(200).json({
@@ -156,12 +84,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+//forgotPassword controller
 export const forgotPasswordManagementStaffController = async (
   req: Request,
   res: Response
 ) => {
   try {
-    // Validate Request Body
+    // Validate Request Body (based on schema)
     const validatedData = forgotPasswordSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
@@ -183,9 +112,10 @@ export const forgotPasswordManagementStaffController = async (
   }
 };
 
+//verify OTP controller
 export const verifyOTPController = async (req: Request, res: Response) => {
   try {
-    // Validate Request Body
+    // Validate Request Body (based on schema)
     const validatedData = verifyOTPSchema.safeParse(req.body);
 
     if (!validatedData?.success) {
@@ -206,12 +136,13 @@ export const verifyOTPController = async (req: Request, res: Response) => {
   }
 };
 
+//resetPassword controller
 export const resetPasswordManagementStaffController = async (
   req: Request,
   res: Response
 ) => {
   try {
-    // Validate Request Body
+    // Validate Request Body (based on schema)
     const validatedData = resetPasswordSchema.safeParse(req.body);
 
     if (!validatedData?.success) {

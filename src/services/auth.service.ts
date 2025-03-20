@@ -3,19 +3,11 @@ import { prisma } from "../config/database";
 import dotenv from "dotenv";
 import { jwtGenerateToken } from "../utils/jwtTokenGenerate";
 import { sendEmail } from "../config/nodemailer";
+import { AppError } from "../utils/errorHandler";
+import { UserRole } from "../types/common.type";
 
 // Load environment variables from .env file
 dotenv.config();
-
-interface LoginResponse {
-  data: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    token: string;
-  };
-}
 
 export const registerCounsellor = async (
   email: string,
@@ -57,26 +49,56 @@ export const registerCounsellor = async (
 
 export const loginService = async (
   email: string,
+  role: UserRole,
   password: string
-): Promise<LoginResponse> => {
+) => {
   if (!email || !password) {
     throw new Error("Email and password are required.");
   }
 
-  // Find user in the database with selected fields (excluding unnecessary data)
-  const user = await prisma.managementStaff.findUnique({
-    where: { email },
-    select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
-  });
+  let user: any;
 
-  if (!user || user.role !== "counsellor") {
-    throw new Error("Unauthorized: Invalid email or password.");
+  switch (role) {
+    case 'counsellor':
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.managementStaff.findUnique({
+        where: { email, role: 'counsellor' },
+        select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
+      });
+      break;
+    case 'staff':
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.managementStaff.findUnique({
+        where: { email, role: 'staff' },
+        select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
+      });
+      break;
+    default: // Code to execute if no cases match
+      // Find user in the database with selected fields (excluding unnecessary data)
+      user = await prisma.student.findUnique({
+        where: { email },
+        select: { id: true, name: true, email: true, password: true }, // Select only required fields
+      });
+
+      user = { ...user, role: "student" };
+  }
+
+  if (!user) {
+    throw new AppError({
+      statusCode: 401,
+      data: {},
+      message: "Unauthorized: Invalid Email Address."
+    });
   }
 
   // Validate Password securely
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    throw new Error("Unauthorized: Invalid email or password.");
+    throw new AppError({
+      statusCode: 401,
+      data: {},
+      message: "Unauthorized: Invalid Password."
+    });
   }
 
   // Ensure JWT Secret is available
@@ -86,7 +108,12 @@ export const loginService = async (
   }
 
   // Generate JWT Token with User Role
-  const token = jwtGenerateToken(user.id, user.name, user.email, user.role);
+  const token = jwtGenerateToken({
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  });
 
   return {
     data: {
@@ -103,12 +130,18 @@ export const forgotPasswordManagementStaff = async (email: string) => {
   const user = await prisma.managementStaff.findUnique({
     where: { email, deletedAt: null },
   });
-  if (!user) throw new Error("User not found");
+
+  if (!user) {
+    throw new AppError({
+      statusCode: 404,
+      data: {},
+      message: "Invalid User.",
+    });
+  };
 
   // Generate OTP
   // const otp = Math.floor(1000 + Math.random() * 9000).toString();
   const otp = '1234'
-  // const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
   // Soft Delete Previous OTP from DB (optional)
   await prisma.storedOTPDetail.updateMany({
@@ -125,7 +158,12 @@ export const forgotPasswordManagementStaff = async (email: string) => {
   });
 
   // Send email
-  await sendEmail(email, "Password Reset OTP", `Your OTP is: ${otp}`);
+  // await sendEmail({
+  //   to: user.email,
+  //   subject: "Password Reset OTP",
+  //   text: `Your OTP is: ${otp}`,
+  //   html: `<h2>Password Reset OTP</h2></br><p>Your OTP is: ${otp}</p>`,
+  // });
 
   return { email: user.email, otp: otp };
 };
@@ -135,13 +173,25 @@ export const verifyOTPService = async (email: string, otp: string) => {
     where: { email, deletedAt: null },
   });
 
-  if (!user) throw new Error("User not found");
+  if (!user) {
+    throw new AppError({
+      statusCode: 404,
+      data: {},
+      message: "Invalid User.",
+    });
+  };
 
   const storedOTP = await prisma.storedOTPDetail.findFirst({
     where: { email: user.email, otp: otp, deletedAt: null },
   });
 
-  if (!storedOTP) throw new Error("Invalid OTP");
+  if (!storedOTP) {
+    throw new AppError({
+      statusCode: 404,
+      data: {},
+      message: "Invalid OTP.",
+    });
+  };
 
   return { email: storedOTP.email, otp: storedOTP.otp };
 };
@@ -154,7 +204,13 @@ export const resetPasswordManagementStaff = async (
     where: { email, deletedAt: null },
   });
 
-  if (!user) throw new Error("User not found");
+  if (!user) {
+    throw new AppError({
+      statusCode: 404,
+      data: {},
+      message: "Invalid User.",
+    })
+  };
 
   // Hash new password
   const hashedPassword = await bcrypt.hash(newPassword, 10);

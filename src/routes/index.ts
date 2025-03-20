@@ -3,13 +3,12 @@ import authRoutes from "./auth.route";
 import batchRoutes from "./batch.route";
 import { verifyToken } from "../middlewares/auth.middleware";
 import s3Routes from "./s3/s3.route";
-import { getAllStudentsController } from "../controllers/counsellor/allStudentsList.controller";
 import notificationRoutes from "./notification.route";
 import { raiseSupportTicket } from "../controllers/counsellor/supportTicket.controller";
 import { getProfile } from "../controllers/counsellor/profile.controller";
-import { createNewStudentController } from "../controllers/counsellor/createStudent.controller";
 import { getStaff_Student_BatchController } from "../controllers/counsellor/getStaff_Student_Batch.controller";
 import { requestLeaveController } from "../controllers/counsellor/applyLeave.controller";
+import { createNewStudentController, getAllStudentsController } from "../controllers/counsellor/students.controller";
 
 const router = Router();
 
