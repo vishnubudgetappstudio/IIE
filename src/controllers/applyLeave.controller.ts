@@ -1,32 +1,31 @@
 import { NextFunction, Response } from "express";
-import { AuthRequest } from "../../middlewares/auth.middleware";
-import { applyLeaveService } from "../../services/counsellor/applyLeave.service";
-import { AppError } from "../../utils/errorHandler";
-import { z } from "zod";
-
-
-export const leaveRequestSchema = z.object({
-  leave_type: z.enum(["Sick", "Casual", "Earned", "Unpaid", "Other"], {
-    message: "Invalid leave type. Allowed values: Sick, Casual, Earned, Unpaid, Other",
-  }),
-  leave_mode: z.enum(["Full_Day", "Half_Day"], { message: "Invalid leave mode. Allowed values: Full_Day, Half_Day", }),
-  from_date: z.string().min(1, "From date is required"),
-  to_date: z.string().min(1, "To date is required"),
-  reason: z.string().min(1, "Reason is required"),
-});
+import { AuthRequest } from "../middlewares/auth.middleware";
+import { AppError } from "../utils/errorHandler";
+import { applyLeaveService } from "../services/applyLeave.service";
+import { leaveRequestSchema } from "../zodSchema/common.schema";
+import { UserRole } from "../types/common.type";
 
 export const requestLeaveController = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): Promise<void> => {
+) => {
   try {
-    // Validate user authentication
-    if (!req.user) {
-      throw new AppError({ statusCode: 401, data: {}, message: "Unauthorized access" });
-    }
+    const userId = req.user?.userId as string; // Logged-in user ID
+    const role = req.user?.role as UserRole;
 
-    // Validate Request Body
+    console.log({ userId, role });
+
+    if (!userId || !role) {
+      return next(
+        new AppError({
+          statusCode: 401,
+          data: {},
+          message: "Unauthorized: Invalid user credentials.",
+        })
+      );
+    }
+    // Validate Request Body (based on schema)
     const validatedData = leaveRequestSchema.safeParse(req.body);
 
     if (!validatedData.success) {
@@ -47,14 +46,16 @@ export const requestLeaveController = async (
     }
 
     // Apply leave
-    const leave = await applyLeaveService(
-      req.user.userId,
-      leave_type,
-      leave_mode,
-      from_date,
-      to_date,
-      reason
-    );
+    const leave = await applyLeaveService({
+      userId: userId,
+      role: role,
+      leave_type: leave_type,
+      leave_mode: leave_mode,
+      from_date: from_date,
+      to_date: to_date,
+      reason: reason,
+
+    });
 
     res.status(201).json({
       status: true,

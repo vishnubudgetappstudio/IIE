@@ -17,24 +17,24 @@ datasource db {
 // ✅ Management Staffs Schema
 // ==============================
 model ManagementStaff {
-  id              String    @id @unique @default(uuid())
-  email           String    @unique
+  id              String                   @id @unique @default(uuid())
+  email           String                   @unique
   password        String
-  employeeId      String?   @unique
-  role            Role
+  employeeId      String?                  @unique
+  role            ManagementStaffModelRole
   phone           String?
   name            String
   profile_img_url String?
   address         String?
-  emailVerified   Boolean   @default(false)
+  emailVerified   Boolean                  @default(false)
   fcm_token       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
   deletedAt       DateTime?
 
   // Relation: One staff can create multiple tickets
-  supportTicketsModel        SupportTicketDetails[]
-  LeaveRequestModel          LeaveManagementStaff[]
+  supportTicketsModel        SupportTicketDetail[]
+  LeaveRequestModel          LeaveDetail[]
   batchDetailModel           BatchDetail[]
   studentModel               Student[]
   notificationModel          Notification[]
@@ -48,30 +48,37 @@ model ManagementStaff {
   @@map("ManagementStaff") // Mapping to actual table name
 }
 
-enum Role {
+enum ManagementStaffModelRole {
   admin
   counsellor
   staff
   guest
+
+  @@map("Role")
 }
 
 // ==============================
 // ✅ Support Ticket Schema
 // ==============================
-model SupportTicketDetails {
-  id                        String                 @id @default(uuid())
-  management_staff_id       String // Foreign key referencing ManagementStaff
-  management_staff_relation ManagementStaff        @relation(fields: [management_staff_id], references: [id]) // No Cascade
-  role                      RaiseSupportTicketRole
-  query                     String // Reason for raising the ticket
-  status                    TicketStatus           @default(open)
-  createdAt                 DateTime               @default(now())
-  updatedAt                 DateTime               @updatedAt
-  deletedAt                 DateTime? // Soft delete column
+model SupportTicketDetail {
+  id                  String         @id @default(uuid())
+  management_staff_id String? // Nullable - If role is staff or counsellor
+  student_id          String? // Nullable - If role is student
+  role                CommonUserRole
+  query               String // Reason for raising the ticket
+  status              TicketStatus   @default(open)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  deletedAt           DateTime? // Soft delete column
+
+  // Relations
+  management_staff_relation ManagementStaff? @relation(fields: [management_staff_id], references: [id], map: "SupportTicket_ManagementStaff_fkey") // Optional relation
+  student_relation          Student?         @relation(fields: [student_id], references: [id], map: "SupportTicket_Student_fkey") // Optional relation
 
   @@index([management_staff_id])
+  @@index([student_id])
   @@index([status])
-  @@map("SupportTicketDetails") // Mapping to actual table name
+  @@map("SupportTicketDetail") // Mapping to actual table name
 }
 
 enum TicketStatus {
@@ -81,7 +88,7 @@ enum TicketStatus {
   closed
 }
 
-enum RaiseSupportTicketRole {
+enum CommonUserRole {
   admin
   counsellor
   staff
@@ -92,24 +99,30 @@ enum RaiseSupportTicketRole {
 // ==============================
 // ✅ Apply Leave Schema
 // ==============================
-model LeaveManagementStaff {
-  id                        String          @id @default(uuid()) // Unique Leave ID
-  management_staff_id       String // Foreign key referencing ManagementStaff
-  management_staff_relation ManagementStaff @relation(fields: [management_staff_id], references: [id]) // No Cascade
-  role                      Role
-  leave_type                LeaveType
-  leave_mode                LeaveMode
-  from_date                 String // Leave start date
-  to_date                   String // Leave end date
-  reason                    String // Reason for leave
-  status                    LeaveStatus     @default(Pending) // Leave approval status
-  createdAt                 DateTime        @default(now())
-  updatedAt                 DateTime        @updatedAt
-  deletedAt                 DateTime? // Soft delete column
+model LeaveDetail {
+  id                  String  @id @default(uuid()) // Unique Leave ID
+  management_staff_id String? // Nullable - If role is staff or counsellor
+  student_id          String? // Nullable - If role is student
+
+  // Relations
+  management_staff_relation ManagementStaff? @relation(fields: [management_staff_id], references: [id], map: "Leave_ManagementStaff_fkey")
+  student_relation          Student?         @relation(fields: [student_id], references: [id], map: "Leave_Student_fkey")
+
+  role       CommonUserRole
+  leave_type LeaveType
+  leave_mode LeaveMode
+  from_date  String // Leave start date
+  to_date    String // Leave end date
+  reason     String // Reason for leave
+  status     LeaveStatus    @default(Pending) // Leave approval status
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  deletedAt  DateTime? // Soft delete column
 
   @@index([management_staff_id])
+  @@index([student_id])
   @@index([status])
-  @@map("LeaveManagementStaff") // Mapping to actual table name
+  @@map("LeaveDetail") // Mapping to actual table name
 }
 
 enum LeaveType {
@@ -184,13 +197,15 @@ model Student {
   // Many-to-Many Relation with CreateBatch (Explicit)
   batchWithStudentModel      BatchWithStudent[]
   notificationRecipientModel NotificationRecipient[]
+  SupportTicket              SupportTicketDetail[]
+  LeaveManagementStaff       LeaveDetail[]
 
   @@index([name, roll_number, email, phone])
   @@map("Student") // Mapping to actual table name
 }
 
 // ==============================
-// ✅ Create Batch Schema
+// ✅ Batch Schema
 // ==============================
 model BatchDetail {
   id                String         @id @unique @default(uuid())
@@ -224,9 +239,9 @@ enum BatchSlotsType {
   evening
 }
 
-// ==============================
-// ✅ Join Table for Many-to-Many Relation
-// ==============================
+// ========================================================================
+// ✅ Join Table for Many-to-Many Relation (Student and BatchDetail models)
+// ========================================================================
 model BatchWithStudent {
   batch_id   String
   student_id String
@@ -251,7 +266,7 @@ model StoredOTPDetail {
   deletedAt DateTime? // Nullable field for soft delete
 
   @@index([email])
-	@@map("StoredOTPDetail")
+  @@map("StoredOTPDetail")
 }
 
 model Notification {
