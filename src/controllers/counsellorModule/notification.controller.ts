@@ -2,10 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { createNotificationService, getNotificationHistoryService } from "../../services/counsellor/notification.service";
 import { AppError } from "../../utils/errorHandler";
 import { AuthRequest } from "../../middlewares/auth.middleware";
-import { z } from "zod";
+import { managementStaffIdSchema } from "../../zodSchema/counsellor.schema";
 
-// Define a validation schema for batchId
-const managementStaffIdSchema = z.string().uuid({ message: "Invalid batch ID format" });
 
 export const createNotificationController = async (
     req: AuthRequest,
@@ -63,7 +61,7 @@ export const getNotificationHistoryController = async (req: AuthRequest, res: Re
 
         const userId = req.user?.userId; // Logged-in user ID
 
-        // Validate ManagementStaffId
+        // Validate ManagementStaffId - Request Body (based on schema)
         const validatedManagementStaffId = managementStaffIdSchema.safeParse(userId);
 
         if (!validatedManagementStaffId?.success) {

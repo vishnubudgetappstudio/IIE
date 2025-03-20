@@ -5,7 +5,7 @@ import {
     getAllBatchesListController,
     getBatchStudentsController,
     removeStudentsFromBatchController
-} from "../controllers/counsellor/batch.controller";
+} from "../controllers/counsellorModule/batch.controller";
 
 const router = express.Router();
 

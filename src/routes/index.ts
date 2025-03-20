@@ -4,11 +4,11 @@ import batchRoutes from "./batch.route";
 import { verifyToken } from "../middlewares/auth.middleware";
 import s3Routes from "./s3/s3.route";
 import notificationRoutes from "./notification.route";
-import { raiseSupportTicket } from "../controllers/counsellor/supportTicket.controller";
-import { getProfile } from "../controllers/counsellor/profile.controller";
-import { getStaff_Student_BatchController } from "../controllers/counsellor/getStaff_Student_Batch.controller";
-import { requestLeaveController } from "../controllers/counsellor/applyLeave.controller";
-import { createNewStudentController, getAllStudentsController } from "../controllers/counsellor/students.controller";
+import { raiseSupportTicket } from "../controllers/counsellorModule/supportTicket.controller";
+import { getProfileController } from "../controllers/profile.controller";
+import { getStaff_Student_BatchController } from "../controllers/counsellorModule/getStaff_Student_Batch.controller";
+import { requestLeaveController } from "../controllers/counsellorModule/applyLeave.controller";
+import { createNewStudentController, getAllStudentsController } from "../controllers/counsellorModule/students.controller";
 
 const router = Router();
 
@@ -20,7 +20,7 @@ router.use("/s3", s3Routes); //upload files and profile images
 router.use(verifyToken);
 
 //Counsellor API routes
-router.use("/profile", getProfile); // Profile route
+router.use("/profile", getProfileController); // Profile route
 router.use("/rise-support-ticket", raiseSupportTicket); // Support ticket route
 router.use("/apply-leave", requestLeaveController); // Apply Leave route
 router.use("/add-new-student", createNewStudentController); // Create New Student route
