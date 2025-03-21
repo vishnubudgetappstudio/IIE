@@ -69,6 +69,14 @@ export const loginService = async (
         where: { email, role: 'counsellor', deletedAt: null },
         select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
       });
+
+      if (!user) {
+        throw new AppError({
+          statusCode: 401,
+          data: {},
+          message: "Unauthorized: Invalid Email Address."
+        });
+      }
       break;
     case 'staff':
       // Find user in the database with selected fields (excluding unnecessary data)
@@ -76,6 +84,14 @@ export const loginService = async (
         where: { email, role: 'staff', deletedAt: null },
         select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
       });
+
+      if (!user) {
+        throw new AppError({
+          statusCode: 401,
+          data: {},
+          message: "Unauthorized: Invalid Email Address."
+        });
+      }
       break;
     default: // Code to execute if no cases match
       // Find user in the database with selected fields (excluding unnecessary data)
@@ -84,15 +100,15 @@ export const loginService = async (
         select: { id: true, name: true, email: true, password: true }, // Select only required fields
       });
 
-      user = { ...user, role: "student" };
-  }
+      if (!user) {
+        throw new AppError({
+          statusCode: 401,
+          data: {},
+          message: "Unauthorized: Invalid Email Address."
+        });
+      }
 
-  if (!user) {
-    throw new AppError({
-      statusCode: 401,
-      data: {},
-      message: "Unauthorized: Invalid Email Address."
-    });
+      user = { ...user, role: "student" };
   }
 
   // Validate Password securely
@@ -143,11 +159,12 @@ export const forgotPasswordManagementStaff = async ({ email, role }: { email: st
 
       if (!user) {
         throw new AppError({
-          statusCode: 404,
+          statusCode: 401,
           data: {},
-          message: "Invalid User.",
+          message: "Unauthorized: Invalid Email Address."
         });
-      };
+      }
+
       break;
     case 'staff':
       // Find user in the database with selected fields (excluding unnecessary data)
@@ -155,13 +172,15 @@ export const forgotPasswordManagementStaff = async ({ email, role }: { email: st
         where: { email, role: 'staff', deletedAt: null },
         select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
       });
+
       if (!user) {
         throw new AppError({
-          statusCode: 404,
+          statusCode: 401,
           data: {},
-          message: "Invalid User.",
+          message: "Unauthorized: Invalid Email Address."
         });
-      };
+      }
+
       break;
     default: // Code to execute if no cases match
       // Find user in the database with selected fields (excluding unnecessary data)
@@ -172,11 +191,11 @@ export const forgotPasswordManagementStaff = async ({ email, role }: { email: st
 
       if (!user) {
         throw new AppError({
-          statusCode: 404,
+          statusCode: 401,
           data: {},
-          message: "Invalid User.",
+          message: "Unauthorized: Invalid Email Address."
         });
-      };
+      }
 
       user = { ...user, role: "student" };
   }
@@ -261,11 +280,11 @@ export const resetPasswordManagementStaff = async ({ email, role, newPassword }:
 
       if (!user) {
         throw new AppError({
-          statusCode: 404,
+          statusCode: 401,
           data: {},
-          message: "Invalid User.",
+          message: "Unauthorized: Invalid Email Address."
         });
-      };
+      }
 
       // Update password
       await prisma.managementStaff.update({
@@ -283,11 +302,11 @@ export const resetPasswordManagementStaff = async ({ email, role, newPassword }:
 
       if (!user) {
         throw new AppError({
-          statusCode: 404,
+          statusCode: 401,
           data: {},
-          message: "Invalid User.",
+          message: "Unauthorized: Invalid Email Address."
         });
-      };
+      }
 
       // Update password
       await prisma.managementStaff.update({
@@ -305,11 +324,11 @@ export const resetPasswordManagementStaff = async ({ email, role, newPassword }:
 
       if (!user) {
         throw new AppError({
-          statusCode: 404,
+          statusCode: 401,
           data: {},
-          message: "Invalid User.",
+          message: "Unauthorized: Invalid Email Address."
         });
-      };
+      }
 
       // Update password
       await prisma.student.update({

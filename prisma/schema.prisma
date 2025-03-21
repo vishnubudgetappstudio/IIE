@@ -23,6 +23,7 @@ model ManagementStaff {
   employeeId      String?                  @unique
   role            ManagementStaffModelRole
   phone           String?
+  alt_phone       String?
   name            String
   profile_img_url String?
   address         String?

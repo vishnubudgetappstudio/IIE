@@ -2,8 +2,8 @@ import { z } from "zod";
 import { Request, Response, NextFunction } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { AppError } from "../../utils/errorHandler";
-import { createNewStudentSchema } from "../../zodSchema/student.schema";
 import { createNewStudentService, getAllStudentsListService } from "../../services/counsellor/students.service";
+import { createNewStudentSchema } from "../../zodSchema/counsellor.schema";
 
 export const createNewStudentController = async (
     req: AuthRequest,
