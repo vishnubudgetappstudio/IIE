@@ -7,7 +7,7 @@ import {
   getAllBatchesService, 
   getBatchStudentsService, 
   removeStudentsFromBatchService 
-} from "../../services/counsellor/batch.service";
+} from "../../services/counsellorModule/batch.service";
 import { AppError } from "../../utils/errorHandler";
 import { BatchSlotsType } from "@prisma/client";
 

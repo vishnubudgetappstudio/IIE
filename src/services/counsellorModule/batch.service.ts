@@ -77,6 +77,7 @@ export const createNewBatchService = async (
       session_sheet_url: session_sheet_url,
       slot: slot,
       management_staff_relation: { connect: { id: mentor_id, role: "staff" } },
+      batch_stud_count: studentIdsArray.length.toString() as string,
       batchWithStudentModel: {
         create: studentIdsArray?.map((studentId) => ({
           student_relation: { connect: { id: studentId } }

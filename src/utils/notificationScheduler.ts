@@ -18,7 +18,7 @@ const processScheduledNotifications = async () => {
         // Step 2: Fetch "Pending" notifications for processing
         const pendingNotifications = await prisma.notificationRecipient.findMany({
             where: { status: "Pending" },
-            include: { notification: true },
+            include: { notification_relation: true },
         });
 
         if (pendingNotifications.length === 0) {

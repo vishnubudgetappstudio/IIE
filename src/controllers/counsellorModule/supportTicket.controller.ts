@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
-import { createSupportTicket } from "../../services/counsellor/supportTicket.service";
+import { createSupportTicket } from "../../services/counsellorModule/supportTicket.service";
 import { AppError } from "../../utils/errorHandler";
 import { z } from "zod";
 import { UserRole } from "../../types/common.type";

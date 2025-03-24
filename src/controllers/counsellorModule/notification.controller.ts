@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { createNotificationService, getNotificationHistoryService } from "../../services/counsellor/notification.service";
+import { createNotificationService, getNotificationHistoryService } from "../../services/counsellorModule/notification.service";
 import { AppError } from "../../utils/errorHandler";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { managementStaffIdSchema } from "../../zodSchema/counsellor.schema";

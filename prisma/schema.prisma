@@ -33,12 +33,17 @@ model ManagementStaff {
   updatedAt       DateTime                 @updatedAt
   deletedAt       DateTime?
 
-  // Relation: One staff can create multiple tickets
+  // One-to-Many: One staff can create multiple tickets
   supportTicketsModel        SupportTicketDetail[]
+  // One-to-Many: One staff can create multiple leave requests
   LeaveRequestModel          LeaveDetail[]
+  // One-to-Many: One staff can manage multiple batches
   batchDetailModel           BatchDetail[]
+  // One-to-Many: One staff can be assigned multiple students
   studentModel               Student[]
+  // One-to-Many: One staff can send multiple notifications
   notificationModel          Notification[]
+  // One-to-Many: One staff can receive multiple notifications
   notificationRecipientModel NotificationRecipient[]
 
   @@index([id])
@@ -54,8 +59,6 @@ enum ManagementStaffModelRole {
   counsellor
   staff
   guest
-
-  @@map("Role")
 }
 
 // ==============================
@@ -72,7 +75,7 @@ model SupportTicketDetail {
   updatedAt           DateTime       @updatedAt
   deletedAt           DateTime? // Soft delete column
 
-  // Relations
+  // One-to-One (Optional): A ticket is linked to only one management staff or student
   management_staff_relation ManagementStaff? @relation(fields: [management_staff_id], references: [id], map: "SupportTicket_ManagementStaff_fkey") // Optional relation
   student_relation          Student?         @relation(fields: [student_id], references: [id], map: "SupportTicket_Student_fkey") // Optional relation
 
@@ -105,7 +108,7 @@ model LeaveDetail {
   management_staff_id String? // Nullable - If role is staff or counsellor
   student_id          String? // Nullable - If role is student
 
-  // Relations
+  // One-to-One (Optional): A leave request is linked to only one management staff or student
   management_staff_relation ManagementStaff? @relation(fields: [management_staff_id], references: [id], map: "Leave_ManagementStaff_fkey")
   student_relation          Student?         @relation(fields: [student_id], references: [id], map: "Leave_Student_fkey")
 
@@ -180,9 +183,9 @@ model Student {
   Status               String?   @db.VarChar(20)
   Remarks              String?   @db.VarChar(100)
 
-  // Relation fields
+  // One-to-One: A student is assigned to one counsellor
   counsellor_id             String          @db.VarChar(191)
-  counsellor_name           String          @db.VarChar(191) // Not a relation, just a stored field
+  counsellor_name           String          @db.VarChar(191) // Not a relation, Just a stored field
   management_staff_relation ManagementStaff @relation(fields: [counsellor_id], references: [id])
 
   Walkin_By       String?   @db.VarChar(20)
@@ -195,7 +198,7 @@ model Student {
   updatedAt       DateTime  @updatedAt @db.DateTime(3)
   deletedAt       DateTime? // Nullable for soft delete
 
-  // Many-to-Many Relation with CreateBatch (Explicit)
+  // Many-to-Many: Student can be in multiple batches
   batchWithStudentModel      BatchWithStudent[]
   notificationRecipientModel NotificationRecipient[]
   SupportTicket              SupportTicketDetail[]
@@ -212,23 +215,25 @@ model BatchDetail {
   id                String         @id @unique @default(uuid())
   batch_number      String         @unique
   batchName         String?
+  batch_stud_count  String
   from_date         String
   to_date           String
   course            String
   slot              BatchSlotsType
-  session_sheet_url String? // JSON array of file URLs (optional)
+  session_sheet_url String? // SessionSheet file URLs
 
-  // Mentor Relation (One Mentor -> Many Batches)
+  // One-to-Many: One mentor can manage multiple batches
   mentor_id                 String
   management_staff_relation ManagementStaff @relation(fields: [mentor_id], references: [id])
 
-  // Student Relation (Many-to-Many)
-  batchWithStudentModel BatchWithStudent[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  createdAt                  DateTime                @default(now())
-  updatedAt                  DateTime                @updatedAt
-  deletedAt                  DateTime?
+  // Many-to-Many: A batch can have multiple students
+  batchWithStudentModel      BatchWithStudent[]
   notificationRecipientModel NotificationRecipient[]
+  // sessionSheetDetailModel    SessionSheetDetail[]
 
   @@index([id])
   @@index([mentor_id]) // Index for faster lookups
@@ -274,7 +279,7 @@ model Notification {
   id          String                @id @default(uuid())
   senderId    String // Foreign key for sender (ManagementStaff)
   title       String
-  message     String
+  description String
   image       String?
   type        NotificationType // Enum for notification type
   category    NotificationCategory? // Optional category field
@@ -288,13 +293,15 @@ model Notification {
   updatedAt   DateTime              @updatedAt
   deletedAt   DateTime? // Soft delete
 
-  // Relations
+  // Relation: Notification is sent by a ManagementStaff (One-to-One)
   management_staff_relation ManagementStaff @relation(fields: [senderId], references: [id])
 
-  // One-to-Many Relation with Recipients
+  // Relation: One Notification can have multiple recipients (One-to-Many)
   notificationRecipientModel NotificationRecipient[]
 
+  // Index for faster queries based on senderId
   @@index([senderId])
+  // Map to the actual table name in the database
   @@map("Notification")
 }
 
@@ -305,16 +312,23 @@ model NotificationRecipient {
   studentId         String? // Foreign key for student
   batchId           String? // Foreign key for batch
   receiverRole      ReceiverRole // Enum: staff, guest, student
+  type              NotificationType
   isRead            Boolean            @default(false) // Read status
   status            NotificationStatus @default(Scheduled) // Default status should be "Scheduled"
   sentAt            BigInt? // Timestamp when notification was sent
   createdAt         DateTime           @default(now())
 
-  // Relations
-  notification    Notification     @relation(fields: [notificationId], references: [id])
-  managementStaff ManagementStaff? @relation(fields: [managementStaffId], references: [id], map: "NotificationRecipient_managementStaffId_fkey")
-  student         Student?         @relation(fields: [studentId], references: [id], map: "NotificationRecipient_studentId_fkey")
-  batch           BatchDetail?     @relation(fields: [batchId], references: [id], map: "NotificationRecipient_batchId_fkey")
+  // Relation: One NotificationRecipient belongs to one Notification (Many-to-One)
+  notification_relation Notification @relation(fields: [notificationId], references: [id])
+
+  // Relation: A NotificationRecipient may be associated with a ManagementStaff (Optional)
+  management_staff_relation ManagementStaff? @relation(fields: [managementStaffId], references: [id], map: "NotificationRecipient_managementStaffId_fkey")
+
+  // Relation: A NotificationRecipient may be associated with a Student (Optional)
+  student_relation Student? @relation(fields: [studentId], references: [id], map: "NotificationRecipient_studentId_fkey")
+
+  // Relation: A NotificationRecipient may be associated with a BatchDetail (Optional)
+  batch_detail_relation BatchDetail? @relation(fields: [batchId], references: [id], map: "NotificationRecipient_batchId_fkey")
 
   @@index([notificationId])
   @@index([managementStaffId])
@@ -343,8 +357,30 @@ enum ReceiverRole {
 }
 
 enum NotificationType {
-  system
-  alert
+  course_test
+  mock_test
+  leave
+  support_ticket
   message
-  event
+  material_uploaded
+  session_uploaded
+  session_completed
 }
+
+// ==============================
+// ✅ SessionSheet Schema
+// ==============================
+// model SessionSheetDetail {
+//   id                   String    @id @default(uuid())
+//   batch_id             String
+//   session_file_url     String
+//   status               String
+//   stud_completed_count String
+//   student_doubt_count  String
+//   createdAt            DateTime  @default(now()) // Automatically stores created time
+//   updatedAt            DateTime  @updatedAt // Automatically updates updated time
+//   deletedAt            DateTime? // Nullable field for soft delete
+
+//   // Relation: Each session sheet belongs to a specific batch (One-to-One)
+//   batch_detail_relation BatchDetail @relation(fields: [batch_id], references: [id])
+// }

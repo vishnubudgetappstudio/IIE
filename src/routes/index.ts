@@ -10,6 +10,7 @@ import { getStaff_Student_BatchController } from "../controllers/counsellorModul
 import { createNewStudentController, getAllStudentsController } from "../controllers/counsellorModule/students.controller";
 import { requestLeaveController } from "../controllers/applyLeave.controller";
 import { getProfileController, updateProfileController } from "../controllers/profile.controller";
+import { studentHomeScreenController } from "../controllers/studentModule/homeScreen.controller";
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.get("/all-students", getAllStudentsController);// Get students with pagin
 router.use("/notification", notificationRoutes);// Counsellor Notification Routes
 
 //Student API routes
+router.get("/student-home-details", studentHomeScreenController)
 
 
 export default router;

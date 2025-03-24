@@ -19,3 +19,9 @@ export const leaveRequestSchema = z.object({
         .string({ required_error: "*reason is required" })
         .min(1, "Reason is required"),
 });
+
+
+export const roleSchema = z.enum(["staff", "counsellor", "student", "admin", "guest"], { required_error: "*role is required" }).refine(
+    (role) => ["staff", "counsellor", "student", "admin", "guest"].includes(role),
+    { message: "Role must be one of: staff, counsellor, student, admin, guest" }
+);

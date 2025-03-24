@@ -97,7 +97,7 @@ export const createNotificationService = async (data: CreateNotificationData) =>
         const newNotification = await prisma.notification.create({
             data: {
                 title: data.title,
-                message: data.message,
+                description: data.message,
                 image: data.image,
                 type: data.type as NotificationType,
                 category: data.category ? (data.category as NotificationCategory) : null,
@@ -115,6 +115,7 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                 studentId: r.studentId || null,
                 managementStaffId: r.managementStaffId || null,
                 batchId: r.batchId || null,
+                type: r.type || NotificationType,
                 receiverRole: r.receiverRole,
                 status: "Pending",
                 createdAt: new Date(),
@@ -123,7 +124,7 @@ export const createNotificationService = async (data: CreateNotificationData) =>
 
         return {
             title: newNotification.title,
-            message: newNotification.message,
+            message: newNotification.description,
             image: newNotification.image,
             category: newNotification.category,
             date: newNotification.date as string,
@@ -149,7 +150,7 @@ export const getNotificationHistoryService = async ({ senderId }: { senderId: st
         select: {
             id: true,
             title: true,
-            message: true,
+            description: true,
             image: true,
             date: true,
             type: true,
@@ -166,7 +167,7 @@ export const getNotificationHistoryService = async ({ senderId }: { senderId: st
         {
             id: history.id,
             title: history.title,
-            message: history.message,
+            message: history.description,
             image: history.image,
             category: history.category,
             date: history.date,

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { getStaff_Student_BatchService } from "../../services/counsellor/getStaff_Student_Batch.service";
+import { getStaff_Student_BatchService } from "../../services/counsellorModule/getStaff_Student_Batch.service";
 import { AppError } from "../../utils/errorHandler";
 
 export const getStaff_Student_BatchController = async (
