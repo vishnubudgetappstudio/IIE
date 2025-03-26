@@ -16,6 +16,7 @@ interface CreateNewBatchResponse {
   };
 }
 
+//✅ Create New Batch service.
 export const createNewBatchService = async (
   batch_number: string,
   from_date: string,
@@ -108,6 +109,7 @@ export const createNewBatchService = async (
 };
 
 
+//✅ Add Students to Batch Service.
 export const addStudentsToBatchService = async (batch_id: string, student_ids: string[]) => {
   // Check if the batch exists
   const batchExists = await prisma.batchDetail.findUnique({
@@ -185,6 +187,7 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
   };
 };
 
+//✅ Remove Students From Batch service.
 export const removeStudentsFromBatchService = async (batch_id: string, student_ids: string[]) => {
   // Check if the batch exists
   const batchExists = await prisma.batchDetail.findUnique({
@@ -235,7 +238,7 @@ export const removeStudentsFromBatchService = async (batch_id: string, student_i
   };
 };
 
-
+//✅ Get All Batches service.
 export const getAllBatchesService = async (page: number, limit: number, slot: "all" | BatchSlotsType) => {
 
   if (page < 1 || limit < 1) {
@@ -322,6 +325,7 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
   return { batches: formattedBatches, total };
 };
 
+//✅ Get Batch Students service.
 export const getBatchStudentsService = async (
   batchId: string,
   page: number,
@@ -430,28 +434,6 @@ export const getBatchStudentsService = async (
       };
     })
   );
-
-  // // Extract student data
-  // const studentsData = students.map((s) => {
-  //   return {
-  //     id: s.id,
-  //     name: s.name,
-  //     email: s.email,
-  //     mobile: s.phone,
-  //     alternate_mobile: s.alt_phone,
-  //     roll_number: s.roll_number,
-  //     course_id: s.course_id,
-  //     course: s.Course,
-  //     image: s.profile_img_url,
-  //     monthly_present: "78%",
-  //     monthly_absent: "22%",
-  //     weekly_present: "98%",
-  //     weekly_absent: "2%",
-  //     course_test: "14",
-  //     mock_test: "2",
-
-  //   };
-  // });
 
   return {
     students: studentsData,
