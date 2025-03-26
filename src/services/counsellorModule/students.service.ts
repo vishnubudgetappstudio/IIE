@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import { sendEmail } from "../../config/nodemailer";
 import { AppError } from "../../utils/errorHandler";
 import { generateRandomPassword } from "../../utils/randomPasswordGenerate";
+import { getAttendancePercentageController } from "../../controllers/staffModule/attendance.controller";
+import { getStudentAttendanceStats } from "../staffModule/attendance.service";
 
 interface CreateNewStudentResponse {
     data: {
@@ -130,61 +132,56 @@ export const createNewStudentService = async (
     };
 };
 
+
 /**
- * Get batch students with pagination and search query
- * @param page - Current page number
- * @param limit - Number of students per page
- * @param searchQuery - Search keyword (optional)
- * @param batchId - batch_id (optional)
+ * ✅ Fetch batch students with pagination and search query
+ * @param {number} page - Current page number
+ * @param {number} limit - Number of students per page
+ * @param {string} [searchQuery] - Optional search keyword
+ * @param {string} [batchId] - Optional batch ID to filter students
+ * @returns {Promise<object>} - List of students with pagination details
  */
-export const getAllStudentsListService = async (
-    { page, limit, searchQuery, batchId }: {
-        page: number,
-        limit: number,
-        searchQuery?: string,
-        batchId?: string,
-    }
-) => {
-    // Ensure page and limit are valid
-    const currentPage = page > 0 ? page : 1;
-    const perPage = searchQuery ? undefined : limit > 0 ? limit : 10;
-    const skip = searchQuery ? undefined : (currentPage - 1) * perPage!;
+export const getAllStudentsListService = async ({
+    page,
+    limit,
+    searchQuery,
+    batchId
+}: {
+    page: number;
+    limit: number;
+    searchQuery?: string;
+    batchId?: string;
+}) => {
+    // 🏆 Ensure page and limit values are valid
+    const currentPage = Math.max(1, page); // Ensure page starts from 1
+    const perPage = limit > 0 ? limit : 10;
+    const skip = (currentPage - 1) * perPage;
 
+    // 🔎 Validate batch existence if batchId is provided
     if (batchId) {
-        const existingBatch = await prisma.batchDetail.findUnique({
+        const batchExists = await prisma.batchDetail.findUnique({
             where: { id: batchId }
-        })
+        });
 
-        if (!existingBatch) {
+        if (!batchExists) {
             throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
         }
     }
 
-    // Define search conditions
-    const searchCondition: any = {};
+    // 🔍 Define search conditions
+    const searchCondition: any = {
+        deletedAt: null,
+        ...(searchQuery && { name: { startsWith: searchQuery } }), // Search by name
+        ...(batchId && {
+            batchWithStudentModel: {
+                some: { batch_id: batchId, deletedAt: null } // Filter by batch ID
+            }
+        })
+    };
 
-    if (searchQuery) {
-        searchCondition.name = {
-            startsWith: searchQuery, // Matches names that start with the search query
-        };
-    }
-
-    // If batchId is provided, filter students belonging to that batch
-    if (batchId) {
-        searchCondition.batchWithStudentModel = {
-            some: {
-                batch_id: batchId,
-                deletedAt: null,
-            }, // Ensure student is part of the batch
-        };
-    }
-
-    // Fetch students with pagination & search
+    // 🎯 Fetch students with pagination & search
     const students = await prisma.student.findMany({
-        where: {
-            ...searchCondition,
-            deletedAt: null,
-        },
+        where: searchCondition,
         skip,
         take: perPage,
         orderBy: { createdAt: "desc" },
@@ -199,47 +196,54 @@ export const getAllStudentsListService = async (
             Course: true,
             profile_img_url: true
         }
-    }).catch(err => {
-        console.error("Error fetching batch students:", err);
-        throw new AppError({ statusCode: 500, message: "Failed to fetch students", data: [] });
     });
 
-    // Get total count of matching students
-    const totalStudents = await prisma.student.count({
-        where: searchCondition,
-    });
+    // 📊 Get total count of matching students
+    const totalStudents = await prisma.student.count({ where: searchCondition });
 
     if (!students.length) {
         throw new AppError({ statusCode: 404, message: "No students found", data: [] });
     }
 
-    // Extract student data
-    const studentsData = students?.map((s) => {
-        return {
-            id: s.id,
-            name: s.name,
-            email: s.email,
-            mobile: s.phone,
-            alternate_mobile: s.alt_phone,
-            roll_number: s.roll_number,
-            course_id: s.course_id,
-            course: s.Course,
-            image: s.profile_img_url,
-            monthly_present: "78%",
-            monthly_absent: "22%",
-            weekly_present: "98%",
-            weekly_absent: "2%",
-            course_test: "14",
-            mock_test: "2",
+    // 🏆 Fetch attendance stats concurrently for all students
+    const studentsData = await Promise.all(
+        students.map(async (student) => {
+            const attendanceStats = await getStudentAttendanceStats({
+                batchId: batchId as string,
+                studentId: student.id as string,
+            });
 
-        };
-    });
+            return {
+                id: student.id,
+                name: student.name,
+                email: student.email,
+                mobile: student.phone,
+                alternate_mobile: student.alt_phone,
+                roll_number: student.roll_number,
+                course_id: student.course_id,
+                course: student.Course,
+                image: student.profile_img_url,
+                over_all_present: attendanceStats.overAll.presentPercentage,
+                over_all_absent: attendanceStats.overAll.absentPercentage,
+                weekly_present: attendanceStats.weekly.presentPercentage,
+                weekly_absent: attendanceStats.weekly.absentPercentage,
+                this_monthly_present: attendanceStats.thisMonth.presentPercentage,
+                this_monthly_absent: attendanceStats.thisMonth.absentPercentage,
+                last_monthly_present: attendanceStats.lastMonth.presentPercentage,
+                last_monthly_absent: attendanceStats.lastMonth.absentPercentage,
+                course_test: "14",
+                mock_test: "2"
+            };
+        })
+    );
 
+    // 📌 Return final paginated student data
     return {
         students: studentsData,
-        totalPages: Math.ceil(totalStudents / perPage!),
+        totalPages: Math.ceil(totalStudents / perPage),
         perPage,
         currentPage,
-        totalStudents,
+        totalStudents
     };
 };
+

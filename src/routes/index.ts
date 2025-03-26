@@ -11,6 +11,7 @@ import { createNewStudentController, getAllStudentsController } from "../control
 import { requestLeaveController } from "../controllers/applyLeave.controller";
 import { getProfileController, updateProfileController } from "../controllers/profile.controller";
 import { studentHomeScreenController } from "../controllers/studentModule/homeScreen.controller";
+import { getAttendancePercentageController, markStudentAttendanceController } from "../controllers/staffModule/attendance.controller";
 
 const router = Router();
 
@@ -38,5 +39,8 @@ router.use("/notification", notificationRoutes);// Counsellor Notification Route
 //Student API routes
 router.get("/student-home-details", studentHomeScreenController)
 
+//Staff API routes
+router.post("/attendance/mark", markStudentAttendanceController)
+router.get("/attendance/percentage", getAttendancePercentageController)
 
 export default router;

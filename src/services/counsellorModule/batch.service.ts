@@ -1,6 +1,7 @@
 import { BatchSlotsType } from "@prisma/client";
 import { prisma } from "../../config/database";
 import { AppError } from "../../utils/errorHandler";
+import { getStudentAttendanceStats } from "../staffModule/attendance.service";
 
 interface CreateNewBatchResponse {
   data: {
@@ -398,27 +399,59 @@ export const getBatchStudentsService = async (
   // Extract student data
   const students = batch.batchWithStudentModel.map((s) => s.student_relation);
 
-  // Extract student data
-  const studentsData = students.map((s) => {
-    return {
-      id: s.id,
-      name: s.name,
-      email: s.email,
-      mobile: s.phone,
-      alternate_mobile: s.alt_phone,
-      roll_number: s.roll_number,
-      course_id: s.course_id,
-      course: s.Course,
-      image: s.profile_img_url,
-      monthly_present: "78%",
-      monthly_absent: "22%",
-      weekly_present: "98%",
-      weekly_absent: "2%",
-      course_test: "14",
-      mock_test: "2",
+  // 🏆 Fetch attendance stats concurrently for all students
+  const studentsData = await Promise.all(
+    students.map(async (student) => {
+      const attendanceStats = await getStudentAttendanceStats({
+        batchId: batchId as string,
+        studentId: student.id as string,
+      });
 
-    };
-  });
+      return {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        mobile: student.phone,
+        alternate_mobile: student.alt_phone,
+        roll_number: student.roll_number,
+        course_id: student.course_id,
+        course: student.Course,
+        image: student.profile_img_url,
+        over_all_present: attendanceStats.overAll.presentPercentage,
+        over_all_absent: attendanceStats.overAll.absentPercentage,
+        weekly_present: attendanceStats.weekly.presentPercentage,
+        weekly_absent: attendanceStats.weekly.absentPercentage,
+        this_monthly_present: attendanceStats.thisMonth.presentPercentage,
+        this_monthly_absent: attendanceStats.thisMonth.absentPercentage,
+        last_monthly_present: attendanceStats.lastMonth.presentPercentage,
+        last_monthly_absent: attendanceStats.lastMonth.absentPercentage,
+        course_test: "14",
+        mock_test: "2"
+      };
+    })
+  );
+
+  // // Extract student data
+  // const studentsData = students.map((s) => {
+  //   return {
+  //     id: s.id,
+  //     name: s.name,
+  //     email: s.email,
+  //     mobile: s.phone,
+  //     alternate_mobile: s.alt_phone,
+  //     roll_number: s.roll_number,
+  //     course_id: s.course_id,
+  //     course: s.Course,
+  //     image: s.profile_img_url,
+  //     monthly_present: "78%",
+  //     monthly_absent: "22%",
+  //     weekly_present: "98%",
+  //     weekly_absent: "2%",
+  //     course_test: "14",
+  //     mock_test: "2",
+
+  //   };
+  // });
 
   return {
     students: studentsData,
