@@ -18,3 +18,41 @@ export const createNewStudentSchema = z.object({
     course_id: z.string({ required_error: "*course_id is required" }),
     preferred_batch: z.string().optional(),
 });
+
+// Batch Creation Schema
+export const createNewBatchSchema = z.object({
+    batch_number: z
+        .string()
+        .min(2, { message: "Batch number must be at least 2 characters long" }),
+    from_date: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+        message: "Invalid date format (DD/MM/YYYY required)",
+    }),
+    to_date: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+        message: "Invalid date format (DD/MM/YYYY required)",
+    }),
+    course: z
+        .string()
+        .min(3, { message: "Course name must be at least 3 characters long" }),
+    slot: z.enum(["morning", "evening"], {
+        message: "Slot must be 'morning' or 'evening'",
+    }), // Fixed Enum Validation
+    mentor_id: z
+        .string()
+        .uuid({ message: "Invalid mentor ID format (must be a UUID)" }),
+    students_id: z.string().optional(),
+});
+
+// Add Multiple Student IDs to the batch
+export const addStudentsToBatchSchema = z.object({
+    batch_id: z.string().uuid("Invalid Batch ID format"),
+    student_ids: z.array(z.string().uuid("Invalid Student ID format")).min(1, "At least one student ID is required"),
+});
+
+// Remove Multiple Student IDs from the batch
+export const removeStudentsFromBatchSchema = z.object({
+    batch_id: z.string().uuid("Invalid Batch ID format"),
+    student_ids: z.array(z.string().uuid("Invalid Student ID format")).nonempty("Student IDs are required"),
+});
+
+// validation schema for batchId
+export const batchIdSchema = z.string().uuid({ message: "Invalid batch ID format" });

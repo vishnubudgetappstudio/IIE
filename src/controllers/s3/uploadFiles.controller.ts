@@ -1,21 +1,33 @@
 import { Request, Response, NextFunction } from "express";
-import { uploadImageToS3, uploadFilesToS3 } from "../../services/s3/uploadFiles.service";
+import { uploadBufferToS3, uploadFileToS3, } from "../../services/s3/uploadFiles.service";
 import { AppError } from "../../utils/errorHandler";
+import { compressImage, validateFile } from "../../utils/s3";
+import { AuthRequest } from "../../middlewares/auth.middleware";
 
 /**
  * Controller to upload a **single image**
  */
-export const uploadImageController = async (req: Request, res: Response, next: NextFunction) => {
+export const uploadImageController = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        if (!req.file) {
+        const imageFile = req.files ? (req.files as Express.Multer.File[])[0] : null;
+
+        if (!imageFile) {
             throw new AppError({ statusCode: 400, message: "Image file is required", data: {} });
         }
 
-        const { fileUrl } = await uploadImageToS3(req.file);
+        validateFile(imageFile, true);
+
+        const optimizedBuffer = await compressImage(imageFile);
+
+        const imageUrl = await uploadBufferToS3({
+            buffer: optimizedBuffer,
+            file: imageFile,
+            userId: req.user?.userId,
+        });
 
         res.status(201).json({
             status: true,
-            profileImgUrl: fileUrl,
+            profileImgUrl: imageUrl,
             message: "Image uploaded successfully",
         });
     } catch (error) {
@@ -25,25 +37,53 @@ export const uploadImageController = async (req: Request, res: Response, next: N
 };
 
 /**
- * Controller to upload **multiple files**
+ * Controller to upload **single file**
  */
-export const uploadFilesController = async (req: Request, res: Response, next: NextFunction) => {
+export const uploadSingleFileController = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const files = req.files as Express.Multer.File[];
+        const file = req.files ? (req.files as Express.Multer.File[])[0] : null;
 
-        if (!files || files.length === 0) {
-            throw new AppError({ statusCode: 400, message: "At least one file is required", data: {} });
+        if (!file) {
+            throw new AppError({ statusCode: 400, message: "file is required", data: {} });
         }
 
-        const { fileUrls } = await uploadFilesToS3(files);
+        validateFile(file);
+
+        const fileUrl = await uploadFileToS3({ file: file, batchId: req.query.batchId as string });
 
         res.status(201).json({
             status: true,
             message: "Files uploaded successfully",
-            fileUrls,
+            fileUrl,
         });
     } catch (error) {
         console.error("Error in uploadFilesController:", error);
         next(error);
     }
 };
+
+/**
+ * Controller to upload **multiple files**
+ */
+// export const uploadMultipleFilesController = async (req: AuthRequest, res: Response, next: NextFunction) => {
+//     try {
+//         const files = req.files as Express.Multer.File[];
+
+//         if (!files || files.length === 0) {
+//             throw new AppError({ statusCode: 400, message: "At least one file is required", data: {} });
+//         }
+
+//         files.forEach((file) => validateFile(file));
+
+//         const fileUrls = await Promise.all(files.map((file) => uploadFileToS3({ file: file, userId: req.user?.userId })));
+
+//         res.status(201).json({
+//             status: true,
+//             message: "Files uploaded successfully",
+//             fileUrls,
+//         });
+//     } catch (error) {
+//         console.error("Error in uploadFilesController:", error);
+//         next(error);
+//     }
+// };

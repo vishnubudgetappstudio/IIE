@@ -2,54 +2,60 @@ import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import { AppError } from "../utils/errorHandler";
+import { upload } from "./upload.middleware";
 
-dotenv.config();
+dotenv.config()
 
+// ✅ Extend Request Interface (ONLY for user)
 export interface AuthRequest extends Request {
   user?: JwtPayload;
 }
 
-// Middleware to verify token
-export const verifyToken = (
+// ✅ Middleware to verify token & handle form-data
+export const verifyToken = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
-    let token: string | undefined;
+    // ✅ First, parse form-data (files & fields)
+    upload.any()(req, res, async (err: any) => {
+      if (err) {
+        return next(new AppError({ statusCode: 400, message: "Form-data parsing error", data: {} }));
+      }
 
-    // console.log("Headers:", req.headers);
-    // console.log("Body:", req.body);
-    // console.log("Query Params:", req.query);
+      let token: string | undefined;
 
-    // Check Authorization header first
-    const authHeader = req.header("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      token = authHeader.split(" ")[1];
-    }
+      // ✅ 1. Authorization Header Check
+      const authHeader = req.header("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      }
 
-    // Fallback: Check if token is in request body
-    if (!token && req.body?.token) {
-      token = req.body.token;
-    }
+      // ✅ 2. Body Check (Form-data fields)
+      if (!token && req.body?.token) {
+        token = req.body.token;
+      }
 
-    // Fallback: Check if token is in query params
-    if (!token && req.query?.token) {
-      token = req.query.token as string;
-    }
+      // ✅ 3. Query Params Check
+      if (!token && req.query?.token) {
+        token = req.query.token as string;
+      }
 
-    if (!token) {
-      throw new AppError({ statusCode: 401, data: {}, message: "Access Denied. No token provided." });
-    }
+      // console.log("Token:", token);
+      // console.log("Form Data:", req.body);
+      // console.log("Uploaded Files:", req.files); // ✅ Files are still accessible in req.files
 
-    // Verify the token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string
-    ) as JwtPayload;
-    req.user = decoded; // Attach user data to request
-    next(); // Proceed to next middleware
+      if (!token) {
+        return next(new AppError({ statusCode: 401, message: "Access Denied. No token provided.", data: {} }));
+      }
+
+      // ✅ Verify the token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+      req.user = decoded; // Attach user data to request
+      next(); // Proceed to next middleware
+    });
   } catch (error) {
-    throw new AppError({ statusCode: 403, data: {}, message: "Invalid or expired token." });
+    return next(new AppError({ statusCode: 403, message: "Invalid or expired token.", data: {} }));
   }
 };

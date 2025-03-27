@@ -1,52 +1,19 @@
 import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
-import { z } from "zod";
-import { 
-  addStudentsToBatchService, 
-  createNewBatchService, 
-  getAllBatchesService, 
-  getBatchStudentsService, 
-  removeStudentsFromBatchService 
+import {
+  addStudentsToBatchService,
+  createNewBatchService,
+  getAllBatchesService,
+  getBatchStudentsService,
+  removeStudentsFromBatchService
 } from "../../services/counsellorModule/batch.service";
 import { AppError } from "../../utils/errorHandler";
 import { BatchSlotsType } from "@prisma/client";
+import { addStudentsToBatchSchema, batchIdSchema, createNewBatchSchema, removeStudentsFromBatchSchema } from "../../zodSchema/counsellor.schema";
+import { validateFile } from "../../utils/s3";
+import { uploadFileToS3 } from "../../services/s3/uploadFiles.service";
 
-const createNewBatchSchema = z.object({
-  batch_number: z
-    .string()
-    .min(2, { message: "Batch number must be at least 2 characters long" }),
-  from_date: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
-    message: "Invalid date format (DD/MM/YYYY required)",
-  }),
-  to_date: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
-    message: "Invalid date format (DD/MM/YYYY required)",
-  }),
-  course: z
-    .string()
-    .min(3, { message: "Course name must be at least 3 characters long" }),
-  session_sheet_url: z.string().optional(), // Validates as a URL string
-  slot: z.enum(["morning", "evening"], {
-    message: "Slot must be 'morning' or 'evening'",
-  }), // Fixed Enum Validation
-  mentor_id: z
-    .string()
-    .uuid({ message: "Invalid mentor ID format (must be a UUID)" }),
-  students_id: z.string().optional(),
-});
 
-// Define Schema for Batch and Multiple Student IDs
-const addStudentsToBatchSchema = z.object({
-  batch_id: z.string().uuid("Invalid Batch ID format"),
-  student_ids: z.array(z.string().uuid("Invalid Student ID format")).min(1, "At least one student ID is required"),
-});
-
-const removeStudentsFromBatchSchema = z.object({
-  batch_id: z.string().uuid("Invalid Batch ID format"),
-  student_ids: z.array(z.string().uuid("Invalid Student ID format")).nonempty("Student IDs are required"),
-});
-
-// Define a validation schema for batchId
-const batchIdSchema = z.string().uuid({ message: "Invalid batch ID format" });
 
 export const createNewBatch = async (
   req: AuthRequest,
@@ -56,49 +23,52 @@ export const createNewBatch = async (
   try {
     // Validate user authentication
     if (!req.user) {
-      throw new AppError({ statusCode: 401, data: {}, message: "Unauthorized access" });
+      throw new AppError({ statusCode: 401, message: "Unauthorized access", data: {} });
     }
-    
+
+    // Validate that a single file is uploaded
+    // ✅ Retrieve file (If single file upload)
+    const sessionSheetFile = req.files ? (req.files as Express.Multer.File[])[0] : null;
+
+    console.log({ sessionSheetFile })
+
+    if (!sessionSheetFile) {
+      throw new AppError({ statusCode: 400, message: "CSV file is required", data: {} });
+    }
+
+    // Validate file type (must be .csv)
+    if (!sessionSheetFile.mimetype.includes("csv")) {
+      throw new AppError({ statusCode: 400, message: "Only CSV files are allowed", data: {} });
+    }
+
+    if (!sessionSheetFile) {
+      throw new AppError({ statusCode: 400, message: "file is required", data: {} });
+    }
+
+    validateFile(sessionSheetFile);
+
     // Validate Request Body
-    const validatePayload = createNewBatchSchema.parse(req.body);
+    const validatedData = createNewBatchSchema.parse(req.body);
 
-    // Extract data from request body
-    const {
-      batch_number,
-      course,
-      from_date,
-      mentor_id,
-      to_date,
-      slot,
-      session_sheet_url,
-      students_id,
-    } = validatePayload;
-
-    //call create new batch service
-    const response = await createNewBatchService(
-      batch_number,
-      from_date,
-      to_date,
-      course,
-      session_sheet_url as string,
-      slot,
-      mentor_id,
-      students_id!
-    );
-
-    // Send Success Response
-    res.status(200).json({
-      status: true,
-      ...response,
-      message: "Create New Student successfully",
+    // Call Service to Create New Batch
+    const response = await createNewBatchService({
+      ...validatedData,
+      sessionSheetFile: sessionSheetFile, // Attach uploaded file URL
+      students_id: validatedData.students_id!,
     });
 
-    return;
+    // Send Success Response
+    res.status(201).json({
+      status: true,
+      ...response,
+      message: "Batch created successfully with CSV file",
+    });
   } catch (error) {
-    console.error("Error Creating Batch:", error);
+    console.error("❌ Error Creating Batch:", error);
     next(error);
   }
 };
+
 
 
 export const addStudentsToBatchController = async (
@@ -193,8 +163,6 @@ export const getAllBatchesListController = async (
     next(error);
   }
 };
-
-
 
 export const getBatchStudentsController = async (
   req: AuthRequest,

@@ -17,10 +17,10 @@ const router = Router();
 
 //Authorization routes:
 router.use("/auth", authRoutes);
-router.use("/s3", s3Routes); //upload files and profile images
 
 // Secure all protected routes
 router.use(verifyToken);
+router.use("/s3", s3Routes); //upload files and profile images
 
 //common API routes
 router.get("/profile", getProfileController) // get Profile route

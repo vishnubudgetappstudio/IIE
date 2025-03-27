@@ -2,6 +2,7 @@ import { BatchSlotsType } from "@prisma/client";
 import { prisma } from "../../config/database";
 import { AppError } from "../../utils/errorHandler";
 import { getStudentAttendanceStats } from "../staffModule/attendance.service";
+import { uploadFileToS3 } from "../s3/uploadFiles.service";
 
 interface CreateNewBatchResponse {
   data: {
@@ -17,16 +18,25 @@ interface CreateNewBatchResponse {
 }
 
 //✅ Create New Batch service.
-export const createNewBatchService = async (
+export const createNewBatchService = async ({
+  batch_number,
+  from_date,
+  to_date,
+  course,
+  sessionSheetFile,
+  slot,
+  mentor_id,
+  students_id
+}: {
   batch_number: string,
   from_date: string,
   to_date: string,
   course: string,
-  session_sheet_url: string,
+  sessionSheetFile?: Express.Multer.File,
   slot: "morning" | "evening",
   mentor_id: string,
   students_id: string
-): Promise<CreateNewBatchResponse> => {
+}): Promise<CreateNewBatchResponse> => {
   // Check if batch number already exists
   const existingBatch = await prisma.batchDetail.findUnique({
     where: { batch_number: batch_number },
@@ -76,7 +86,6 @@ export const createNewBatchService = async (
       course: course,
       from_date: from_date,
       to_date: to_date,
-      session_sheet_url: session_sheet_url,
       slot: slot,
       management_staff_relation: { connect: { id: mentor_id, role: "staff" } },
       batch_stud_count: studentIdsArray.length.toString() as string,
@@ -91,6 +100,22 @@ export const createNewBatchService = async (
     console.error(error);
     throw new AppError({ statusCode: 500, message: "Failed to create new batch", data: {} });
   });
+
+  // Upload session sheet if provided
+  if (sessionSheetFile) {
+    // Upload session sheet to S3
+    // const sessionSheetUrl = await uploadFileToS3({ file: sessionSheetFile, batchId: response.data. });
+    const { fileUrl } = await uploadFileToS3({
+      file: sessionSheetFile,
+      batchId: newBatch.id,
+    });
+
+    // Update batch with uploaded session sheet URL
+    await prisma.batchDetail.update({
+      where: { id: newBatch.id, deletedAt: null },
+      data: { session_sheet_url: fileUrl },
+    });
+  }
 
   return {
     data: {
@@ -285,9 +310,8 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
     },
   }).catch(err => {
     console.error({ err });
-
     throw new AppError({
-      statusCode: 500, // Internal Server Error
+      statusCode: 400,
       data: [],
       message: "Failed to retrieve batches",
     });
