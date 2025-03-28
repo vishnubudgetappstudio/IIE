@@ -1,5 +1,8 @@
+import { HeadObjectCommand } from "@aws-sdk/client-s3";
+import s3 from "../config/s3Config";
 import { AppError } from "./errorHandler";
 import sharp from "sharp"; // For image compression
+import { formatFileSize } from "./commonUtils";
 
 const IMAGE_MIME_TYPES = ["image/jpeg", "image/png"];
 const FILE_MIME_TYPES = ["text/csv", "application/vnd.ms-excel", "application/pdf"];
@@ -48,4 +51,32 @@ export const compressImage = async (file: Express.Multer.File): Promise<Buffer> 
  */
 export const sanitizeFileName = (filename: string): string => {
     return filename.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9.-]/g, "");
+};
+
+/**
+ * ✅ Extracts S3 Bucket and Key from file URL.
+ */
+export const extractS3BucketAndKeySize = async (fileUrl: string): Promise<{ Bucket: string; Key: string; FileSize: string }> => {
+    const match = fileUrl.match(/https:\/\/(.+?)\.s3\.(.+?)\.amazonaws\.com\/(.+)/);
+    if (!match) {
+        throw new AppError({ statusCode: 400, message: "Invalid S3 URL format." });
+    }
+    const Bucket = match[1];
+    const Key = match[3];
+
+    try {
+        // ✅ Fetch file metadata (head request) to get size
+        const response = await s3.send(new HeadObjectCommand({ Bucket, Key }));
+
+        if (!response.ContentLength) {
+            throw new AppError({ statusCode: 404, message: "File not found or size unavailable." });
+        }
+
+        const fileSize = formatFileSize(response.ContentLength); // Convert to KB/MB
+
+        return { Bucket, Key, FileSize: fileSize };
+    } catch (error) {
+        console.error("❌ Error fetching S3 file size:", error);
+        throw new AppError({ statusCode: 500, message: "Failed to retrieve file size." });
+    }
 };

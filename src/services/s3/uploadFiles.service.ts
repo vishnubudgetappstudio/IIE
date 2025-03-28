@@ -1,18 +1,10 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { AppError } from "../../utils/errorHandler";
 import dotenv from "dotenv";
 import { sanitizeFileName } from "../../utils/s3";
+import s3 from "../../config/s3Config";
 
 dotenv.config();
-
-// Initialize AWS S3 Client
-const s3 = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-});
 
 /** Constants */
 const FILE_TYPE_FOLDER_MAP: Record<string, string> = {
@@ -28,18 +20,18 @@ const FILE_TYPE_FOLDER_MAP: Record<string, string> = {
  * @param file - The uploaded file
  * @returns {Promise<string>} - Uploaded file URL
  */
-export const uploadFileToS3 = async ({ file, batchId }: { file: Express.Multer.File, batchId: string }): Promise<{ fileUrl: string }> => {
+export const uploadFileToS3 = async ({ file, batchId }: { file: Express.Multer.File, batchId: string }): Promise<{ fileUrl: string, fileName: string }> => {
     if (!batchId) {
         throw new Error("Batch ID is required to store the file in S3.");
     }
 
-    const { s3url } = await uploadBufferToS3({
+    const { s3url, fileName } = await uploadBufferToS3({
         buffer: file.buffer,
         file: file,
         batchId: batchId,
     });
 
-    return { fileUrl: s3url };
+    return { fileUrl: s3url, fileName: fileName! };
 };
 
 /**
@@ -59,7 +51,7 @@ export const uploadBufferToS3 = async ({
     file: Express.Multer.File,
     userId?: string,
     batchId?: string
-}): Promise<{ s3url: string }> => {
+}): Promise<{ s3url: string, fileName?: string }> => {
     if (!userId && !batchId) {
         throw new Error("Either userId or batchId is required for uploading.");
     }
@@ -91,7 +83,10 @@ export const uploadBufferToS3 = async ({
 
         await s3.send(command);
 
-        return { s3url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}` };
+        return {
+            s3url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`,
+            fileName: file.originalname
+        };
     } catch (error) {
         console.error("Error uploading file to S3:", error);
         throw new AppError({ statusCode: 500, message: "Failed to upload file" });

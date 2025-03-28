@@ -5,13 +5,13 @@ import {
   createNewBatchService,
   getAllBatchesService,
   getBatchStudentsService,
+  getSessionSheetDataService,
   removeStudentsFromBatchService
 } from "../../services/counsellorModule/batch.service";
 import { AppError } from "../../utils/errorHandler";
 import { BatchSlotsType } from "@prisma/client";
 import { addStudentsToBatchSchema, batchIdSchema, createNewBatchSchema, removeStudentsFromBatchSchema } from "../../zodSchema/counsellor.schema";
 import { validateFile } from "../../utils/s3";
-import { uploadFileToS3 } from "../../services/s3/uploadFiles.service";
 
 
 
@@ -29,8 +29,6 @@ export const createNewBatch = async (
     // Validate that a single file is uploaded
     // ✅ Retrieve file (If single file upload)
     const sessionSheetFile = req.files ? (req.files as Express.Multer.File[])[0] : null;
-
-    console.log({ sessionSheetFile })
 
     if (!sessionSheetFile) {
       throw new AppError({ statusCode: 400, message: "CSV file is required", data: {} });
@@ -98,7 +96,7 @@ export const addStudentsToBatchController = async (
       data: addedStudents,
       message: `${addedStudents?.length} students added successfully`,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error Adding Students to Batch:", error);
     next(error);
   }
@@ -222,3 +220,43 @@ export const getBatchStudentsController = async (
     next(error);
   }
 };
+
+/**
+ * ✅ Handles fetching and parsing session sheet data from S3.
+ * @param req - Express request object.
+ * @param res - Express response object.
+ * @param next - Express next function for error handling.
+ * @returns JSON response with parsed CSV data.
+ */
+export const getSessionSheetDataController = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const batchId = req.query.batch_id as string || undefined;
+    const searchQuery = (req.query.search as string) || undefined; // Extract search query
+
+    if (page < 1 || limit < 1) {
+      throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: [] });
+    }
+
+    // ✅ Validate batch_id
+    if (!batchId) {
+      throw new AppError({ statusCode: 400, message: "Batch ID is required", data: [] });
+    }
+
+    // ✅ Fetch and parse session sheet data
+    const jsonData = await getSessionSheetDataService({
+      batch_id: batchId,
+      search: searchQuery,
+      page: page,
+      limit: limit
+    });
+
+    // ✅ Send successful response
+    res.status(200).json({ success: true, data: jsonData, message: "Session sheet data fetched successfully" });
+  } catch (error) {
+    console.error("❌ Error fetching session sheet:", error);
+    next(error);
+  }
+};
+

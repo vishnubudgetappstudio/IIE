@@ -19,7 +19,7 @@ export const uploadImageController = async (req: AuthRequest, res: Response, nex
 
         const optimizedBuffer = await compressImage(imageFile);
 
-        const imageUrl = await uploadBufferToS3({
+        const { s3url } = await uploadBufferToS3({
             buffer: optimizedBuffer,
             file: imageFile,
             userId: req.user?.userId,
@@ -27,7 +27,7 @@ export const uploadImageController = async (req: AuthRequest, res: Response, nex
 
         res.status(201).json({
             status: true,
-            profileImgUrl: imageUrl,
+            profileImgUrl: s3url,
             message: "Image uploaded successfully",
         });
     } catch (error) {
@@ -49,7 +49,7 @@ export const uploadSingleFileController = async (req: AuthRequest, res: Response
 
         validateFile(file);
 
-        const fileUrl = await uploadFileToS3({ file: file, batchId: req.query.batchId as string });
+        const { fileUrl } = await uploadFileToS3({ file: file, batchId: req.query.batchId as string });
 
         res.status(201).json({
             status: true,

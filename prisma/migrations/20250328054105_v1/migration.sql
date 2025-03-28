@@ -127,7 +127,6 @@ CREATE TABLE `batch_detail` (
     `to_date` VARCHAR(191) NOT NULL,
     `course` VARCHAR(191) NOT NULL,
     `slot` ENUM('morning', 'evening') NOT NULL,
-    `session_sheet_url` VARCHAR(191) NULL,
     `mentor_id` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -208,6 +207,68 @@ CREATE TABLE `notification_recipient` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `session_sheet_detail` (
+    `id` VARCHAR(191) NOT NULL,
+    `batch_id` VARCHAR(191) NOT NULL,
+    `session_file_name` VARCHAR(191) NOT NULL,
+    `session_file_url` VARCHAR(191) NOT NULL,
+    `status` ENUM('completed', 'inComplete') NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deletedAt` DATETIME(3) NULL,
+
+    INDEX `session_sheet_detail_id_batch_id_session_file_name_status_idx`(`id`, `batch_id`, `session_file_name`, `status`),
+    UNIQUE INDEX `session_sheet_detail_id_batch_id_key`(`id`, `batch_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `session_sheet_student_report_detail` (
+    `id` VARCHAR(191) NOT NULL,
+    `batch_id` VARCHAR(191) NOT NULL,
+    `session_sheet_id` VARCHAR(191) NOT NULL,
+    `student_id` VARCHAR(191) NOT NULL,
+    `status` ENUM('completed', 'inComplete') NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deletedAt` DATETIME(3) NULL,
+
+    UNIQUE INDEX `session_sheet_student_report_detail_id_key`(`id`),
+    INDEX `session_sheet_student_report_detail_id_session_sheet_id_stat_idx`(`id`, `session_sheet_id`, `status`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `material_file_detail` (
+    `id` VARCHAR(191) NOT NULL,
+    `batch_id` VARCHAR(191) NOT NULL,
+    `material_file_name` VARCHAR(191) NOT NULL,
+    `material_file_url` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NULL,
+    `deletedAt` DATETIME(3) NULL,
+
+    UNIQUE INDEX `material_file_detail_id_key`(`id`),
+    INDEX `material_file_detail_id_batch_id_material_file_name_idx`(`id`, `batch_id`, `material_file_name`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `xls_file_detail` (
+    `id` VARCHAR(191) NOT NULL,
+    `management_staff_id` VARCHAR(191) NOT NULL,
+    `xls_file_name` VARCHAR(191) NOT NULL,
+    `xls_file_url` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NULL,
+    `deletedAt` DATETIME(3) NULL,
+
+    UNIQUE INDEX `xls_file_detail_id_key`(`id`),
+    INDEX `xls_file_detail_id_management_staff_id_xls_file_name_idx`(`id`, `management_staff_id`, `xls_file_name`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `student_attendance` (
     `id` VARCHAR(191) NOT NULL,
     `batch_id` VARCHAR(191) NOT NULL,
@@ -219,7 +280,8 @@ CREATE TABLE `student_attendance` (
     `updatedAt` DATETIME(3) NOT NULL,
     `deletedAt` DATETIME(3) NULL,
 
-    UNIQUE INDEX `student_attendance_batch_id_student_id_attendance_date_key`(`batch_id`, `student_id`, `attendance_date`),
+    INDEX `student_attendance_id_batch_id_idx`(`id`, `batch_id`),
+    UNIQUE INDEX `student_attendance_batch_id_attendance_date_key`(`batch_id`, `attendance_date`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -261,6 +323,21 @@ ALTER TABLE `notification_recipient` ADD CONSTRAINT `NotificationRecipient_stude
 
 -- AddForeignKey
 ALTER TABLE `notification_recipient` ADD CONSTRAINT `NotificationRecipient_batchId_fkey` FOREIGN KEY (`batchId`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `session_sheet_detail` ADD CONSTRAINT `session_sheet_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `session_sheet_student_report_detail` ADD CONSTRAINT `session_sheet_student_report_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `session_sheet_student_report_detail` ADD CONSTRAINT `session_sheet_student_report_detail_session_sheet_id_fkey` FOREIGN KEY (`session_sheet_id`) REFERENCES `session_sheet_detail`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `material_file_detail` ADD CONSTRAINT `material_file_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `xls_file_detail` ADD CONSTRAINT `xls_file_detail_management_staff_id_fkey` FOREIGN KEY (`management_staff_id`) REFERENCES `management_staff`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `student_attendance` ADD CONSTRAINT `student_attendance_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

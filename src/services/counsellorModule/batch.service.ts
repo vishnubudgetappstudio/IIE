@@ -3,21 +3,39 @@ import { prisma } from "../../config/database";
 import { AppError } from "../../utils/errorHandler";
 import { getStudentAttendanceStats } from "../staffModule/attendance.service";
 import { uploadFileToS3 } from "../s3/uploadFiles.service";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { Readable } from "stream";
+import s3 from "../../config/s3Config";
+import { extractS3BucketAndKeySize } from "../../utils/s3";
+import { formatDateTime, parseCSVStream } from "../../utils/commonUtils";
 
+// ✅ Define batch creation request type
+interface CreateBatchRequest {
+  batch_number: string;
+  from_date: string;
+  to_date: string;
+  course: string;
+  sessionSheetFile?: Express.Multer.File;
+  slot: "morning" | "evening";
+  mentor_id: string;
+  students_id: string;
+}
+
+// ✅ Define response type
 interface CreateNewBatchResponse {
   data: {
     batch_number: string;
+    course: string;
     from_date: string;
     to_date: string;
-    course: string;
-    session_sheet_url: string;
     slot: string;
     mentor_id: string;
     students_id: string;
+    session_sheet_url: string;
   };
 }
 
-//✅ Create New Batch service.
+// ✅ Create New Batch Service
 export const createNewBatchService = async ({
   batch_number,
   from_date,
@@ -27,41 +45,67 @@ export const createNewBatchService = async ({
   slot,
   mentor_id,
   students_id
-}: {
-  batch_number: string,
-  from_date: string,
-  to_date: string,
-  course: string,
-  sessionSheetFile?: Express.Multer.File,
-  slot: "morning" | "evening",
-  mentor_id: string,
-  students_id: string
-}): Promise<CreateNewBatchResponse> => {
-  // Check if batch number already exists
+}: CreateBatchRequest): Promise<CreateNewBatchResponse> => {
+  let sessionFileUrl: string = "";
+
+  // 🚀 Step 1: Check if batch number already exists
   const existingBatch = await prisma.batchDetail.findUnique({
-    where: { batch_number: batch_number },
+    where: { batch_number },
   });
 
   if (existingBatch) {
-    throw new AppError({ statusCode: 409, data: {}, message: "This Batch Number already registered" });
+    throw new AppError({
+      statusCode: 409,
+      message: "This Batch Number is already registered",
+      data: {},
+    });
   }
 
-  const studentIdsArray = students_id ? students_id?.split(",").map((id: string) => id.trim()) : [];
+  // 🚀 Step 2: Validate and parse student IDs
+  const studentIdsArray = students_id ? students_id.split(",").map((id) => id.trim()) : [];
 
-  if (!studentIdsArray.length) {
-    throw new AppError({ statusCode: 400, data: {}, message: "Students ID is required" });
+  if (studentIdsArray.length === 0) {
+    throw new AppError({
+      statusCode: 400,
+      message: "At least one student ID is required",
+      data: {},
+    });
   }
 
-  // Check if staff(mentor) already exists
-  const existingStaffMentor = await prisma.managementStaff.findUnique({
+  // 🚀 Step 3: Check if the mentor exists and has the correct role
+  const existingStaffMentor = await prisma.managementStaff.findFirst({
     where: { id: mentor_id, role: "staff", deletedAt: null },
   });
 
   if (!existingStaffMentor) {
-    throw new AppError({ statusCode: 404, data: {}, message: "This Mentor does not exist" });
+    throw new AppError({
+      statusCode: 404,
+      message: "The specified mentor does not exist",
+      data: {},
+    });
   }
 
-  // Check if any student is already in another batch with the same slot
+  // 🚀 Step 4: Validate CSV File (if provided)
+  if (sessionSheetFile) {
+    try {
+      // ✅ Read file as Buffer (Node.js way)
+      const fileStream = Readable.from(sessionSheetFile.buffer); // Convert Buffer to Stream
+
+      // ✅ Read and validate CSV file
+      const parsedData = await parseCSVStream(fileStream);
+
+      // console.log("✅ CSV Validation Passed: ", parsedData.length, "rows");
+    } catch (error) {
+      console.error("❌ CSV Validation Failed:", error);
+      throw new AppError({
+        statusCode: 400,
+        message: "Invalid CSV file data format. Please upload a valid CSV data.",
+        data: {},
+      });
+    }
+  }
+
+  // 🚀 Step 5: Check if students are already assigned to a batch in the same slot
   const conflictingStudents = await prisma.batchWithStudent.findMany({
     where: {
       student_id: { in: studentIdsArray },
@@ -71,52 +115,72 @@ export const createNewBatchService = async ({
     select: { student_id: true },
   });
 
-  if (conflictingStudents.length) {
+  if (conflictingStudents.length > 0) {
     throw new AppError({
       statusCode: 400,
-      data: {},
       message: `Some students are already assigned to a batch in the ${slot} slot.`,
+      data: {},
     });
   }
 
-  // Create Counsellor in Database
+  // 🚀 Step 6: Create new batch with student associations
   const newBatch = await prisma.batchDetail.create({
     data: {
-      batch_number: batch_number,
-      course: course,
-      from_date: from_date,
-      to_date: to_date,
-      slot: slot,
-      management_staff_relation: { connect: { id: mentor_id, role: "staff" } },
-      batch_stud_count: studentIdsArray.length.toString() as string,
+      batch_number,
+      course,
+      from_date,
+      to_date,
+      slot,
+      management_staff_relation: { connect: { id: mentor_id } },
+      batch_stud_count: studentIdsArray.length.toString(),
       batchWithStudentModel: {
-        create: studentIdsArray?.map((studentId) => ({
-          student_relation: { connect: { id: studentId } }
-        }))
+        create: studentIdsArray.map((studentId) => ({
+          student_relation: { connect: { id: studentId } },
+        })),
       },
     },
-    include: { batchWithStudentModel: { include: { student_relation: true } } },
+    include: {
+      batchWithStudentModel: { include: { student_relation: true } },
+    },
   }).catch((error) => {
-    console.error(error);
-    throw new AppError({ statusCode: 500, message: "Failed to create new batch", data: {} });
+    console.error("Batch creation error:", error);
+    throw new AppError({
+      statusCode: 500,
+      message: "Failed to create a new batch",
+      data: {},
+    });
   });
 
-  // Upload session sheet if provided
+  // 🚀 Step 7: Upload session sheet (if provided)
   if (sessionSheetFile) {
-    // Upload session sheet to S3
-    // const sessionSheetUrl = await uploadFileToS3({ file: sessionSheetFile, batchId: response.data. });
-    const { fileUrl } = await uploadFileToS3({
-      file: sessionSheetFile,
-      batchId: newBatch.id,
-    });
+    try {
+      const { fileUrl, fileName } = await uploadFileToS3({
+        file: sessionSheetFile,
+        batchId: newBatch.id, // Attach batch ID for organized storage
+      });
 
-    // Update batch with uploaded session sheet URL
-    await prisma.batchDetail.update({
-      where: { id: newBatch.id, deletedAt: null },
-      data: { session_sheet_url: fileUrl },
-    });
+      sessionFileUrl = fileUrl;
+
+      // ✅ Save session sheet details in the database
+      await prisma.sessionSheetDetail.create({
+        data: {
+          batch_id: newBatch.id,
+          session_file_url: fileUrl,
+          session_file_name: fileName,
+          status: "inComplete",
+        },
+      });
+    } catch (error) {
+      console.error("Session sheet upload error:", error);
+      throw new AppError({
+        statusCode: 400,
+        message: "Failed to upload session sheet",
+        data: {},
+      });
+    }
   }
 
+  // 🚀 Step 8: Return the response
   return {
     data: {
       batch_number: newBatch.batch_number,
@@ -125,13 +189,12 @@ export const createNewBatchService = async ({
       to_date: newBatch.to_date,
       slot: newBatch.slot,
       mentor_id: newBatch.mentor_id,
-      students_id: newBatch.batchWithStudentModel
-        .map((student) => student.student_id)
-        .join(","),
-      session_sheet_url: newBatch.session_sheet_url ?? '',
+      students_id: newBatch.batchWithStudentModel.map((student) => student.student_id).join(","),
+      session_sheet_url: sessionFileUrl,
     },
   };
 };
+
 
 
 //✅ Add Students to Batch Service.
@@ -331,7 +394,6 @@ export const getAllBatchesService = async (page: number, limit: number, slot: "a
     to_date: batch.to_date,
     course: batch.course,
     slot: batch.slot,
-    session_sheet_url: batch.session_sheet_url,
     createdAt: batch.createdAt,
     updatedAt: batch.updatedAt,
     deletedAt: batch.deletedAt,
@@ -467,3 +529,84 @@ export const getBatchStudentsService = async (
     totalStudents,
   };
 };
+
+/**
+ * ✅ Fetches and parses the session sheet from S3.
+ */
+export const getSessionSheetDataService = async ({
+  batch_id,
+  search,
+  page,
+  limit,
+}: {
+  batch_id: string;
+  search?: string;
+  page: number;
+  limit: number;
+}): Promise<{
+  session_file_name: string;
+  session_file_size: string;
+  session_sheet_data: any[];
+  createdAt: string;
+  totalRecords: number;
+  totalPages: number;
+  currentPage: number;
+}> => {
+  // ✅ Fetch session sheet URL from database
+  const sessionSheet = await prisma.sessionSheetDetail.findFirst({
+    where: { batch_id, deletedAt: null },
+    select: {
+      session_file_name: true,
+      session_file_url: true,
+      createdAt: true
+    },
+  });
+
+  if (!sessionSheet?.session_file_url) {
+    throw new AppError({ statusCode: 404, message: "Session sheet not found for the given batch.", data: {} });
+  }
+
+  // ✅ Extract S3 details
+  const { Bucket, Key, FileSize } = await extractS3BucketAndKeySize(sessionSheet.session_file_url);
+  // console.log(`📥 Fetching CSV from S3: ${Bucket}/${Key}`);
+
+  // ✅ Fetch file from S3
+  const command = new GetObjectCommand({ Bucket, Key });
+  const response = await s3.send(command);
+
+  if (!response.Body) {
+    throw new AppError({ statusCode: 400, message: "Failed to retrieve file from S3.", data: {} });
+  }
+
+  // ✅ Parse CSV data from the S3 stream
+  const allData = await parseCSVStream(response.Body as Readable).catch((error) => {
+    console.error("❌ Error parsing CSV from S3:", error);
+    throw new AppError({ statusCode: 400, message: "Failed to parse CSV file from S3." });
+  });
+
+  // ✅ Search Filtering with Explicit Type Casting
+  const filteredData = search
+    ? allData.filter((row) =>
+      Object.values(row).some((value) =>
+        String(value).toLowerCase().includes(search.toLowerCase())
+      )
+    )
+    : allData;
+
+  // ✅ Pagination Logic
+  const totalRecords = filteredData.length;
+  const totalPages = Math.ceil(totalRecords / limit);
+  const paginatedData = filteredData.slice((page - 1) * limit, page * limit);
+
+  return {
+    session_file_name: sessionSheet.session_file_name,
+    session_file_size: FileSize,
+    createdAt: formatDateTime(sessionSheet.createdAt),
+    session_sheet_data: paginatedData,
+    totalRecords,
+    totalPages,
+    currentPage: page,
+  };
+};
+
+

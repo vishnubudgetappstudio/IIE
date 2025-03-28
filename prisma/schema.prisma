@@ -45,6 +45,7 @@ model ManagementStaff {
   notificationModel          Notification[]
   // One-to-Many: One staff can receive multiple notifications
   notificationRecipientModel NotificationRecipient[]
+  XlsFileDetail              XlsFileDetail[]
 
   @@index([id])
   @@index([email])
@@ -65,35 +66,35 @@ enum ManagementStaffModelRole {
 // ✅ Student Model
 // ==============================
 model Student {
-  id                    String    @id @default(uuid())
-  lms_id                String    @db.VarChar(20)
-  name                  String    @db.VarChar(191)
-  phone                 String?   @db.VarChar(191) // Nullable
-  alt_phone             String?   @db.VarChar(191) // Nullable
-  Dob                   String?
-  email                 String    @unique @db.VarChar(191)
-  profile_img_url       String?
-  password              String?   @db.VarChar(191) // Nullable
-  roll_number           String    @unique @db.VarChar(191)
-  Qualification         String?   @db.VarChar(30)
-  Yop                   String?
-  Profession            String?   @db.VarChar(20)
-  C_Name                String?   @db.VarChar(100)
-  address               String?   @db.VarChar(191) // Nullable
-  City                  String?   @db.VarChar(20)
-  Pincode               String?
-  Global_Certification  String?   @db.VarChar(20)
-  Course                String?   @db.VarChar(50)
-  Fees                  Int?
-  Batch_time            String?   @db.VarChar(20)
-  Demo                  String?   @db.VarChar(20)
-  Joining_Date          DateTime? @db.Date
-  Know_about_iie        String?   @db.VarChar(20)
-  Frd_Name              String?   @db.VarChar(100)
-  Branch                String?   @db.VarChar(20)
-  Follow_up             DateTime? @db.Date
-  Status                String?   @db.VarChar(20)
-  Remarks               String?   @db.VarChar(100)
+  id                   String    @id @default(uuid())
+  lms_id               String    @db.VarChar(20)
+  name                 String    @db.VarChar(191)
+  phone                String?   @db.VarChar(191) // Nullable
+  alt_phone            String?   @db.VarChar(191) // Nullable
+  Dob                  String?
+  email                String    @unique @db.VarChar(191)
+  profile_img_url      String?
+  password             String?   @db.VarChar(191) // Nullable
+  roll_number          String    @unique @db.VarChar(191)
+  Qualification        String?   @db.VarChar(30)
+  Yop                  String?
+  Profession           String?   @db.VarChar(20)
+  C_Name               String?   @db.VarChar(100)
+  address              String?   @db.VarChar(191) // Nullable
+  City                 String?   @db.VarChar(20)
+  Pincode              String?
+  Global_Certification String?   @db.VarChar(20)
+  Course               String?   @db.VarChar(50)
+  Fees                 Int?
+  Batch_time           String?   @db.VarChar(20)
+  Demo                 String?   @db.VarChar(20)
+  Joining_Date         DateTime? @db.Date
+  Know_about_iie       String?   @db.VarChar(20)
+  Frd_Name             String?   @db.VarChar(100)
+  Branch               String?   @db.VarChar(20)
+  Follow_up            DateTime? @db.Date
+  Status               String?   @db.VarChar(20)
+  Remarks              String?   @db.VarChar(100)
 
   // One-to-One: A student is assigned to one counsellor
   counsellor_id             String          @db.VarChar(191)
@@ -214,15 +215,14 @@ enum LeaveStatus {
 // ✅ Batch Schema
 // ==============================
 model BatchDetail {
-  id                String         @id @unique @default(uuid())
-  batch_number      String         @unique
-  batchName         String?
-  batch_stud_count  String
-  from_date         String
-  to_date           String
-  course            String
-  slot              BatchSlotsType
-  session_sheet_url String? // SessionSheet file URLs
+  id               String         @id @unique @default(uuid())
+  batch_number     String         @unique
+  batchName        String?
+  batch_stud_count String
+  from_date        String
+  to_date          String
+  course           String
+  slot             BatchSlotsType
 
   // One-to-Many: One mentor can manage multiple batches
   mentor_id                 String
@@ -233,10 +233,12 @@ model BatchDetail {
   deletedAt DateTime?
 
   // Many-to-Many: A batch can have multiple students
-  batchWithStudentModel      BatchWithStudent[]
-  notificationRecipientModel NotificationRecipient[]
-  // sessionSheetDetailModel    SessionSheetDetail[]
-  AttendanceDetail           StudentAttendanceDetail[]
+  batchWithStudentModel           BatchWithStudent[]
+  notificationRecipientModel      NotificationRecipient[]
+  AttendanceDetail                StudentAttendanceDetail[]
+  SessionSheetDetail              SessionSheetDetail[]
+  SessionSheetStudentReportDetail SessionSheetStudentReportDetail[]
+  MaterialFileDetail              MaterialFileDetail[]
 
   @@index([id])
   @@index([mentor_id]) // Index for faster lookups
@@ -373,20 +375,94 @@ enum NotificationType {
 // ==============================
 // ✅ SessionSheet Schema
 // ==============================
-// model SessionSheetDetail {
-//   id                   String    @id @default(uuid())
-//   batch_id             String
-//   session_file_url     String
-//   status               String
-//   stud_completed_count String
-//   student_doubt_count  String
-//   createdAt            DateTime  @default(now()) // Automatically stores created time
-//   updatedAt            DateTime  @updatedAt // Automatically updates updated time
-//   deletedAt            DateTime? // Nullable field for soft delete
+model SessionSheetDetail {
+  id                String             @id @default(uuid())
+  batch_id          String
+  session_file_name String
+  session_file_url  String
+  status            SessionSheetStatus
+  createdAt         DateTime           @default(now()) // Automatically stores created time
+  updatedAt         DateTime           @updatedAt // Automatically updates updated time
+  deletedAt         DateTime? // Nullable field for soft delete
 
-//   // Relation: Each session sheet belongs to a specific batch (One-to-One)
-//   batch_detail_relation BatchDetail @relation(fields: [batch_id], references: [id])
-// }
+  // Relation: Each session sheet belongs to a specific batch (One-to-One)
+  batch_detail_relation           BatchDetail                       @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  SessionSheetStudentReportDetail SessionSheetStudentReportDetail[]
+
+  @@unique([id, batch_id])
+  @@index([id, batch_id, session_file_name, status])
+  @@map("session_sheet_detail")
+}
+
+enum SessionSheetStatus {
+  completed
+  inComplete
+}
+
+// =======================================
+// ✅ SessionSheet - Student Report Schema
+// =======================================
+model SessionSheetStudentReportDetail {
+  id               String             @id @unique @default(uuid())
+  batch_id         String
+  session_sheet_id String
+  student_id       String
+  status           SessionSheetStatus
+  createdAt        DateTime           @default(now()) // Automatically stores created time
+  updatedAt        DateTime           @updatedAt // Automatically updates updated time
+  deletedAt        DateTime? // Nullable field for soft delete
+
+  // Relation: Each session sheet belongs to a specific batch (One-to-One)
+  batch_detail_relation         BatchDetail        @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  session_sheet_detail_relation SessionSheetDetail @relation(fields: [session_sheet_id], references: [id], onDelete: Cascade)
+
+  @@index([id, session_sheet_id, status])
+  @@map("session_sheet_student_report_detail")
+}
+
+enum SessionSheetReportStatus {
+  completed
+  have_doubt
+  not_marked
+}
+
+// ==============================
+// ✅ Material File Schema
+// ==============================
+model MaterialFileDetail {
+  id                 String    @id @unique @default(uuid())
+  batch_id           String
+  material_file_name String
+  material_file_url  String
+  createdAt          DateTime  @default(now()) // Automatically stores created time
+  updatedAt          DateTime?
+  deletedAt          DateTime? // Nullable field for soft delete
+
+  // Relation: Each session sheet belongs to a specific batch (One-to-One)
+  batch_detail_relation BatchDetail @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
+  @@index([id, batch_id, material_file_name])
+  @@map("material_file_detail")
+}
+
+// ==============================
+// ✅  XLS File Detail Schema
+// ==============================
+model XlsFileDetail {
+  id                  String    @id @unique @default(uuid())
+  management_staff_id String
+  xls_file_name       String
+  xls_file_url        String
+  createdAt           DateTime  @default(now()) // Automatically stores created time
+  updatedAt           DateTime?
+  deletedAt           DateTime? // Nullable field for soft delete
+
+  // Relation: Each session sheet belongs to a specific batch (One-to-One)
+  management_staff_relation ManagementStaff @relation(fields: [management_staff_id], references: [id], onDelete: Cascade)
+
+  @@index([id, management_staff_id, xls_file_name])
+  @@map("xls_file_detail")
+}
 
 // ==============================
 // ✅ Attendance Schema - Student
@@ -407,7 +483,8 @@ model StudentAttendanceDetail {
   student_relation      Student     @relation(fields: [student_id], references: [id], onDelete: Cascade)
 
   // ✅ Ensures one attendance record per student per batch per day
-  @@unique([batch_id, student_id, attendance_date])
+  @@unique([batch_id, attendance_date])
+  @@index([id, batch_id])
   @@map("student_attendance")
 }
 
@@ -415,7 +492,3 @@ enum AttendanceStatus {
   present
   absent
 }
-
-// ==============================
-// ✅ Attendance Schema - Student
-// ==============================
