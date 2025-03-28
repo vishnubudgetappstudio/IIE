@@ -1,4 +1,5 @@
 import { prisma } from "../../config/database";
+import { formatDateOnly } from "../../utils/commonUtils";
 
 export const studentHomeScreenService = async ({ student_id }: { student_id: string }) => {
 
@@ -50,8 +51,10 @@ export const studentHomeScreenService = async ({ student_id }: { student_id: str
         roll_number: studentHomeScreenDetails?.roll_number,
         mentor_image: studentHomeScreenDetails?.batchWithStudentModel.map(e => e.batch_detail_relation.management_staff_relation.profile_img_url)?.[0],
         mentor: studentHomeScreenDetails?.batchWithStudentModel.map(e => e.batch_detail_relation.management_staff_relation.name)?.[0],
-        course_start: studentHomeScreenDetails?.batchWithStudentModel.map(e => e.batch_detail_relation.from_date)?.[0],
-        course_end: studentHomeScreenDetails?.batchWithStudentModel.map(e => e.batch_detail_relation.to_date)?.[0],
+        course_start: "28 Mar",
+        course_end: "28 May",
+        // course_start: studentHomeScreenDetails?.batchWithStudentModel.map(e => formatDateOnly(e.batch_detail_relation.from_date))?.[0],
+        // course_end: studentHomeScreenDetails?.batchWithStudentModel.map(e => formatDateOnly(e.batch_detail_relation.to_date))?.[0],
         duration: "2 months",
         progress: 25,
         updates: [
