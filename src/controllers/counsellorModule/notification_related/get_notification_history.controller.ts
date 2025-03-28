@@ -2,7 +2,7 @@ import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../../middlewares/auth.middleware";
 import { managementStaffIdSchema } from "../../../zodSchema/counsellor.schema";
 import { AppError } from "../../../utils/errorHandler";
-import { getNotificationHistoryService } from "../../../services/counsellorModule/notification.service";
+import { getNotificationHistoryService } from "../../../services/counsellorModule/notification_related/get_notification_history.service";
 
 export const getNotificationHistoryController = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {

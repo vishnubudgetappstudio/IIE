@@ -2,7 +2,7 @@ import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../../middlewares/auth.middleware";
 import { managementStaffIdSchema } from "../../../zodSchema/counsellor.schema";
 import { AppError } from "../../../utils/errorHandler";
-import { createNotificationService } from "../../../services/counsellorModule/notification.service";
+import { createNotificationService } from "../../../services/counsellorModule/notification_related/create_notification.service";
 
 export const createNotificationController = async (
     req: AuthRequest,

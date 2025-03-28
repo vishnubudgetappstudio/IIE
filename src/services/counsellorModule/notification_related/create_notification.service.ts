@@ -1,13 +1,13 @@
 import { NotificationCategory, NotificationType } from "@prisma/client";
-import { prisma } from "../../config/database";
-import { AppError } from "../../utils/errorHandler";
+import { prisma } from "../../../config/database";
+import { AppError } from "../../../utils/errorHandler";
 
 interface CreateNotificationData {
     senderId: string;
     title: string;
     message: string;
     image?: string;
-    type: string;
+    type: NotificationType;
     category?: NotificationCategory | "";
     date?: string;
     time?: string;
@@ -115,7 +115,7 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                 studentId: r.studentId || null,
                 managementStaffId: r.managementStaffId || null,
                 batchId: r.batchId || null,
-                type: r.type || NotificationType,
+                type: newNotification.type as NotificationType,
                 receiverRole: r.receiverRole,
                 status: "Pending",
                 createdAt: new Date(),
@@ -140,43 +140,3 @@ export const createNotificationService = async (data: CreateNotificationData) =>
         });
     }
 };
-
-// Get Notification History List
-export const getNotificationHistoryService = async ({ senderId }: { senderId: string }) => {
-
-    const history = await prisma.notification.findMany({
-        where: { senderId },
-        orderBy: { date: "desc" }, // Order by latest notification
-        select: {
-            id: true,
-            title: true,
-            description: true,
-            image: true,
-            date: true,
-            type: true,
-            category: true,
-            time: true,
-            batch_ids: true,
-            student_ids: true,
-            senderId: true,
-            createdAt: true,
-        },
-    });
-
-    const historyList = history.map((history) => (
-        {
-            id: history.id,
-            title: history.title,
-            message: history.description,
-            image: history.image,
-            category: history.category,
-            date: history.date,
-            time: history.time,
-            batch_ids: history.batch_ids,
-            student_ids: history.student_ids,
-        }
-
-    ));
-    return { historyList };
-};
-
