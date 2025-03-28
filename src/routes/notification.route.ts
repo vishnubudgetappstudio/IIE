@@ -1,6 +1,7 @@
 import express from "express";
-import { createNotificationController, getNotificationHistoryController } from "../controllers/counsellorModule/notification.controller";
 import { student_NotificationList } from "../controllers/studentModule/student_notification.controller";
+import { createNotificationController } from "../controllers/counsellorModule/notification_related/create_notification.controller";
+import { getNotificationHistoryController } from "../controllers/counsellorModule/notification_related/get_notification_history.controller";
 
 const router = express.Router();
 

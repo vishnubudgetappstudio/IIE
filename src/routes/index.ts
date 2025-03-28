@@ -6,12 +6,14 @@ import { verifyToken } from "../middlewares/auth.middleware";
 import s3Routes from "./s3/s3.route";
 import notificationRoutes from "./notification.route";
 import { raiseSupportTicket } from "../controllers/counsellorModule/supportTicket.controller";
-import { getStaff_Student_BatchController } from "../controllers/counsellorModule/getStaff_Student_Batch.controller";
-import { createNewStudentController, getAllStudentsController } from "../controllers/counsellorModule/students.controller";
+import { getStaff_Student_BatchController } from "../controllers/counsellorModule/get_Staff_Student_Batch.controller";
 import { requestLeaveController } from "../controllers/applyLeave.controller";
 import { getProfileController, updateProfileController } from "../controllers/profile.controller";
 import { studentHomeScreenController } from "../controllers/studentModule/homeScreen.controller";
-import { getAttendancePercentageController, markStudentAttendanceController } from "../controllers/staffModule/attendance.controller";
+import { createNewStudentController } from "../controllers/counsellorModule/student_related/create_new_student.controller";
+import { getAllStudentsController } from "../controllers/counsellorModule/student_related/get_all_students.controller";
+import { markStudentAttendanceController } from "../controllers/staffModule/attendance_related/mark_student_attendance.controller";
+import { getStudentAttendanceStatsController } from "../controllers/staffModule/attendance_related/get_student_attendance_stats.controller";
 
 const router = Router();
 
@@ -41,6 +43,6 @@ router.get("/student-home-details", studentHomeScreenController)
 
 //Staff API routes
 router.post("/attendance/mark", markStudentAttendanceController)
-router.get("/attendance/percentage", getAttendancePercentageController)
+router.get("/attendance/percentage", getStudentAttendanceStatsController)
 
 export default router;
