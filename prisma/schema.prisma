@@ -381,7 +381,7 @@ model SessionSheetDetail {
   deletedAt         DateTime? // Nullable field for soft delete
 
   // Relation: Each session sheet belongs to a specific batch (One-to-One)
-  batch_detail_relation           BatchDetail                       @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  batch_detail_relation                BatchDetail                       @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   SessionSheetStudentReportDetailModel SessionSheetStudentReportDetail[]
 
   @@unique([id, batch_id])
@@ -425,11 +425,12 @@ enum SessionSheetReportStatus {
 // ✅ Material File Schema
 // ==============================
 model MaterialFileDetail {
-  id                 String    @id @unique @default(uuid())
+  id                 String                   @id @unique @default(uuid())
   batch_id           String
   material_file_name String
   material_file_url  String
-  createdAt          DateTime  @default(now())
+  status             MaterialFileDetailStatus
+  createdAt          DateTime                 @default(now())
   updatedAt          DateTime?
   deletedAt          DateTime?
 
@@ -441,6 +442,11 @@ model MaterialFileDetail {
 
   @@index([id, batch_id, material_file_name])
   @@map("material_file_detail")
+}
+
+enum MaterialFileDetailStatus {
+  draft
+  published
 }
 
 // ==============================

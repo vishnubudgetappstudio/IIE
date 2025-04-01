@@ -1,6 +1,6 @@
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
-import { getStudentAttendanceStats } from "../../staffModule/attendance.service";
+import { getStudentAttendanceStats } from "../../staffModule/attendance_related/get_student_attendance_stats.service";
 
 export const getAllStudentsFromBatchService = async (
     batchId: string,

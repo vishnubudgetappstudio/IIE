@@ -17,6 +17,9 @@ import { getStudentAttendanceStatsController } from "../controllers/staffModule/
 import { uploadXlsFileController } from "../controllers/counsellorModule/xls_file_upload.controller";
 import { updateXlsFileNameController } from "../controllers/counsellorModule/xls_fileName_update.controller";
 import { getXLSFileListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
+import { uploadPDFMaterialFileController } from "../controllers/staffModule/pdf_material_related/upload_pdf_material.controller";
+import { getStudentStudyMaterialsController } from "../controllers/studentModule/get_study_material.controller";
+import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf_material_related/get_pdf_material_list.controller";
 
 const router = Router();
 
@@ -45,10 +48,13 @@ router.get("/all-students", getAllStudentsController);// Get students with pagin
 router.use("/notification", notificationRoutes);// Counsellor Notification Routes
 
 //Student API routes
-router.get("/student-home-details", studentHomeScreenController)
+router.get("/student-home-details", studentHomeScreenController);
+router.get("/get-study-materials", getStudentStudyMaterialsController);
 
 //Staff API routes
-router.post("/attendance/mark", markStudentAttendanceController)
-router.get("/attendance/percentage", getStudentAttendanceStatsController)
+router.post("/attendance/mark", markStudentAttendanceController);
+router.get("/attendance/percentage", getStudentAttendanceStatsController);
+router.post("/upload-pdfMaterial-students", uploadPDFMaterialFileController);
+router.get("/get-pdf-Materials", getPDFMaterialFileListController);
 
 export default router;

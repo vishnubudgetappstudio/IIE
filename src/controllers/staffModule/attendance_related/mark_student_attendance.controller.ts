@@ -3,7 +3,7 @@ import { AuthRequest } from "../../../middlewares/auth.middleware";
 import { CommonUserRole } from "@prisma/client";
 import { AppError } from "../../../utils/errorHandler";
 import { attendanceSchema } from "../../../zodSchema/staff.schema";
-import { markAttendanceService } from "../../../services/staffModule/attendance.service";
+import { markAttendanceService } from "../../../services/staffModule/attendance_related/mark_student_attendance.service";
 
 export const markStudentAttendanceController = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {

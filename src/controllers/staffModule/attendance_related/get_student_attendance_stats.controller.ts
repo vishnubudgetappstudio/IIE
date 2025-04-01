@@ -2,7 +2,7 @@ import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../../middlewares/auth.middleware";
 import { CommonUserRole } from "@prisma/client";
 import { AppError } from "../../../utils/errorHandler";
-import { getStudentAttendanceStats } from "../../../services/staffModule/attendance.service";
+import { getStudentAttendanceStats } from "../../../services/staffModule/attendance_related/get_student_attendance_stats.service";
 
 export const getStudentAttendanceStatsController = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {

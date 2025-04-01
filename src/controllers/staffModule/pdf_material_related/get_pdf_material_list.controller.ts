@@ -1,7 +1,7 @@
 import { NextFunction, Response } from "express";
-import { AuthRequest } from "../../middlewares/auth.middleware";
-import { AppError } from "../../utils/errorHandler";
-import { getXLSFileListService } from "../../services/counsellorModule/get_xls_fileList.service";
+import { AuthRequest } from "../../../middlewares/auth.middleware";
+import { AppError } from "../../../utils/errorHandler";
+import { getPDFMaterialFileListService } from "../../../services/staffModule/pdf_material_related/get_pdf_material_list.service";
 
 /**
  * ✅ Handles fetching and parsing session sheet data from S3.
@@ -10,11 +10,12 @@ import { getXLSFileListService } from "../../services/counsellorModule/get_xls_f
  * @param next - Express next function for error handling.
  * @returns JSON response with parsed CSV data.
  */
-export const getXLSFileListController = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getPDFMaterialFileListController = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const searchQuery = (req.query.search as string) || undefined; // Extract search query
+        const batchId = (req.query.batch_id as string) || undefined;
 
         if (page < 1 || limit < 1) {
             throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: [] });
@@ -25,31 +26,30 @@ export const getXLSFileListController = async (req: AuthRequest, res: Response, 
             throw new AppError({ statusCode: 401, message: "Unauthorized access", data: [] });
         }
 
-        if (!req.user?.role || req.user?.role !== "counsellor") {
-            throw new AppError({ statusCode: 401, message: "Unauthorized role access", data: [] });
+        if (!req.user?.role || req.user?.role !== 'counsellor') {
+            throw new AppError({ statusCode: 401, message: "Invalid role", data: [] });
         }
 
         // ✅ Fetch and parse session sheet data
-        const { xls_files, currentPage, totalPages, xls_files_count, perPage } = await getXLSFileListService({
-            counsellorId: req.user?.userId,
+        const { material_files, material_files_count, currentPage, totalPages, perPage } = await getPDFMaterialFileListService({
+            batch_id: batchId,
             search: searchQuery,
             page: page,
             limit: limit
         });
 
         // ✅ Send successful response
-        // res.status(200).json({ success: true, data: , message: "XLS Files List fetched successfully" });
         res.status(200).json({
             status: true,
-            data: xls_files,
+            data: material_files,
             currentPage: currentPage,
             limit: perPage,
-            xls_files_count: xls_files_count,
+            xls_files_count: material_files_count,
             totalPages: totalPages,
-            message: "XLS Files List fetched successfully",
+            message: "Material PDF Files List fetched successfully",
         });
     } catch (error) {
-        console.error("❌ Error Fetching XLS Files List:", error);
+        console.error("❌ Error Fetching PDF Material Files List:", error);
         next(error);
     }
 };
