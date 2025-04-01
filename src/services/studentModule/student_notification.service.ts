@@ -24,10 +24,10 @@ export const student_notificationListService = async ({
                 receiverRole: role,
                 isRead: false,
                 status: 'Sent',
-                notification_relation: {
-                    status: 'Sent',
-                    deletedAt: null
-                }
+                // notification_relation: {
+                //     status: 'Sent',
+                //     deletedAt: null
+                // }
             },
             select: {
                 notificationId: true,

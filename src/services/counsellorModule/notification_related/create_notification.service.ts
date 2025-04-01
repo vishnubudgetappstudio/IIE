@@ -1,6 +1,7 @@
 import { NotificationCategory, NotificationType } from "@prisma/client";
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
+import { convertToEpoch, formatDateOnly, formatTimeOnly } from "../../../utils/commonUtils";
 
 interface CreateNotificationData {
     senderId: string;
@@ -9,8 +10,8 @@ interface CreateNotificationData {
     image?: string;
     type: NotificationType;
     category?: NotificationCategory | "";
-    date?: string;
-    time?: string;
+    // date?: Date | null;
+    // time?: Date | null;
     batchIds?: string; // Comma-separated batch IDs
     studentIds?: string; // Comma-separated student IDs
 }
@@ -94,6 +95,8 @@ export const createNotificationService = async (data: CreateNotificationData) =>
 
     // Create notification and recipients
     try {
+        const scheduledDate = formatDateOnly(new Date());
+        const scheduledTime = formatTimeOnly(new Date());
         const newNotification = await prisma.notification.create({
             data: {
                 title: data.title,
@@ -103,8 +106,9 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                 category: data.category ? (data.category as NotificationCategory) : null,
                 batch_ids: batchIdsArray.length ? data.batchIds as string : "",
                 student_ids: studentIdsArray.length ? data.studentIds as string : "",
-                date: data.date as string,
-                time: data.time as string,
+                date: scheduledDate,
+                time: scheduledTime,
+                scheduledAt: convertToEpoch({ date: scheduledDate, time: scheduledTime }),
                 senderId: data.senderId,
             },
         });

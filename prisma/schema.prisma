@@ -45,7 +45,8 @@ model ManagementStaff {
   notificationModel          Notification[]
   // One-to-Many: One staff can receive multiple notifications
   notificationRecipientModel NotificationRecipient[]
-  XlsFileDetail              XlsFileDetail[]
+  // One-to-Many: One staff can receive multiple files
+  xlsFileDetailModel         XlsFileDetail[]
 
   @@index([id])
   @@index([email])
@@ -115,9 +116,10 @@ model Student {
   // Many-to-Many: Student can be in multiple batches
   batchWithStudentModel      BatchWithStudent[]
   notificationRecipientModel NotificationRecipient[]
-  SupportTicket              SupportTicketDetail[]
-  LeaveManagementStaff       LeaveDetail[]
-  AttendanceDetail           StudentAttendanceDetail[]
+  SupportTicketModel         SupportTicketDetail[]
+  LeaveManagementStaffModel  LeaveDetail[]
+  AttendanceDetailModel      StudentAttendanceDetail[]
+  StudentMaterialAccessModel StudentMaterialAccess[]
 
   @@index([name, roll_number, email, phone])
   @@map("student") // Mapping to actual table name
@@ -233,12 +235,12 @@ model BatchDetail {
   deletedAt DateTime?
 
   // Many-to-Many: A batch can have multiple students
-  batchWithStudentModel           BatchWithStudent[]
-  notificationRecipientModel      NotificationRecipient[]
-  AttendanceDetail                StudentAttendanceDetail[]
-  SessionSheetDetail              SessionSheetDetail[]
-  SessionSheetStudentReportDetail SessionSheetStudentReportDetail[]
-  MaterialFileDetail              MaterialFileDetail[]
+  batchWithStudentModel                BatchWithStudent[]
+  notificationRecipientModel           NotificationRecipient[]
+  AttendanceDetailModel                StudentAttendanceDetail[]
+  SessionSheetDetailModel              SessionSheetDetail[]
+  SessionSheetStudentReportDetailModel SessionSheetStudentReportDetail[]
+  MaterialFileDetailModel              MaterialFileDetail[]
 
   @@index([id])
   @@index([mentor_id]) // Index for faster lookups
@@ -286,27 +288,25 @@ model Notification {
   title       String
   description String
   image       String?
-  type        NotificationType // Enum for notification type
-  category    NotificationCategory? // Optional category field
-  batch_ids   String // Optional: String of batch IDs
-  student_ids String // Optional: String of student IDs
+  type        NotificationType
+  category    NotificationCategory? // Optional category
+  batch_ids   String // Optional: Comma-separated batch IDs
+  student_ids String // Optional: Comma-separated student IDs
   date        String
   time        String
-  scheduledAt BigInt? // The exact datetime when the notification should be sent
-  status      NotificationStatus    @default(Scheduled) // Default status should be "Scheduled"
+  scheduledAt BigInt? // Timestamp when notification should be sent
+  status      NotificationStatus    @default(Scheduled)
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
-  deletedAt   DateTime? // Soft delete
+  deletedAt   DateTime? // Soft delete field
 
-  // Relation: Notification is sent by a ManagementStaff (One-to-One)
-  management_staff_relation ManagementStaff @relation(fields: [senderId], references: [id], onDelete: Cascade)
-
-  // Relation: One Notification can have multiple recipients (One-to-Many)
+  // Relations
+  management_staff_relation  ManagementStaff         @relation(fields: [senderId], references: [id], onDelete: Cascade)
   notificationRecipientModel NotificationRecipient[]
 
-  // Index for faster queries based on senderId
-  @@index([senderId])
-  // Map to the actual table name in the database
+  // Indexes for faster queries
+  @@index([senderId, status])
+  @@index([scheduledAt])
   @@map("notification")
 }
 
@@ -316,26 +316,21 @@ model NotificationRecipient {
   managementStaffId String? // Foreign key for staff
   studentId         String? // Foreign key for student
   batchId           String? // Foreign key for batch
-  receiverRole      ReceiverRole // Enum: staff, guest, student
+  receiverRole      ReceiverRole
   type              NotificationType
-  isRead            Boolean            @default(false) // Read status
-  status            NotificationStatus @default(Scheduled) // Default status should be "Scheduled"
-  sentAt            BigInt? // Timestamp when notification was sent
+  isRead            Boolean            @default(false)
+  status            NotificationStatus @default(Scheduled)
+  sentAt            BigInt? // Timestamp of when it was sent
   createdAt         DateTime           @default(now())
 
-  // Relation: One NotificationRecipient belongs to one Notification (Many-to-One)
-  notification_relation Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  // Relations
+  notification_relation     Notification     @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  management_staff_relation ManagementStaff? @relation(fields: [managementStaffId], references: [id], onDelete: Cascade)
+  student_relation          Student?         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch_detail_relation     BatchDetail?     @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
-  // Relation: A NotificationRecipient may be associated with a ManagementStaff (Optional)
-  management_staff_relation ManagementStaff? @relation(fields: [managementStaffId], references: [id], onDelete: Cascade, map: "NotificationRecipient_managementStaffId_fkey")
-
-  // Relation: A NotificationRecipient may be associated with a Student (Optional)
-  student_relation Student? @relation(fields: [studentId], references: [id], onDelete: Cascade, map: "NotificationRecipient_studentId_fkey")
-
-  // Relation: A NotificationRecipient may be associated with a BatchDetail (Optional)
-  batch_detail_relation BatchDetail? @relation(fields: [batchId], references: [id], onDelete: Cascade, map: "NotificationRecipient_batchId_fkey")
-
-  @@index([notificationId])
+  // Indexing for efficient querying
+  @@index([notificationId, status])
   @@index([managementStaffId])
   @@index([studentId])
   @@index([batchId])
@@ -343,10 +338,10 @@ model NotificationRecipient {
 }
 
 enum NotificationStatus {
-  Scheduled // Notification is scheduled for a future time
-  Pending // Notification time has arrived but not yet sent
-  Sent // Notification has been successfully sent
-  Failed // Notification failed to send
+  Scheduled // Notification is scheduled
+  Pending // Notification is waiting to be sent
+  Sent // Successfully sent
+  Failed // Failed to send
 }
 
 enum NotificationCategory {
@@ -387,7 +382,7 @@ model SessionSheetDetail {
 
   // Relation: Each session sheet belongs to a specific batch (One-to-One)
   batch_detail_relation           BatchDetail                       @relation(fields: [batch_id], references: [id], onDelete: Cascade)
-  SessionSheetStudentReportDetail SessionSheetStudentReportDetail[]
+  SessionSheetStudentReportDetailModel SessionSheetStudentReportDetail[]
 
   @@unique([id, batch_id])
   @@index([id, batch_id, session_file_name, status])
@@ -434,15 +429,36 @@ model MaterialFileDetail {
   batch_id           String
   material_file_name String
   material_file_url  String
-  createdAt          DateTime  @default(now()) // Automatically stores created time
+  createdAt          DateTime  @default(now())
   updatedAt          DateTime?
-  deletedAt          DateTime? // Nullable field for soft delete
+  deletedAt          DateTime?
 
-  // Relation: Each session sheet belongs to a specific batch (One-to-One)
+  // Relation: Each material belongs to a specific batch
   batch_detail_relation BatchDetail @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
+  // Relation: Many-to-Many with Students via `StudentMaterialAccess`
+  studentMaterialAccessModel StudentMaterialAccess[]
 
   @@index([id, batch_id, material_file_name])
   @@map("material_file_detail")
+}
+
+// ==============================
+// ✅ Student Material Access Schema
+// ==============================
+model StudentMaterialAccess {
+  id             String   @id @unique @default(uuid())
+  student_id     String
+  material_id    String
+  access_granted Boolean  @default(false) // Default: No access
+  createdAt      DateTime @default(now())
+
+  // Relations
+  student_relation  Student            @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  material_relation MaterialFileDetail @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@unique([student_id, material_id]) // Ensures one entry per student-material pair
+  @@map("student_material_access")
 }
 
 // ==============================

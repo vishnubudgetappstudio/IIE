@@ -40,7 +40,7 @@ export const getSessionSheetDataService = async ({
     }
 
     // ✅ Extract S3 details
-    const { Bucket, Key, FileSize } = await extractS3BucketAndKeySize(sessionSheet.session_file_url);
+    const { Bucket, Key, FileSize } = await extractS3BucketAndKeySize({ fileUrl: sessionSheet.session_file_url });
     // console.log(`📥 Fetching CSV from S3: ${Bucket}/${Key}`);
 
     // ✅ Fetch file from S3

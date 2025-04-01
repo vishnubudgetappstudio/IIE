@@ -36,13 +36,28 @@ export const createNewBatchController = async (
         validateFile(sessionSheetFile);
 
         // Validate Request Body
-        const validatedData = createNewBatchSchema.parse(req.body);
+        const validatedData = createNewBatchSchema.safeParse(req.body);
+
+        if (!validatedData.success) {
+            throw new AppError({
+                statusCode: 400,
+                data: {},
+                message: validatedData.error.errors[0].message, // Get first error message
+            });
+        }
+
+        const { batch_number, from_date, to_date, course, slot, mentor_id, students_id } = validatedData.data;
 
         // Call Service to Create New Batch
         const response = await createNewBatchService({
-            ...validatedData,
+            batch_number: batch_number!,
+            from_date: from_date!,
+            to_date: to_date!,
+            course: course!,
+            slot: slot!,
+            mentor_id: mentor_id!, // Attach mentor ID to request body data
             sessionSheetFile: sessionSheetFile, // Attach uploaded file URL
-            students_id: validatedData.students_id!,
+            students_id: students_id!,
         });
 
         // Send Success Response

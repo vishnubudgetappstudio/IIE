@@ -56,3 +56,8 @@ export const removeStudentsFromBatchSchema = z.object({
 
 // validation schema for batchId
 export const batchIdSchema = z.string().uuid({ message: "Invalid batch ID format" });
+
+//validation schema for xls file upload
+export const xlsFileUploadSchema = z.object({
+    fileName: z.string({ required_error: "*file name is required" }).min(2, "Name must be at least 2 characters long"),
+});

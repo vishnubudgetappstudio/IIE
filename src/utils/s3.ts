@@ -56,7 +56,7 @@ export const sanitizeFileName = (filename: string): string => {
 /**
  * ✅ Extracts S3 Bucket and Key from file URL.
  */
-export const extractS3BucketAndKeySize = async (fileUrl: string): Promise<{ Bucket: string; Key: string; FileSize: string }> => {
+export const extractS3BucketAndKeySize = async ({ fileUrl }: { fileUrl: string }): Promise<{ Bucket: string; Key: string; FileSize: string }> => {
     const match = fileUrl.match(/https:\/\/(.+?)\.s3\.(.+?)\.amazonaws\.com\/(.+)/);
     if (!match) {
         throw new AppError({ statusCode: 400, message: "Invalid S3 URL format." });

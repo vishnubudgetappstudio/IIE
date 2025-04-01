@@ -86,3 +86,9 @@ export const formatTimeOnly = (date: string | Date): string => {
     const parsedDate = date instanceof Date ? date : new Date(date);
     return format(parsedDate, "h:mm a"); // 2:30 PM
 };
+
+export const convertToEpoch = ({ date, time }: { date: string, time: string }): number => {
+    const dateStr = `${date}, ${time} `
+    const dateObj = new Date(dateStr);
+    return Math.floor(dateObj.getTime() / 1000); // Convert to seconds
+}

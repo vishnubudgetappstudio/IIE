@@ -181,7 +181,8 @@ CREATE TABLE `notification` (
     `updatedAt` DATETIME(3) NOT NULL,
     `deletedAt` DATETIME(3) NULL,
 
-    INDEX `notification_senderId_idx`(`senderId`),
+    INDEX `notification_senderId_status_idx`(`senderId`, `status`),
+    INDEX `notification_scheduledAt_idx`(`scheduledAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -199,7 +200,7 @@ CREATE TABLE `notification_recipient` (
     `sentAt` BIGINT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    INDEX `notification_recipient_notificationId_idx`(`notificationId`),
+    INDEX `notification_recipient_notificationId_status_idx`(`notificationId`, `status`),
     INDEX `notification_recipient_managementStaffId_idx`(`managementStaffId`),
     INDEX `notification_recipient_studentId_idx`(`studentId`),
     INDEX `notification_recipient_batchId_idx`(`batchId`),
@@ -250,6 +251,19 @@ CREATE TABLE `material_file_detail` (
 
     UNIQUE INDEX `material_file_detail_id_key`(`id`),
     INDEX `material_file_detail_id_batch_id_material_file_name_idx`(`id`, `batch_id`, `material_file_name`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `student_material_access` (
+    `id` VARCHAR(191) NOT NULL,
+    `student_id` VARCHAR(191) NOT NULL,
+    `material_id` VARCHAR(191) NOT NULL,
+    `access_granted` BOOLEAN NOT NULL DEFAULT false,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `student_material_access_id_key`(`id`),
+    UNIQUE INDEX `student_material_access_student_id_material_id_key`(`student_id`, `material_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -316,28 +330,34 @@ ALTER TABLE `notification` ADD CONSTRAINT `notification_senderId_fkey` FOREIGN K
 ALTER TABLE `notification_recipient` ADD CONSTRAINT `notification_recipient_notificationId_fkey` FOREIGN KEY (`notificationId`) REFERENCES `notification`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `notification_recipient` ADD CONSTRAINT `NotificationRecipient_managementStaffId_fkey` FOREIGN KEY (`managementStaffId`) REFERENCES `management_staff`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `notification_recipient` ADD CONSTRAINT `notification_recipient_managementStaffId_fkey` FOREIGN KEY (`managementStaffId`) REFERENCES `management_staff`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `notification_recipient` ADD CONSTRAINT `NotificationRecipient_studentId_fkey` FOREIGN KEY (`studentId`) REFERENCES `student`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `notification_recipient` ADD CONSTRAINT `notification_recipient_studentId_fkey` FOREIGN KEY (`studentId`) REFERENCES `student`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `notification_recipient` ADD CONSTRAINT `NotificationRecipient_batchId_fkey` FOREIGN KEY (`batchId`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `notification_recipient` ADD CONSTRAINT `notification_recipient_batchId_fkey` FOREIGN KEY (`batchId`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `session_sheet_detail` ADD CONSTRAINT `session_sheet_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `session_sheet_detail` ADD CONSTRAINT `session_sheet_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `session_sheet_student_report_detail` ADD CONSTRAINT `session_sheet_student_report_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `session_sheet_student_report_detail` ADD CONSTRAINT `session_sheet_student_report_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `session_sheet_student_report_detail` ADD CONSTRAINT `session_sheet_student_report_detail_session_sheet_id_fkey` FOREIGN KEY (`session_sheet_id`) REFERENCES `session_sheet_detail`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `session_sheet_student_report_detail` ADD CONSTRAINT `session_sheet_student_report_detail_session_sheet_id_fkey` FOREIGN KEY (`session_sheet_id`) REFERENCES `session_sheet_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `material_file_detail` ADD CONSTRAINT `material_file_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `material_file_detail` ADD CONSTRAINT `material_file_detail_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `xls_file_detail` ADD CONSTRAINT `xls_file_detail_management_staff_id_fkey` FOREIGN KEY (`management_staff_id`) REFERENCES `management_staff`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `student_material_access` ADD CONSTRAINT `student_material_access_student_id_fkey` FOREIGN KEY (`student_id`) REFERENCES `student`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `student_material_access` ADD CONSTRAINT `student_material_access_material_id_fkey` FOREIGN KEY (`material_id`) REFERENCES `material_file_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `xls_file_detail` ADD CONSTRAINT `xls_file_detail_management_staff_id_fkey` FOREIGN KEY (`management_staff_id`) REFERENCES `management_staff`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `student_attendance` ADD CONSTRAINT `student_attendance_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

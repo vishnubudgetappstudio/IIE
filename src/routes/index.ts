@@ -14,6 +14,9 @@ import { createNewStudentController } from "../controllers/counsellorModule/stud
 import { getAllStudentsController } from "../controllers/counsellorModule/student_related/get_all_students.controller";
 import { markStudentAttendanceController } from "../controllers/staffModule/attendance_related/mark_student_attendance.controller";
 import { getStudentAttendanceStatsController } from "../controllers/staffModule/attendance_related/get_student_attendance_stats.controller";
+import { uploadXlsFileController } from "../controllers/counsellorModule/xls_file_upload.controller";
+import { updateXlsFileNameController } from "../controllers/counsellorModule/xls_fileName_update.controller";
+import { getXLSFileListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
 
 const router = Router();
 
@@ -30,6 +33,9 @@ router.post("/update-profile", updateProfileController); // update Profile route
 // router.use("/profile", profileRoutes); // Profile routes
 router.post("/apply-leave", requestLeaveController); // Apply Leave route
 router.post("/rise-support-ticket", raiseSupportTicket); // Support ticket route
+router.post("/upload-xls-file", uploadXlsFileController); // Upload XLS or XLSX route
+router.post("/update-xls-fileName", updateXlsFileNameController); // Update XLS or XLSX route
+router.post("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
 
 //Counsellor API routes
 router.post("/add-new-student", createNewStudentController); // Create New Student route
