@@ -13,6 +13,7 @@ interface UploadBufferToS3Params {
     userId?: string;
     batchId?: string;
     role?: CommonUserRole;
+    is_xls_file?: boolean
 }
 
 interface UploadBufferToS3Response {
@@ -57,28 +58,6 @@ export const uploadFileToS3 = async ({
     return { fileUrl: s3url, fileName: fileName! };
 };
 
-export const uploadXLSFileToS3 = async ({
-    file, role, userId
-}:
-    {
-        file: Express.Multer.File,
-        role: CommonUserRole,
-        userId: string
-    }): Promise<{ fileUrl: string }> => {
-    if (role !== 'counsellor') {
-        throw new Error("Counsellor role is required to store the xls file in S3.");
-    }
-
-    const { s3url } = await uploadBufferToS3({
-        buffer: file.buffer,
-        file: file,
-        role: role,
-        userId: userId
-    });
-
-    return { fileUrl: s3url };
-};
-
 /**
  * Uploads a buffer (file content) to S3
  * @param buffer - File buffer content
@@ -95,6 +74,7 @@ export const uploadBufferToS3 = async ({
     userId,
     batchId,
     role,
+    is_xls_file
 }: UploadBufferToS3Params): Promise<UploadBufferToS3Response> => {
 
     if (!file) {
@@ -112,7 +92,12 @@ export const uploadBufferToS3 = async ({
         folder = `images/${userId}`;
     } else if (isCounsellorUploadXLS) {
         const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
-        folder = `files/${fileTypeFolder}/batch-${batchId}`;
+        if (is_xls_file) {
+            // ✅ only xls file folder structure
+            folder = `files/${fileTypeFolder}/counsellor-${userId}`;
+        } else {
+            folder = `files/${fileTypeFolder}/batch-${batchId}`;
+        }
     } else {
         const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
 

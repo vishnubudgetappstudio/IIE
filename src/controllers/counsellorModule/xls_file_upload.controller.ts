@@ -5,7 +5,6 @@ import { validateFile } from "../../utils/s3";
 import * as path from "path";
 import { xlsFileUploadSchema } from "../../zodSchema/counsellor.schema";
 import { uploadXlsFileService } from "../../services/counsellorModule/xls_file_upload.service";
-import { uploadXLSFileToS3 } from "../../services/s3/uploadFiles.service";
 import { CommonUserRole } from "@prisma/client";
 
 export const uploadXlsFileController = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -15,6 +14,14 @@ export const uploadXlsFileController = async (req: AuthRequest, res: Response, n
             throw new AppError({ statusCode: 401, message: "Unauthorized access", data: {} });
         }
 
+        // Check if the user is authorized to upload files
+        if (req.user.role !== 'counsellor') {
+            throw new AppError({
+                statusCode: 403,
+                message: "Counsellor role is required to store the xls file in S3.",
+                data: {},
+            });
+        }
         const file = req.files ? (req.files as Express.Multer.File[])[0] : null;
 
         if (!file) {
@@ -43,13 +50,13 @@ export const uploadXlsFileController = async (req: AuthRequest, res: Response, n
 
         validateFile(file);
 
-        const { fileUrl } = await uploadXLSFileToS3({ file: file, role: req.user?.role as CommonUserRole, userId: req.user?.userId });
-
         // Call Service to upload the xls file
         const { responseUploadXlsFile } = await uploadXlsFileService({
             fileName: fileName,
-            fileUrl: fileUrl,
+            file: file,
             management_staff_id: req.user?.userId,
+            role: req.user?.role as CommonUserRole,
+            is_xls_file : true,
         });
 
         res.status(201).json({

@@ -62,7 +62,7 @@ export const EditStudentMaterialFileAccessService = async ({
     const fileKey = oldS3Url.split(".amazonaws.com/")[1]; // Extract S3 file path
 
     // const newS3Key = fileKey.replace(`material-draft/${role}-${userId}/`, `material-published/batch-${batchId}`);
-    
+
     // ✅ Step 5: Replace the folder structure correctly
     const newS3Key = fileKey.replace(
         /material-draft\/[^/]+/,  // Match "material-draft/{role}-{userId}"
@@ -83,7 +83,12 @@ export const EditStudentMaterialFileAccessService = async ({
         prisma.studentMaterialAccess.createMany({ data: assignedStudents, skipDuplicates: true }),
         prisma.materialFileDetail.update({
             where: { id: material_id },
-            data: { batch_id: batchId, status: "published", material_file_url: newS3Url },
+            data: {
+                batch_id: batchId,
+                status: "published",
+                material_file_url: newS3Url,
+                updatedAt: new Date(),
+            },
         }),
     ]);
 
