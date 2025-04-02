@@ -112,7 +112,7 @@ export const uploadBufferToS3 = async ({
         folder = `images/${userId}`;
     } else if (isCounsellorUploadXLS) {
         const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
-        folder = `files/${fileTypeFolder}/${role}-${userId}`;
+        folder = `files/${fileTypeFolder}/batch-${batchId}`;
     } else {
         const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
 
