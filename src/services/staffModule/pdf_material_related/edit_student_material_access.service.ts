@@ -41,24 +41,38 @@ export const EditStudentMaterialFileAccessService = async ({
 
     if (!existMaterial) throw new AppError({ statusCode: 404, message: "Material file not found or already published.", data: {} });
 
-    // ✅ Step 2: Validate Students in Batch
+    // ✅ Step 2: Find Batch (Ensure it's not deleted)
+    const existBatch = await prisma.batchDetail.findFirst({
+        where: { id: batchId, deletedAt: null },
+        select: { id: true },
+    })
+
+    if (!existBatch) throw new AppError({ statusCode: 404, message: "Batch not found!.", data: {} });
+
+    // ✅ Step 3: Validate Students in Batch
     const validStudents = await prisma.batchWithStudent.findMany({
         where: { batch_id: batchId, student_id: { in: studentIds }, deletedAt: null },
         select: { student_id: true },
     });
 
-    if (!validStudents.length) throw new AppError({ statusCode: 400, message: "No valid students found in this batch.", data: {} });
+    if (!validStudents.length) throw new AppError({ statusCode: 404, message: "No valid students found in this batch.", data: {} });
 
-    // ✅ Step 3: Move File to Published Folder in S3
+    // ✅ Step 4: Move File to Published Folder in S3
     const oldS3Url = existMaterial.material_file_url;
     const fileKey = oldS3Url.split(".amazonaws.com/")[1]; // Extract S3 file path
 
-    const newS3Key = fileKey.replace(`material-draft/`, `material-published/batch-${batchId}/`);
+    // const newS3Key = fileKey.replace(`material-draft/${role}-${userId}/`, `material-published/batch-${batchId}`);
+    
+    // ✅ Step 5: Replace the folder structure correctly
+    const newS3Key = fileKey.replace(
+        /material-draft\/[^/]+/,  // Match "material-draft/{role}-{userId}"
+        `material-published/batch-${batchId}`
+    );
 
     // Move file in S3
     const newS3Url = await moveFileInS3(fileKey, newS3Key);
 
-    // ✅ Step 4: Assign Material & Update DB in Transactions
+    // ✅ Step 6: Assign Material & Update DB in Transactions
     const assignedStudents = validStudents.map(({ student_id }) => ({
         student_id,
         material_id: existMaterial.id,

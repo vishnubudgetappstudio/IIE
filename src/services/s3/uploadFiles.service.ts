@@ -119,7 +119,7 @@ export const uploadBufferToS3 = async ({
         if (!batchId) {
             folder = `files/${fileTypeFolder}/material-draft/${role}-${userId}`;
         } else {
-            folder = `files/${fileTypeFolder}/material-published/batch-${batchId}/${role}-${userId}`;
+            folder = `files/${fileTypeFolder}/material-published/batch-${batchId}`;
         }
     }
 
