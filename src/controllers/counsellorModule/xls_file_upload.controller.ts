@@ -43,7 +43,7 @@ export const uploadXlsFileController = async (req: AuthRequest, res: Response, n
 
         validateFile(file);
 
-        const { fileUrl } = await uploadXLSFileToS3({ file: file, role: req.user?.role as CommonUserRole });
+        const { fileUrl } = await uploadXLSFileToS3({ file: file, role: req.user?.role as CommonUserRole, userId: req.user?.userId });
 
         // Call Service to upload the xls file
         const { responseUploadXlsFile } = await uploadXlsFileService({

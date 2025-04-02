@@ -7,8 +7,21 @@ import { CommonUserRole } from "@prisma/client";
 
 dotenv.config();
 
+interface UploadBufferToS3Params {
+    buffer: Buffer;
+    file: Express.Multer.File;
+    userId?: string;
+    batchId?: string;
+    role?: CommonUserRole;
+}
+
+interface UploadBufferToS3Response {
+    s3url: string;
+    fileName?: string;
+}
+
 /** Constants */
-const FILE_TYPE_FOLDER_MAP: Record<string, string> = {
+export const FILE_TYPE_FOLDER_MAP: Record<string, string> = {
     "text/csv": "csv-files",
     "application/vnd.ms-excel": "excel-files",
     "application/pdf": "pdf-files",
@@ -21,7 +34,14 @@ const FILE_TYPE_FOLDER_MAP: Record<string, string> = {
  * @param file - The uploaded file
  * @returns {Promise<string>} - Uploaded file URL
  */
-export const uploadFileToS3 = async ({ file, batchId }: { file: Express.Multer.File, batchId: string }): Promise<{ fileUrl: string, fileName: string }> => {
+export const uploadFileToS3 = async ({
+    file, batchId, role, userId
+}: {
+    file: Express.Multer.File,
+    batchId: string,
+    role: CommonUserRole,
+    userId: string
+}): Promise<{ fileUrl: string, fileName: string }> => {
     if (!batchId) {
         throw new Error("Batch ID is required to store the file in S3.");
     }
@@ -30,12 +50,21 @@ export const uploadFileToS3 = async ({ file, batchId }: { file: Express.Multer.F
         buffer: file.buffer,
         file: file,
         batchId: batchId,
+        role: role,
+        userId: userId
     });
 
     return { fileUrl: s3url, fileName: fileName! };
 };
 
-export const uploadXLSFileToS3 = async ({ file, role }: { file: Express.Multer.File, role: CommonUserRole }): Promise<{ fileUrl: string }> => {
+export const uploadXLSFileToS3 = async ({
+    file, role, userId
+}:
+    {
+        file: Express.Multer.File,
+        role: CommonUserRole,
+        userId: string
+    }): Promise<{ fileUrl: string }> => {
     if (role !== 'counsellor') {
         throw new Error("Counsellor role is required to store the xls file in S3.");
     }
@@ -44,6 +73,7 @@ export const uploadXLSFileToS3 = async ({ file, role }: { file: Express.Multer.F
         buffer: file.buffer,
         file: file,
         role: role,
+        userId: userId
     });
 
     return { fileUrl: s3url };
@@ -54,7 +84,10 @@ export const uploadXLSFileToS3 = async ({ file, role }: { file: Express.Multer.F
  * @param buffer - File buffer content
  * @param file - Original file metadata
  * @param folder - Target S3 folder
- * @returns {Promise<string>}
+ * @returns {Promise<UploadBufferToS3Response>}
+ */
+/**
+ * ✅ Uploads a buffer (file content) to S3 with a structured folder hierarchy.
  */
 export const uploadBufferToS3 = async ({
     buffer,
@@ -62,56 +95,54 @@ export const uploadBufferToS3 = async ({
     userId,
     batchId,
     role,
-}: {
-    buffer: Buffer,
-    file: Express.Multer.File,
-    userId?: string,
-    batchId?: string,
-    role?: CommonUserRole
-}): Promise<{ s3url: string, fileName?: string }> => {
+}: UploadBufferToS3Params): Promise<UploadBufferToS3Response> => {
 
-    // ✅ Check if the file is an image
+    if (!file) {
+        throw new AppError({ statusCode: 400, message: "File is required." });
+    }
+
     const isImage = file.mimetype.startsWith("image/");
+    const isCounsellorUploadXLS = role === "counsellor";
 
-    // ✅ Check if the Counsellor Upload XLS file 
-    const isCounsellorUploadXLS = role === 'counsellor';
+    // ✅ Determine Folder Path
+    let folder = "";
 
-    // ✅ Define folder structure
-    let folder: string;
     if (isImage) {
-        if (!userId) throw new AppError({ statusCode: 400, message: "User ID is required for image uploads.", data: {} });
+        if (!userId) throw new AppError({ statusCode: 400, message: "User ID is required for image uploads." });
         folder = `images/${userId}`;
+    } else if (isCounsellorUploadXLS) {
+        const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
+        folder = `files/${fileTypeFolder}/${role}-${userId}`;
     } else {
-        if (!isCounsellorUploadXLS) {
-            if (!batchId) throw new AppError({ statusCode: 400, message: "Batch ID is required for file uploads.", data: {} });
-            const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
-            folder = `files/${batchId}/${fileTypeFolder}`;
+        const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
+
+        if (!batchId) {
+            folder = `files/${fileTypeFolder}/material-draft/${role}-${userId}`;
         } else {
-            const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
-            folder = `files/${role}/${fileTypeFolder}`;
+            folder = `files/${fileTypeFolder}/material-published/batch-${batchId}/${role}-${userId}`;
         }
     }
 
-    // ✅ Construct the S3 file key (path)
+    // ✅ Construct the S3 file key
     const fileKey = `${folder}/${Date.now()}-${sanitizeFileName(file.originalname)}`;
 
     try {
-        const command = new PutObjectCommand({
-            Bucket: process.env.AWS_BUCKET_NAME!,
-            Key: fileKey,
-            Body: buffer,
-            ContentType: file.mimetype,
-        });
-
-        await s3.send(command);
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME!,
+                Key: fileKey,
+                Body: buffer,
+                ContentType: file.mimetype,
+            })
+        );
 
         return {
             s3url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`,
-            fileName: file.originalname
+            fileName: file.originalname,
         };
     } catch (error) {
-        console.error("Error uploading file to S3:", error);
-        throw new AppError({ statusCode: 500, message: "Failed to upload file", data: {} });
+        console.error("🚨 S3 Upload Error:", error);
+        throw new AppError({ statusCode: 500, message: "Failed to upload file to S3" });
     }
 };
 

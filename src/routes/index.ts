@@ -20,6 +20,7 @@ import { getXLSFileListController } from "../controllers/counsellorModule/get_xl
 import { uploadPDFMaterialFileController } from "../controllers/staffModule/pdf_material_related/upload_pdf_material.controller";
 import { getStudentStudyMaterialsController } from "../controllers/studentModule/get_study_material.controller";
 import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf_material_related/get_pdf_material_list.controller";
+import { editStudentMaterialAccessController } from "../controllers/staffModule/pdf_material_related/edit_student_material_access.controller";
 
 const router = Router();
 
@@ -55,6 +56,7 @@ router.get("/get-study-materials", getStudentStudyMaterialsController);
 router.post("/attendance/mark", markStudentAttendanceController);
 router.get("/attendance/percentage", getStudentAttendanceStatsController);
 router.post("/upload-pdfMaterial-students", uploadPDFMaterialFileController);
+router.post("/edit-pdfMaterial-students-access", editStudentMaterialAccessController);
 router.get("/get-pdf-Materials", getPDFMaterialFileListController);
 
 export default router;

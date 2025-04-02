@@ -78,7 +78,7 @@ export const getStudentStudyMaterialsService = async ({
     const responseList = await prisma.materialFileDetail.findMany({
         where: whereCondition,
         select: {
-            material_file_name: true,
+            material_title: true,
             material_file_url: true,
             createdAt: true
         },
@@ -93,7 +93,7 @@ export const getStudentStudyMaterialsService = async ({
             const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: pdfFile.material_file_url });
 
             return {
-                material_file_name: pdfFile.material_file_name,
+                material_file_name: pdfFile.material_title,
                 material_file_url: pdfFile.material_file_url,
                 material_file_size: FileSize,
                 createdAt: formatDateTime(pdfFile.createdAt),

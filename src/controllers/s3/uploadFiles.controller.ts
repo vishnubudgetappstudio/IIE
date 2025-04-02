@@ -3,6 +3,7 @@ import { uploadBufferToS3, uploadFileToS3, } from "../../services/s3/uploadFiles
 import { AppError } from "../../utils/errorHandler";
 import { compressImage, validateFile } from "../../utils/s3";
 import { AuthRequest } from "../../middlewares/auth.middleware";
+import { CommonUserRole } from "@prisma/client";
 
 /**
  * Controller to upload a **single image**
@@ -49,7 +50,12 @@ export const uploadSingleFileController = async (req: AuthRequest, res: Response
 
         validateFile(file);
 
-        const { fileUrl } = await uploadFileToS3({ file: file, batchId: req.query.batchId as string });
+        const { fileUrl } = await uploadFileToS3({
+            file: file,
+            batchId: req.query.batchId as string,
+            role: req.query.role as CommonUserRole,
+            userId: req.user?.userId
+        });
 
         res.status(201).json({
             status: true,

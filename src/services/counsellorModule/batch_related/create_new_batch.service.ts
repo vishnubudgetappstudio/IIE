@@ -3,6 +3,7 @@ import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
 import { parseCSVStream } from "../../../utils/commonUtils";
 import { uploadFileToS3 } from "../../s3/uploadFiles.service";
+import { CommonUserRole } from "@prisma/client";
 
 // ✅ Define batch creation request type
 interface CreateBatchRequest {
@@ -14,6 +15,8 @@ interface CreateBatchRequest {
     slot: "morning" | "evening";
     mentor_id: string;
     students_id: string;
+    role: CommonUserRole;
+    userId: string;
 }
 
 // ✅ Define response type
@@ -39,7 +42,9 @@ export const createNewBatchService = async ({
     sessionSheetFile,
     slot,
     mentor_id,
-    students_id
+    students_id,
+    role,
+    userId
 }: CreateBatchRequest): Promise<CreateNewBatchResponse> => {
     let sessionFileUrl: string = "";
 
@@ -152,6 +157,8 @@ export const createNewBatchService = async ({
             const { fileUrl, fileName } = await uploadFileToS3({
                 file: sessionSheetFile,
                 batchId: newBatch.id, // Attach batch ID for organized storage
+                role: role,
+                userId: userId,
             });
 
             sessionFileUrl = fileUrl;

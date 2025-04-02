@@ -3,6 +3,7 @@ import s3 from "../config/s3Config";
 import { AppError } from "./errorHandler";
 import sharp from "sharp"; // For image compression
 import { formatFileSize } from "./commonUtils";
+import { CopyObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const IMAGE_MIME_TYPES = ["image/jpeg", "image/png"];
 const FILE_MIME_TYPES = ["text/csv", "application/vnd.ms-excel", "application/pdf"];
@@ -78,5 +79,36 @@ export const extractS3BucketAndKeySize = async ({ fileUrl }: { fileUrl: string }
     } catch (error) {
         console.error("❌ Error fetching S3 file size:", error);
         throw new AppError({ statusCode: 500, message: "Failed to retrieve file size." });
+    }
+};
+
+
+/**
+ * Moves a file from one S3 location to another
+ * @param sourceKey - Existing file path in S3
+ * @param destinationKey - New file path in S3
+ * @returns New S3 URL
+ */
+export const moveFileInS3 = async (sourceKey: string, destinationKey: string): Promise<string> => {
+    try {
+        const bucketName = process.env.AWS_BUCKET_NAME!;
+
+        // ✅ Step 1: Copy the file to the new location
+        await s3.send(new CopyObjectCommand({
+            Bucket: bucketName,
+            CopySource: `${bucketName}/${sourceKey}`,
+            Key: destinationKey,
+        }));
+
+        // ✅ Step 2: Delete the old file
+        await s3.send(new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: sourceKey,
+        }));
+
+        return `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${destinationKey}`;
+    } catch (error) {
+        console.error("❌ Error moving file in S3:", error);
+        throw new AppError({ statusCode: 500, message: "Failed to move file in S3", data: {} });
     }
 };

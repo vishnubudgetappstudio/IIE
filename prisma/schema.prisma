@@ -178,7 +178,7 @@ model LeaveDetail {
 
   role       CommonUserRole
   leave_type LeaveType
-  leave_mode LeaveMode
+  leave_mode LeaveMode?
   from_date  String // Leave start date
   to_date    String // Leave end date
   reason     String // Reason for leave
@@ -373,8 +373,8 @@ enum NotificationType {
 model SessionSheetDetail {
   id                String             @id @default(uuid())
   batch_id          String
-  session_file_name String
-  session_file_url  String
+  session_file_name String             @unique
+  session_file_url  String             @db.Text
   status            SessionSheetStatus
   createdAt         DateTime           @default(now()) // Automatically stores created time
   updatedAt         DateTime           @updatedAt // Automatically updates updated time
@@ -425,22 +425,22 @@ enum SessionSheetReportStatus {
 // ✅ Material File Schema
 // ==============================
 model MaterialFileDetail {
-  id                 String                   @id @unique @default(uuid())
-  batch_id           String
-  material_file_name String
-  material_file_url  String
-  status             MaterialFileDetailStatus
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime?
-  deletedAt          DateTime?
+  id                String                   @id @unique @default(uuid())
+  batch_id          String?
+  material_title    String                   @unique
+  material_file_url String                   @db.Text
+  status            MaterialFileDetailStatus @default(draft)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime?
+  deletedAt         DateTime?
 
   // Relation: Each material belongs to a specific batch
-  batch_detail_relation BatchDetail @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  batch_detail_relation BatchDetail? @relation(fields: [batch_id], references: [id], onDelete: Cascade)
 
   // Relation: Many-to-Many with Students via `StudentMaterialAccess`
   studentMaterialAccessModel StudentMaterialAccess[]
 
-  @@index([id, batch_id, material_file_name])
+  @@index([id, batch_id, material_title])
   @@map("material_file_detail")
 }
 
@@ -473,8 +473,8 @@ model StudentMaterialAccess {
 model XlsFileDetail {
   id                  String    @id @unique @default(uuid())
   management_staff_id String
-  xls_file_name       String
-  xls_file_url        String
+  xls_file_name       String    @unique
+  xls_file_url        String    @db.Text
   createdAt           DateTime  @default(now()) // Automatically stores created time
   updatedAt           DateTime?
   deletedAt           DateTime? // Nullable field for soft delete

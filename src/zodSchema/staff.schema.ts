@@ -6,6 +6,28 @@ export const attendanceSchema = z.object({
     isPresent: z.boolean(),
 });
 
+// Custom transformation & validation for `student_ids Array`
+const studentIdsArraySchema = z.preprocess((val) => {
+    if (typeof val === "string") {
+        try {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) return parsed;
+        } catch {
+            throw new z.ZodError([{ code: "custom", message: "Invalid student_ids format. Expected a JSON array.", path: ["student_ids"] }]);
+        }
+    }
+    return val;
+}, z.array(z.string().optional(), { required_error: '*student_ids array missing, At least empty array is required' }));
+
+export const pdfMaterialFileUploadSchema = z.object({
+    material_title: z
+        .string({ required_error: "*Material title is required" })
+        .min(2, "Material title must be at least 2 characters long"),
+
+    batch_id: z.string().optional(),
+    student_ids: studentIdsArraySchema, // Custom validation for student_ids Array
+});
+
 // Custom transformation & validation for `student_ids`
 const studentIdsSchema = z.preprocess((val) => {
     if (typeof val === "string") {
@@ -19,7 +41,7 @@ const studentIdsSchema = z.preprocess((val) => {
     return val;
 }, z.array(z.string().uuid("Invalid student ID format")).nonempty({ message: "*At least one student ID is required" }));
 
-export const pdfMaterialFileUploadSchema = z.object({
+export const editStudentMaterialFileAccessSchema = z.object({
     material_title: z
         .string({ required_error: "*Material title is required" })
         .min(2, "Material title must be at least 2 characters long"),

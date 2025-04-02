@@ -4,6 +4,7 @@ import { AppError } from "../../../utils/errorHandler";
 import { validateFile } from "../../../utils/s3";
 import { createNewBatchSchema } from "../../../zodSchema/counsellor.schema";
 import { createNewBatchService } from "../../../services/counsellorModule/batch_related/create_new_batch.service";
+import { CommonUserRole } from "@prisma/client";
 
 export const createNewBatchController = async (
     req: AuthRequest,
@@ -58,6 +59,8 @@ export const createNewBatchController = async (
             mentor_id: mentor_id!, // Attach mentor ID to request body data
             sessionSheetFile: sessionSheetFile, // Attach uploaded file URL
             students_id: students_id!,
+            role: req.user?.role as CommonUserRole, // Attach user role to request body data
+            userId: req.user.userId, // Attach user ID to request body data
         });
 
         // Send Success Response

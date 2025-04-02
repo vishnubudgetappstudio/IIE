@@ -102,7 +102,7 @@ CREATE TABLE `leave_detail` (
     `student_id` VARCHAR(191) NULL,
     `role` ENUM('admin', 'counsellor', 'staff', 'guest', 'student') NOT NULL,
     `leave_type` ENUM('Sick', 'Casual', 'Earned', 'Unpaid', 'Other') NOT NULL,
-    `leave_mode` ENUM('Half_Day', 'Full_Day') NOT NULL,
+    `leave_mode` ENUM('Half_Day', 'Full_Day') NULL,
     `from_date` VARCHAR(191) NOT NULL,
     `to_date` VARCHAR(191) NOT NULL,
     `reason` VARCHAR(191) NOT NULL,
@@ -212,12 +212,13 @@ CREATE TABLE `session_sheet_detail` (
     `id` VARCHAR(191) NOT NULL,
     `batch_id` VARCHAR(191) NOT NULL,
     `session_file_name` VARCHAR(191) NOT NULL,
-    `session_file_url` VARCHAR(191) NOT NULL,
+    `session_file_url` TEXT NOT NULL,
     `status` ENUM('completed', 'inComplete') NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `deletedAt` DATETIME(3) NULL,
 
+    UNIQUE INDEX `session_sheet_detail_session_file_name_key`(`session_file_name`),
     INDEX `session_sheet_detail_id_batch_id_session_file_name_status_idx`(`id`, `batch_id`, `session_file_name`, `status`),
     UNIQUE INDEX `session_sheet_detail_id_batch_id_key`(`id`, `batch_id`),
     PRIMARY KEY (`id`)
@@ -242,15 +243,17 @@ CREATE TABLE `session_sheet_student_report_detail` (
 -- CreateTable
 CREATE TABLE `material_file_detail` (
     `id` VARCHAR(191) NOT NULL,
-    `batch_id` VARCHAR(191) NOT NULL,
-    `material_file_name` VARCHAR(191) NOT NULL,
-    `material_file_url` VARCHAR(191) NOT NULL,
+    `batch_id` VARCHAR(191) NULL,
+    `material_title` VARCHAR(191) NOT NULL,
+    `material_file_url` TEXT NOT NULL,
+    `status` ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NULL,
     `deletedAt` DATETIME(3) NULL,
 
     UNIQUE INDEX `material_file_detail_id_key`(`id`),
-    INDEX `material_file_detail_id_batch_id_material_file_name_idx`(`id`, `batch_id`, `material_file_name`),
+    UNIQUE INDEX `material_file_detail_material_title_key`(`material_title`),
+    INDEX `material_file_detail_id_batch_id_material_title_idx`(`id`, `batch_id`, `material_title`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -272,12 +275,13 @@ CREATE TABLE `xls_file_detail` (
     `id` VARCHAR(191) NOT NULL,
     `management_staff_id` VARCHAR(191) NOT NULL,
     `xls_file_name` VARCHAR(191) NOT NULL,
-    `xls_file_url` VARCHAR(191) NOT NULL,
+    `xls_file_url` TEXT NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NULL,
     `deletedAt` DATETIME(3) NULL,
 
     UNIQUE INDEX `xls_file_detail_id_key`(`id`),
+    UNIQUE INDEX `xls_file_detail_xls_file_name_key`(`xls_file_name`),
     INDEX `xls_file_detail_id_management_staff_id_xls_file_name_idx`(`id`, `management_staff_id`, `xls_file_name`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

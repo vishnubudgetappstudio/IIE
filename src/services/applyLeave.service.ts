@@ -15,7 +15,7 @@ export const applyLeaveService = async ({
   userId: string,
   role: string,
   leave_type: LeaveType,
-  leave_mode: LeaveMode,
+  leave_mode?: LeaveMode,
   from_date: string,
   to_date: string,
   reason: string

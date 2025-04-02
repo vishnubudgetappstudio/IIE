@@ -50,7 +50,7 @@ export const requestLeaveController = async (
       userId: userId,
       role: role,
       leave_type: leave_type,
-      leave_mode: leave_mode,
+      leave_mode: role !== 'student' ? leave_mode : '',
       from_date: from_date,
       to_date: to_date,
       reason: reason,
