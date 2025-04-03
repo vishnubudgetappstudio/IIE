@@ -57,12 +57,10 @@ export const getSessionSheetDataService = async ({
         throw new AppError({ statusCode: 400, message: "Failed to parse CSV file from S3." });
     });
 
-    // ✅ Search Filtering with Explicit Type Casting
+    // ✅ Search Filtering Based on Topics with Explicit Type Casting
     const filteredData = search
         ? allData.filter((row) =>
-            Object.values(row).some((value) =>
-                String(value).toLowerCase().includes(search.toLowerCase())
-            )
+            row.Topics.toLowerCase().includes(search.toLowerCase())
         )
         : allData;
 
