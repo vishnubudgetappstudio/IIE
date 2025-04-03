@@ -4,7 +4,7 @@ import { AppError } from "../../utils/errorHandler";
 import { xlsFileUploadSchema } from "../../zodSchema/counsellor.schema";
 import { updateXlsFileNameService } from "../../services/counsellorModule/xls_fileName_update.service";
 
-export const deleteXlsFile = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const deleteXlsFileController = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         // Validate user authentication
         if (!req.user) {
