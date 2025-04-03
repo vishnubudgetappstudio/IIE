@@ -97,3 +97,19 @@ export const parseDDMMYYYYToDate = (dateStr: string): Date => {
     const [day, month, year] = dateStr.split('/').map(Number);
     return new Date(year, month - 1, day); // Month is 0-based in JavaScript
 };
+
+export const convertTimeToDateFormat = (timeStr: string): Date => {
+    const [time, modifier] = timeStr.split(" "); // Split "12:30 PM" into ["12:30", "PM"]
+    let [hours, minutes] = time.split(":").map(Number);
+
+    if (modifier.toLowerCase() === "pm" && hours !== 12) {
+        hours += 12; // Convert PM hours (except 12 PM)
+    } else if (modifier.toLowerCase() === "am" && hours === 12) {
+        hours = 0; // Convert 12 AM to 00:00
+    }
+
+    const now = new Date(); // Get current date
+    now.setHours(hours, minutes, 0, 0); // Set time (HH:MM:SS:MS)
+
+    return now;
+};

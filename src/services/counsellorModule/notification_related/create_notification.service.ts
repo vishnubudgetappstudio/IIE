@@ -1,7 +1,7 @@
 import { NotificationCategory, NotificationType } from "@prisma/client";
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
-import { convertToEpoch, formatDateOnly, formatTimeOnly } from "../../../utils/commonUtils";
+import { convertTimeToDateFormat, convertToEpoch, formatDateOnly, formatTimeOnly, parseDDMMYYYYToDate } from "../../../utils/commonUtils";
 
 interface CreateNotificationData {
     senderId: string;
@@ -95,8 +95,8 @@ export const createNotificationService = async (data: CreateNotificationData) =>
 
     // Create notification and recipients
     try {
-        const scheduledDate = formatDateOnly(new Date());
-        const scheduledTime = formatTimeOnly(new Date());
+        const scheduledDate = formatDateOnly(parseDDMMYYYYToDate(data.date));
+        const scheduledTime = formatTimeOnly(convertTimeToDateFormat(data.time));
         const newNotification = await prisma.notification.create({
             data: {
                 title: data.title,

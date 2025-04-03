@@ -50,12 +50,31 @@ export const verifyToken = async (
         return next(new AppError({ statusCode: 401, message: "Access Denied. No token provided.", data: {} }));
       }
 
-      // ✅ Verify the token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-      req.user = decoded; // Attach user data to request
-      next(); // Proceed to next middleware
+      // // ✅ Verify the token
+      // const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+      // ✅ 3. Verify the token (this is where the crash happens if the token is invalid)
+      jwt.verify(token, process.env.JWT_SECRET as string, (err, decoded) => {
+        if (err) {
+          console.error("❌ JWT Verification Error:", err.message);
+
+          let errorMessage = "Unauthorized: Invalid Token";
+          if (err.name === "TokenExpiredError") {
+            errorMessage = "Unauthorized: Token Expired";
+          } else if (err.name === "JsonWebTokenError") {
+            errorMessage = "Unauthorized: Malformed Token";
+          }
+
+          return res.status(401).json({ success: false, message: errorMessage });
+        }
+
+        // ✅ 4. Store decoded user data in request
+        req.user = decoded as JwtPayload;
+        next(); // Proceed to next middleware
+      });
     });
   } catch (error) {
-    return next(new AppError({ statusCode: 403, message: "Invalid or expired token.", data: {} }));
+    // return next(new AppError({ statusCode: 403, message: "Invalid or expired token.", data: {} }));
+    console.error("❌ Unexpected Error in Auth Middleware:", error);
+    throw new AppError({ statusCode: 500, message: "Internal Server Error", data: {} });
   }
 };
