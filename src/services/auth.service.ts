@@ -50,7 +50,8 @@ export const registerCounsellor = async (
 export const loginService = async (
   email: string,
   role: UserRole,
-  password: string
+  password: string,
+  fcm_token: string
 ) => {
   if (!email || !password) {
     throw new AppError({
@@ -77,6 +78,12 @@ export const loginService = async (
           message: "Unauthorized: Invalid Email Address."
         });
       }
+
+      //update FcmToken for counsellor user
+      await prisma.managementStaff.update({
+        where: { id: user.id },
+        data: { fcm_token },
+      });
       break;
     case 'staff':
       // Find user in the database with selected fields (excluding unnecessary data)
@@ -92,6 +99,12 @@ export const loginService = async (
           message: "Unauthorized: Invalid Email Address."
         });
       }
+
+      //update FcmToken for staff user
+      await prisma.managementStaff.update({
+        where: { id: user.id },
+        data: { fcm_token },
+      });
       break;
     default: // Code to execute if no cases match
       // Find user in the database with selected fields (excluding unnecessary data)
@@ -107,6 +120,12 @@ export const loginService = async (
           message: "Unauthorized: Invalid Email Address."
         });
       }
+
+      //update FcmToken for student user
+      await prisma.student.update({
+        where: { id: user.id },
+        data: { fcm_token },
+      });
 
       user = { ...user, role: "student" };
   }

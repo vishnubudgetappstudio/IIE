@@ -59,10 +59,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       });
     }
 
-    const { email, role, password } = req.body;
+    const { email, role, password, fcm_token } = req.body;
 
     // Call login service
-    const response = await loginService(email, role, password);
+    const response = await loginService(email, role, password, fcm_token);
 
     // Send Success Response
     res.status(200).json({
@@ -71,12 +71,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       message: "Login successful",
     });
   } catch (error) {
-    next(error)
-    // res.status(401).json({
-    //   status: false,
-    //   data: {},
-    //   message: error.message || "Login failed ",
-    // });
+    console.error("Failed to login", error);
+    next(error);
   }
 };
 
@@ -164,18 +160,14 @@ export const resetPasswordManagementStaffController = async (
         data: {}, // Always send an empty object
         message: "Passwords do not match", // Set message from Zod error
       });
-      // res.status(400).json({
-      //   status: false,
-      //   data: {},
-      //   message: "Passwords do not match",
-      // });
-      // return;
     }
+
     const result = await resetPasswordManagementStaff({
       email: email,
       role: role,
       newPassword: new_password,
     });
+
     res.json({
       status: true,
       data: result,
@@ -185,3 +177,4 @@ export const resetPasswordManagementStaffController = async (
     next(error);
   }
 };
+

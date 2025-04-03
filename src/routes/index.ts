@@ -21,6 +21,7 @@ import { uploadPDFMaterialFileController } from "../controllers/staffModule/pdf_
 import { getStudentStudyMaterialsController } from "../controllers/studentModule/get_study_material.controller";
 import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf_material_related/get_pdf_material_list.controller";
 import { editStudentMaterialAccessController } from "../controllers/staffModule/pdf_material_related/edit_student_material_access.controller";
+import { updateUserFcmTokenController } from "../controllers/update_user_fcm_token.controller";
 
 const router = Router();
 
@@ -30,6 +31,7 @@ router.use("/auth", authRoutes);
 // Secure all protected routes
 router.use(verifyToken);
 router.use("/s3", s3Routes); //upload files and profile images
+router.post("/update-fcm-token", updateUserFcmTokenController); //update fcm token for user
 
 //common API routes
 router.get("/profile", getProfileController) // get Profile route
