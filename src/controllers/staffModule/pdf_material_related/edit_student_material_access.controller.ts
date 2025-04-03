@@ -1,7 +1,8 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { AppError } from "../../../utils/errorHandler";
 import { EditStudentMaterialFileAccessService } from "../../../services/staffModule/pdf_material_related/edit_student_material_access.service";
 import { AuthRequest } from "../../../middlewares/auth.middleware";
+import { editStudentMaterialFileAccessSchema } from "../../../zodSchema/staff.schema";
 
 /**
  * 🎯 Controller to Edit Student Material Access
@@ -12,23 +13,29 @@ export const editStudentMaterialAccessController = async (
     next: NextFunction
 ) => {
     try {
-        const { material_id, batch_id, student_ids } = req.body;
+        // ✅ Step 1: Validate User Authentication
+        if (!req.user) {
+            throw new AppError({ statusCode: 401, message: "Unauthorized access", data: {} });
+        }
 
-        // 🔹 Validate request data
-        if (!material_id || !batch_id || !Array.isArray(student_ids)) {
+        // ✅ Step 2: Validate Request Body
+        const parsedData = editStudentMaterialFileAccessSchema.safeParse(req.body);
+        if (!parsedData.success) {
             throw new AppError({
                 statusCode: 400,
-                message: "Invalid request data",
+                message: parsedData.error.errors[0].message, // Get the first error message
+                data: {}
             });
         }
+
+        const { material_title, batch_id, student_ids, material_id } = parsedData.data;
 
         // 🔹 Call Service Layer
         const updatedMaterial = await EditStudentMaterialFileAccessService({
             material_id,
-            batchId: batch_id,
-            studentIds: student_ids,
-            role: req.user?.role,
-            userId: req.user?.id,
+            batchId: batch_id ? batch_id : null,
+            studentIds: student_ids.length ? student_ids as string[] : [],
+            material_title: material_title
         });
 
         // 🔹 Send Response

@@ -28,27 +28,27 @@ export const pdfMaterialFileUploadSchema = z.object({
     student_ids: studentIdsArraySchema, // Custom validation for student_ids Array
 });
 
-// Custom transformation & validation for `student_ids`
-const studentIdsSchema = z.preprocess((val) => {
-    if (typeof val === "string") {
-        try {
-            const parsed = JSON.parse(val);
-            if (Array.isArray(parsed)) return parsed;
-        } catch {
-            throw new z.ZodError([{ code: "custom", message: "Invalid student_ids format. Expected a JSON array.", path: ["student_ids"] }]);
-        }
-    }
-    return val;
-}, z.array(z.string().uuid("Invalid student ID format")).nonempty({ message: "*At least one student ID is required" }));
+// // Custom transformation & validation for `student_ids`
+// const studentIdsSchema = z.preprocess((val) => {
+//     if (typeof val === "string") {
+//         try {
+//             const parsed = JSON.parse(val);
+//             if (Array.isArray(parsed)) return parsed;
+//         } catch {
+//             throw new z.ZodError([{ code: "custom", message: "Invalid student_ids format. Expected a JSON array.", path: ["student_ids"] }]);
+//         }
+//     }
+//     return val;
+// }, z.array(z.string().uuid("Invalid student ID format")).nonempty({ message: "*At least one student ID is required" }));
 
 export const editStudentMaterialFileAccessSchema = z.object({
-    material_title: z
-        .string({ required_error: "*Material title is required" })
-        .min(2, "Material title must be at least 2 characters long"),
+    material_title: z.string().optional(),
 
-    batch_id: z
-        .string({ required_error: "*Batch ID is required" })
-        .uuid("Invalid batch ID format"), // Ensure batch ID is a valid UUID
+    material_id: z
+        .string({ required_error: "*Material ID is required" })
+        .uuid("Invalid material ID format"),
 
-    student_ids: studentIdsSchema, // Custom validation for student_ids
+    batch_id: z.string().optional(),
+
+    student_ids: studentIdsArraySchema, // Custom validation for student_ids
 });

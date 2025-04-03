@@ -1,20 +1,18 @@
-import { CommonUserRole } from "@prisma/client";
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
 import { moveFileInS3 } from "../../../utils/s3"; // Utility functions
 
 interface EditStudentMaterialAccessRequestData {
     material_id: string;
-    batchId: string;
-    studentIds: string[];
-    role: CommonUserRole,
-    userId: string
+    batchId?: string | null;
+    studentIds?: string[] | [];
+    material_title?: string;
 }
 
 interface EditStudentMaterialAccessResponseData {
     material_title: string;
-    batchId: string;
-    studentIds: string[];
+    batchId: string | null;
+    studentIds: string[] | [];
     material_file_url: string;
 }
 
@@ -25,54 +23,66 @@ export const EditStudentMaterialFileAccessService = async ({
     material_id,
     batchId,
     studentIds,
-    role,
-    userId
+    material_title,
 }: EditStudentMaterialAccessRequestData): Promise<EditStudentMaterialAccessResponseData> => {
 
-    // ✅ Validate Inputs
-    if (!batchId) throw new AppError({ statusCode: 400, message: "Batch ID is required." });
-    if (!studentIds.length) throw new AppError({ statusCode: 400, message: "At least one student must be selected.", data: {} });
-
-    // ✅ Step 1: Find Material File (Ensure it's a draft and not deleted)
+    // ✅ Step 1: Fetch Existing Material Details
     const existMaterial = await prisma.materialFileDetail.findFirst({
-        where: { id: material_id, status: "draft", deletedAt: null },
-        select: { id: true, material_title: true, material_file_url: true },
+        where: { id: material_id, deletedAt: null },
+        select: {
+            id: true,
+            batch_id: true,
+            material_title: true,
+            material_file_url: true,
+            status: true,
+        },
     });
 
-    if (!existMaterial) throw new AppError({ statusCode: 404, message: "Material file not found or already published.", data: {} });
+    if (!existMaterial) throw new AppError({ statusCode: 404, message: "Material file not found!" });
 
-    // ✅ Step 2: Find Batch (Ensure it's not deleted)
-    const existBatch = await prisma.batchDetail.findFirst({
-        where: { id: batchId, deletedAt: null },
-        select: { id: true },
-    })
+    // ✅ Step 2: Handle Material Title Update Without Batch ID Change
+    if (existMaterial.status === "draft" && !batchId && material_title) {
+        const updatedMaterial = await prisma.materialFileDetail.update({
+            where: { id: existMaterial.id },
+            data: { material_title },
+            select: {
+                material_title: true,
+                material_file_url: true,
+            },
+        });
 
-    if (!existBatch) throw new AppError({ statusCode: 404, message: "Batch not found!.", data: {} });
+        return {
+            material_title: updatedMaterial.material_title,
+            material_file_url: updatedMaterial.material_file_url,
+            batchId: null,
+            studentIds: [],
+        };
+    }
 
-    // ✅ Step 3: Validate Students in Batch
+    // ✅ Step 3: Validate Batch & Students
+    if (batchId && !studentIds?.length) throw new AppError({ statusCode: 400, message: "At least one student must be selected." });
+
     const validStudents = await prisma.batchWithStudent.findMany({
-        where: { batch_id: batchId, student_id: { in: studentIds }, deletedAt: null },
+        where: { batch_id: batchId!, student_id: { in: studentIds }, deletedAt: null },
         select: { student_id: true },
     });
 
-    if (!validStudents.length) throw new AppError({ statusCode: 404, message: "No valid students found in this batch.", data: {} });
+    if (!validStudents.length) throw new AppError({ statusCode: 404, message: "No valid students found in this batch." });
 
-    // ✅ Step 4: Move File to Published Folder in S3
-    const oldS3Url = existMaterial.material_file_url;
-    const fileKey = oldS3Url.split(".amazonaws.com/")[1]; // Extract S3 file path
+    // ✅ Step 4: Move File in S3 (If Batch ID Changes or Moving from Draft)
+    let newS3Url = existMaterial.material_file_url;
+    if (batchId !== existMaterial.batch_id || existMaterial.status === "draft") {
+        const oldS3Url = existMaterial.material_file_url;
+        const fileKey = oldS3Url.split(".amazonaws.com/")[1]; // Extract S3 file path
 
-    // const newS3Key = fileKey.replace(`material-draft/${role}-${userId}/`, `material-published/batch-${batchId}`);
+        const newS3Key = fileKey.includes("material-draft")
+            ? fileKey.replace(/material-draft\/[^/]+/, `material-published/batch-${batchId}`)
+            : fileKey.replace(`material-published/batch-${existMaterial.batch_id}`, `material-published/batch-${batchId}`);
 
-    // ✅ Step 5: Replace the folder structure correctly
-    const newS3Key = fileKey.replace(
-        /material-draft\/[^/]+/,  // Match "material-draft/{role}-{userId}"
-        `material-published/batch-${batchId}`
-    );
+        newS3Url = await moveFileInS3(fileKey, newS3Key);
+    }
 
-    // Move file in S3
-    const newS3Url = await moveFileInS3(fileKey, newS3Key);
-
-    // ✅ Step 6: Assign Material & Update DB in Transactions
+    // ✅ Step 5: Assign Students & Update Material in Transaction
     const assignedStudents = validStudents.map(({ student_id }) => ({
         student_id,
         material_id: existMaterial.id,
@@ -84,6 +94,7 @@ export const EditStudentMaterialFileAccessService = async ({
         prisma.materialFileDetail.update({
             where: { id: material_id },
             data: {
+                material_title: material_title ? material_title : existMaterial.material_title,
                 batch_id: batchId,
                 status: "published",
                 material_file_url: newS3Url,
@@ -93,8 +104,8 @@ export const EditStudentMaterialFileAccessService = async ({
     ]);
 
     return {
-        material_title: existMaterial.material_title,
-        batchId,
+        material_title: material_title ? material_title : existMaterial.material_title,
+        batchId: batchId as string,
         studentIds: validStudents.map(({ student_id }) => student_id),
         material_file_url: newS3Url,
     };
