@@ -4,7 +4,7 @@ import { AppError } from "../../utils/errorHandler";
 import { xlsFileUploadSchema } from "../../zodSchema/counsellor.schema";
 import { updateXlsFileNameService } from "../../services/counsellorModule/xls_fileName_update.service";
 
-export const deleteXlsFileController = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const deleteXlsFile = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         // Validate user authentication
         if (!req.user) {
@@ -28,16 +28,10 @@ export const deleteXlsFileController = async (req: AuthRequest, res: Response, n
 
         const { fileName: newFileName } = validatedData.data;
 
-        // Call Service to update the xls file name
-        const { responseUpdateXlsFileName } = await updateXlsFileNameService({
-            newFileName: newFileName,
-            xls_file_id: req.query.xls_file_id as string,
-            management_staff_id: req.user.id
-        });
 
         res.status(201).json({
             status: true,
-            data: responseUpdateXlsFileName,
+            data: {},
             message: "XLS file name updated successfully",
         });
     } catch (error) {
