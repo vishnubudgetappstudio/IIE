@@ -41,7 +41,7 @@ router.post("/apply-leave", requestLeaveController); // Apply Leave route
 router.post("/rise-support-ticket", raiseSupportTicket); // Support ticket route
 router.post("/upload-xls-file", uploadXlsFileController); // Upload XLS or XLSX route
 router.post("/update-xls-fileName", updateXlsFileNameController); // Update XLS or XLSX route
-router.post("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
+router.get("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
 
 //Counsellor API routes
 router.post("/add-new-student", createNewStudentController); // Create New Student route
