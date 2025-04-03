@@ -17,7 +17,19 @@ export const uploadXlsFileService = async ({
         role: CommonUserRole,
         is_xls_file: boolean,
     }) => {
-    // ✅ Step 1: Upload the file to S3
+    // ✅ Step 1: Check if management_staff_id exists in the database
+    const counsellorExists = await prisma.managementStaff.findUnique({
+        where: { id: management_staff_id },
+    });
+
+    if (!counsellorExists) {
+        throw new AppError({
+            statusCode: 400,
+            message: "Invalid Counsellor. Counsellor does not exist!",
+            data: {}
+        });
+    }
+    // ✅ Step 2: Upload the file to S3
     const { s3url } = await uploadBufferToS3({
         buffer: file.buffer,
         file: file,
@@ -26,7 +38,7 @@ export const uploadXlsFileService = async ({
         is_xls_file: is_xls_file
     });
 
-    // ✅ Step 2: Store file details in the database
+    // ✅ Step 3: Store file details in the database
     const responseUploadXlsFile = await prisma.xlsFileDetail.create({
         data: {
             xls_file_name: fileName,
@@ -38,13 +50,14 @@ export const uploadXlsFileService = async ({
             xls_file_url: true,
         }
     }).catch((error) => {
-        console.error("Error in uploading xls file:", error);
-
+        console.error("Failed to create XLS file entry:", error);
         throw new AppError({
             statusCode: 400,
             data: {},
-            message: "Failed to upload xls file",
+            message: "Failed to create XLS file entry",
         });
     });
+
     return { responseUploadXlsFile }
+
 }

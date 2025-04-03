@@ -218,7 +218,6 @@ CREATE TABLE `session_sheet_detail` (
     `updatedAt` DATETIME(3) NOT NULL,
     `deletedAt` DATETIME(3) NULL,
 
-    UNIQUE INDEX `session_sheet_detail_session_file_name_key`(`session_file_name`),
     INDEX `session_sheet_detail_id_batch_id_session_file_name_status_idx`(`id`, `batch_id`, `session_file_name`, `status`),
     UNIQUE INDEX `session_sheet_detail_id_batch_id_key`(`id`, `batch_id`),
     PRIMARY KEY (`id`)

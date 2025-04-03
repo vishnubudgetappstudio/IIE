@@ -55,29 +55,39 @@ export const sanitizeFileName = (filename: string): string => {
 };
 
 /**
- * ✅ Extracts S3 Bucket and Key from file URL.
+ * ✅ Extract S3 Bucket, Key, and File Size from file URL (Efficiently).
  */
-export const extractS3BucketAndKeySize = async ({ fileUrl }: { fileUrl: string }): Promise<{ Bucket: string; Key: string; FileSize: string }> => {
-    const match = fileUrl.match(/https:\/\/(.+?)\.s3\.(.+?)\.amazonaws\.com\/(.+)/);
-    if (!match) {
-        throw new AppError({ statusCode: 400, message: "Invalid S3 URL format." });
-    }
-    const Bucket = match[1];
-    const Key = match[3];
-
+export const extractS3BucketAndKeySize = async ({ fileUrl }: { fileUrl: string }) => {
     try {
-        // ✅ Fetch file metadata (head request) to get size
-        const response = await s3.send(new HeadObjectCommand({ Bucket, Key }));
+        // ✅ Step 1: Extract Bucket & Key from the URL
+        const url = new URL(fileUrl);
+        const bucket = url.hostname.split(".")[0]; // Extract "bucket-name"
+        const key = decodeURIComponent(url.pathname.substring(1)); // Remove leading '/'
+
+        console.log(`🔹 Extracted S3 Bucket: ${bucket}, Key: ${key}`);
+
+        // ✅ Step 2: Fetch file metadata from S3
+        const command = new HeadObjectCommand({ Bucket: bucket, Key: key });
+        const response = await s3.send(command);
 
         if (!response.ContentLength) {
             throw new AppError({ statusCode: 404, message: "File not found or size unavailable." });
         }
 
-        const fileSize = formatFileSize(response.ContentLength); // Convert to KB/MB
+        // ✅ Step 3: Format file size (KB, MB, GB)
+        const fileSize = formatFileSize(response.ContentLength);
 
-        return { Bucket, Key, FileSize: fileSize };
-    } catch (error) {
+        return { Bucket: bucket, Key: key, FileSize: fileSize };
+    } catch (error: any) {
         console.error("❌ Error fetching S3 file size:", error);
+
+        if (error.name === "NotFound") {
+            throw new AppError({ statusCode: 404, message: "S3 file not found." });
+        }
+        if (error.name === "AccessDenied") {
+            throw new AppError({ statusCode: 403, message: "Access denied to S3 bucket." });
+        }
+
         throw new AppError({ statusCode: 500, message: "Failed to retrieve file size." });
     }
 };

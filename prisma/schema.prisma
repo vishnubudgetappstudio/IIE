@@ -373,7 +373,7 @@ enum NotificationType {
 model SessionSheetDetail {
   id                String             @id @default(uuid())
   batch_id          String
-  session_file_name String             @unique
+  session_file_name String
   session_file_url  String             @db.Text
   status            SessionSheetStatus
   createdAt         DateTime           @default(now()) // Automatically stores created time

@@ -171,6 +171,13 @@ export const createNewBatchService = async ({
                     session_file_name: fileName,
                     status: "inComplete",
                 },
+            }).catch((error) => {
+                console.error("Error to create session sheet details:", error);
+                throw new AppError({
+                    statusCode: 400,
+                    message: "Error to create session sheet details",
+                    data: {},
+                });
             });
         } catch (error) {
             console.error("Session sheet upload error:", error);
