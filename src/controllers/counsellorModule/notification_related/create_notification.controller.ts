@@ -25,8 +25,8 @@ export const createNotificationController = async (
             });
         }
 
-        const { title, message, image, type, category, batch_ids, student_ids } = req.body;
-        // const { title, message, image, type, category, date, time, batch_ids, student_ids } = req.body;
+        // const { title, message, image, type, category, batch_ids, student_ids } = req.body;
+        const { title, message, image, type, category, date, time, batch_ids, student_ids } = req.body;
 
         if (!title || !message || !type) {
             throw new AppError({ statusCode: 400, message: "Missing required fields" });
@@ -41,6 +41,8 @@ export const createNotificationController = async (
             category,
             batchIds: batch_ids,
             studentIds: student_ids,
+            date: date,
+            time: time
         });
 
         res.status(201).json({

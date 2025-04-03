@@ -10,8 +10,8 @@ interface CreateNotificationData {
     image?: string;
     type: NotificationType;
     category?: NotificationCategory | "";
-    // date?: Date | null;
-    // time?: Date | null;
+    date: string;
+    time: string;
     batchIds?: string; // Comma-separated batch IDs
     studentIds?: string; // Comma-separated student IDs
 }

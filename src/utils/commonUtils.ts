@@ -92,3 +92,8 @@ export const convertToEpoch = ({ date, time }: { date: string, time: string }): 
     const dateObj = new Date(dateStr);
     return Math.floor(dateObj.getTime() / 1000); // Convert to seconds
 }
+
+export const parseDDMMYYYYToDate = (dateStr: string): Date => {
+    const [day, month, year] = dateStr.split('/').map(Number);
+    return new Date(year, month - 1, day); // Month is 0-based in JavaScript
+};
