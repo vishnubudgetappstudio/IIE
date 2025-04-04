@@ -23,6 +23,8 @@ export const getPDFMaterialFileListService = async ({
     // Apply default values if page or limit is undefined
     const currentPage = page && page > 0 ? page : 1;
     const perPage = limit && limit > 0 ? limit : 10;
+    const skip = (currentPage - 1) * perPage;
+    const searchTerm = search?.trim();
 
     // ✅ Common where condition
     const whereCondition = {
@@ -41,7 +43,7 @@ export const getPDFMaterialFileListService = async ({
             deletedAt: null,
         },
         deletedAt: null, // ✅ Always filter out deleted records
-        ...(search && { material_file_name: { startsWith: search, mode: "insensitive" } }) // ✅ Conditionally add search
+        ...(search && { material_file_name: { startsWith: searchTerm } }) // ✅ Conditionally add search
     };
 
     // ✅ Count total records for pagination
@@ -63,8 +65,8 @@ export const getPDFMaterialFileListService = async ({
             createdAt: true
         },
         orderBy: { createdAt: "desc" }, // Sort by latest uploads
-        take: perPage,
-        skip: (currentPage - 1) * perPage, // Pagination logic
+        skip,
+        take: perPage, // Pagination logic
     });
 
     // ✅ Fetch S3 file sizes in parallel (error-safe with `Promise.allSettled`)

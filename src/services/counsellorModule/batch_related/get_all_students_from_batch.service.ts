@@ -9,9 +9,11 @@ export const getAllStudentsFromBatchService = async (
     limit: number,
     search?: string
 ) => {
-    const currentPage = Math.max(page, 1);
-    const perPage = Math.max(limit, 1);
+    // Apply default values if page or limit is undefined
+    const currentPage = page && page > 0 ? page : 1;
+    const perPage = limit && limit > 0 ? limit : 10;
     const skip = (currentPage - 1) * perPage;
+    const searchTerm = search?.trim();
 
     const [studentsList, totalStudents] = await prisma.$transaction([
         prisma.batchWithStudent.findMany({
@@ -20,10 +22,7 @@ export const getAllStudentsFromBatchService = async (
                 deletedAt: null,
                 student_relation: {
                     ...(search && {
-                        name: {
-                            startsWith: search,
-                            mode: "insensitive"
-                        } as Prisma.StringFilter,
+                        name: { startsWith: searchTerm } as Prisma.StringFilter,
                     }),
                     deletedAt: null,
                 },
@@ -54,10 +53,7 @@ export const getAllStudentsFromBatchService = async (
                 deletedAt: null,
                 student_relation: {
                     ...(search && {
-                        name: {
-                            startsWith: search,
-                            mode: "insensitive"
-                        } as Prisma.StringFilter,
+                        name: { startsWith: search } as Prisma.StringFilter,
                     }),
                     deletedAt: null,
                 },

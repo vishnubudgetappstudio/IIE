@@ -21,17 +21,18 @@ export const getXLSFileListService = async ({
     currentPage: number;
 }> => {
 
-    const currentPage = page > 0 ? page : 1;
-    const perPage = limit > 0 ? limit : 10;
+    // Apply default values if page or limit is undefined
+    const currentPage = page && page > 0 ? page : 1;
+    const perPage = limit && limit > 0 ? limit : 10;
     const skip = (currentPage - 1) * perPage;
+    const searchTerm = search?.trim();
 
     const whereCondition = {
         management_staff_id: counsellorId,
         deletedAt: null,
         ...(search && {
             xls_file_name: {
-                startsWith: search,
-                mode: "insensitive",
+                startsWith: searchTerm,
             },
         }),
     };

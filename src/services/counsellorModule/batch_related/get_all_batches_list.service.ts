@@ -10,16 +10,11 @@ export const getAllBatchesListService = async ({
     slot: "all" | BatchSlotsType,
     search: string | null
 }) => {
-
-    if (page < 1 || limit < 1) {
-        throw new AppError({
-            statusCode: 400,
-            message: "Page and limit must be greater than zero.",
-            data: {},
-        });
-    }
-
-    const skip = (page - 1) * limit;
+    // Apply default values if page or limit is undefined
+    const currentPage = page && page > 0 ? page : 1;
+    const perPage = limit && limit > 0 ? limit : 10;
+    const skip = (currentPage - 1) * perPage;
+    const searchTerm = search?.trim();
 
     // Shared where condition
     const whereCondition = {
@@ -27,11 +22,13 @@ export const getAllBatchesListService = async ({
         ...(slot !== "all" && { slot }),
         ...(search && {
             OR: [
-                { batch_number: { startsWith: search, mode: "insensitive" } },
-                { course: { startsWith: search, mode: "insensitive" } },
+                { batch_number: { startsWith: searchTerm } },
+                { course: { startsWith: searchTerm } },
                 {
                     management_staff_relation: {
-                        name: { startsWith: search, mode: "insensitive" },
+                        is: {
+                            name: { startsWith: searchTerm },
+                        }
                     },
                 },
             ],
@@ -41,7 +38,7 @@ export const getAllBatchesListService = async ({
     // Fetch batches
     const batches = await prisma.batchDetail.findMany({
         skip,
-        take: limit,
+        take: perPage,
         orderBy: { createdAt: "desc" },
         where: whereCondition,
         include: {

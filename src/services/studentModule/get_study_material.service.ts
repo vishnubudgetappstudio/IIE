@@ -36,6 +36,8 @@ export const getStudentStudyMaterialsService = async ({
     // Apply default values if page or limit is undefined
     const currentPage = page && page > 0 ? page : 1;
     const perPage = limit && limit > 0 ? limit : 10;
+    const skip = (currentPage - 1) * perPage;
+    const searchTerm = search?.trim();
 
     if (!student_id) {
         throw new AppError({
@@ -61,7 +63,7 @@ export const getStudentStudyMaterialsService = async ({
             deletedAt: null,
         },
         deletedAt: null,
-        ...(search && { material_file_name: { startsWith: search, mode: "insensitive" } }) // ✅ Conditionally add search
+        ...(search && { material_file_name: { startsWith: searchTerm } }) // ✅ Conditionally add search
     };
 
     // ✅ Get total count for pagination
@@ -83,8 +85,8 @@ export const getStudentStudyMaterialsService = async ({
             createdAt: true
         },
         orderBy: { createdAt: "desc" }, // Sort by latest uploads
-        take: perPage,
-        skip: (currentPage - 1) * perPage, // Pagination logic
+        skip,
+        take: perPage, // Pagination logic
     });
 
     // ✅ Fetch S3 file sizes in parallel (error-safe with `Promise.allSettled`)
