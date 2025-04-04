@@ -13,7 +13,7 @@ export const getAllStudentsFromBatchController = async (
         // Extract query params
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
-        const searchQuery = (req.query.search as string) || undefined; // Extract search query
+        const search = (req.query.searchQuery as string) || undefined; // Extract search query
         const batchId = (req.query.batch_id as string);
 
         if (page < 1 || limit < 1) {
@@ -38,7 +38,7 @@ export const getAllStudentsFromBatchController = async (
             batchId,
             page,
             limit,
-            searchQuery
+            search
         );
 
         // If no students are found, return 404

@@ -7,7 +7,7 @@ export const getAllStudentsFromBatchService = async (
     batchId: string,
     page: number,
     limit: number,
-    searchQuery?: string
+    search?: string
 ) => {
     const currentPage = Math.max(page, 1);
     const perPage = Math.max(limit, 1);
@@ -19,9 +19,9 @@ export const getAllStudentsFromBatchService = async (
                 batch_id: batchId,
                 deletedAt: null,
                 student_relation: {
-                    ...(searchQuery && {
+                    ...(search && {
                         name: {
-                            startsWith: searchQuery,
+                            startsWith: search,
                             mode: "insensitive"
                         } as Prisma.StringFilter,
                     }),
@@ -53,9 +53,9 @@ export const getAllStudentsFromBatchService = async (
                 batch_id: batchId,
                 deletedAt: null,
                 student_relation: {
-                    ...(searchQuery && {
+                    ...(search && {
                         name: {
-                            startsWith: searchQuery,
+                            startsWith: search,
                             mode: "insensitive"
                         } as Prisma.StringFilter,
                     }),

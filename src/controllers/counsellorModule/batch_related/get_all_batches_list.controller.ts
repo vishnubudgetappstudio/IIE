@@ -20,7 +20,7 @@ export const getAllBatchesListController = async (
             page,
             limit,
             slot,
-            searchQuery: search,
+            search,
         });
 
         res.status(200).json({

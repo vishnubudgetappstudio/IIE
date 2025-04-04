@@ -14,7 +14,7 @@ export const getXLSFileListController = async (req: AuthRequest, res: Response, 
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
-        const searchQuery = (req.query.search as string) || undefined; // Extract search query
+        const search = (req.query.searchQuery as string) || undefined; // Extract search query
 
         if (page < 1 || limit < 1) {
             throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: [] });
@@ -32,7 +32,7 @@ export const getXLSFileListController = async (req: AuthRequest, res: Response, 
         // ✅ Fetch and parse session sheet data
         const { xls_files, currentPage, totalPages, xls_files_count, perPage } = await getXLSFileListService({
             counsellorId: req.user?.userId,
-            search: searchQuery,
+            search: search,
             page: page,
             limit: limit
         });

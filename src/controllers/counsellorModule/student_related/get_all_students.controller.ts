@@ -8,7 +8,7 @@ import { getAllStudentsListService } from "../../../services/counsellorModule/st
  * @param page - Current page number
  * @param limit - Number of students per page
  * @param batchId - (Optional) Filter students by batch
- * @param searchQuery - (Optional) Search students by name
+ * @param search - (Optional) Search students by name
  */
 
 export const getAllStudentsController = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -16,7 +16,7 @@ export const getAllStudentsController = async (req: AuthRequest, res: Response, 
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const batchId = req.query.batch_id as string || undefined;
-        const searchQuery = (req.query.search as string) || undefined; // Extract search query
+        const search = (req.query.searchQuery as string) || undefined; // Extract search query
 
         if (page < 1 || limit < 1) {
             throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: [] });
@@ -25,7 +25,7 @@ export const getAllStudentsController = async (req: AuthRequest, res: Response, 
         const { students, currentPage, perPage, totalPages, totalStudents } = await getAllStudentsListService({
             page,
             limit,
-            searchQuery,
+            search,
             batchId,
         });
 

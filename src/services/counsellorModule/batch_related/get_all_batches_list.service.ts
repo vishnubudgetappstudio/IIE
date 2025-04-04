@@ -3,12 +3,12 @@ import { AppError } from "../../../utils/errorHandler";
 import { prisma } from "../../../config/database";
 
 export const getAllBatchesListService = async ({
-    limit, page, slot, searchQuery
+    limit, page, slot, search
 }: {
     page: number,
     limit: number,
     slot: "all" | BatchSlotsType,
-    searchQuery: string | null
+    search: string | null
 }) => {
 
     if (page < 1 || limit < 1) {
@@ -25,13 +25,13 @@ export const getAllBatchesListService = async ({
     const whereCondition = {
         deletedAt: null,
         ...(slot !== "all" && { slot }),
-        ...(searchQuery && {
+        ...(search && {
             OR: [
-                { batch_number: { startsWith: searchQuery, mode: "insensitive" } },
-                { course: { startsWith: searchQuery, mode: "insensitive" } },
+                { batch_number: { startsWith: search, mode: "insensitive" } },
+                { course: { startsWith: search, mode: "insensitive" } },
                 {
                     management_staff_relation: {
-                        name: { startsWith: searchQuery, mode: "insensitive" },
+                        name: { startsWith: search, mode: "insensitive" },
                     },
                 },
             ],

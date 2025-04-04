@@ -6,19 +6,19 @@ import { getStudentAttendanceStats } from "../../staffModule/attendance_related/
  * ✅ Fetch batch students with pagination and search query
  * @param {number} page - Current page number
  * @param {number} limit - Number of students per page
- * @param {string} [searchQuery] - Optional search keyword
+ * @param {string} [search] - Optional search keyword
  * @param {string} [batchId] - Optional batch ID to filter students
  * @returns {Promise<object>} - List of students with pagination details
  */
 export const getAllStudentsListService = async ({
     page,
     limit,
-    searchQuery,
+    search,
     batchId
 }: {
     page: number;
     limit: number;
-    searchQuery?: string;
+    search?: string;
     batchId?: string;
 }) => {
     // 🏆 Ensure page and limit values are valid
@@ -42,7 +42,7 @@ export const getAllStudentsListService = async ({
     // 🔍 Define search conditions
     const searchCondition = {
         deletedAt: null,
-        ...(searchQuery && { name: { startsWith: searchQuery, mode: "insensitive" } }), // Search by name
+        ...(search && { name: { startsWith: search, mode: "insensitive" } }), // Search by name
         ...(batchId && {
             batchWithStudentModel: {
                 some: { batch_id: batchId, deletedAt: null } // Filter by batch ID

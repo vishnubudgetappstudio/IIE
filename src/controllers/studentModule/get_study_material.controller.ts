@@ -7,7 +7,7 @@ export const getStudentStudyMaterialsController = async (req: AuthRequest, res: 
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
-        const searchQuery = (req.query.search as string) || undefined; // Extract search query
+        const search = (req.query.searchQuery as string) || undefined; // Extract search query
 
         if (page < 1 || limit < 1) {
             throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: [] });
@@ -25,7 +25,7 @@ export const getStudentStudyMaterialsController = async (req: AuthRequest, res: 
         // ✅ Fetch and parse session sheet data
         const { material_files, material_files_count, currentPage, totalPages, perPage } = await getStudentStudyMaterialsService({
             student_id: req.user?.userId,
-            search: searchQuery,
+            search: search,
             page: page,
             limit: limit
         });
