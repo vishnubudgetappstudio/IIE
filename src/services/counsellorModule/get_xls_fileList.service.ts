@@ -3,7 +3,6 @@ import { formatDateTime } from "../../utils/commonUtils";
 import { AppError } from "../../utils/errorHandler";
 import { extractS3BucketAndKeySize } from "../../utils/s3";
 
-
 export const getXLSFileListService = async ({
     counsellorId,
     search,
@@ -21,18 +20,24 @@ export const getXLSFileListService = async ({
     perPage: number;
     currentPage: number;
 }> => {
-    // Apply default values if page or limit is undefined
-    const currentPage = page && page > 0 ? page : 1;
-    const perPage = limit && limit > 0 ? limit : 10;
 
-    // ✅ Count total records for pagination
-    const xls_files_count = await prisma.xlsFileDetail.count({
-        where: {
-            management_staff_id: counsellorId,
-            deletedAt: null,
-            xls_file_name: { startsWith: search, },
-        },
-    });
+    const currentPage = page > 0 ? page : 1;
+    const perPage = limit > 0 ? limit : 10;
+    const skip = (currentPage - 1) * perPage;
+
+    const whereCondition = {
+        management_staff_id: counsellorId,
+        deletedAt: null,
+        ...(search && {
+            xls_file_name: {
+                startsWith: search,
+                mode: "insensitive",
+            },
+        }),
+    };
+
+    // Count total
+    const xls_files_count = await prisma.xlsFileDetail.count({ where: whereCondition });
 
     if (xls_files_count === 0) {
         throw new AppError({
@@ -41,52 +46,43 @@ export const getXLSFileListService = async ({
             message: "No XLS files found",
         });
     }
+
+    // Fetch paginated file list
     const responseList = await prisma.xlsFileDetail.findMany({
-        where: {
-            management_staff_id: counsellorId,
-            deletedAt: null,
-            xls_file_name: { startsWith: search },
-        },
+        where: whereCondition,
         select: {
             xls_file_name: true,
             xls_file_url: true,
-            createdAt: true
+            createdAt: true,
         },
-        orderBy: { createdAt: "desc" }, // Sort by latest uploads
+        orderBy: [
+            { createdAt: "desc" },
+            { id: "desc" }, // Fallback sort for consistency
+        ],
         take: perPage,
-        skip: (currentPage - 1) * perPage, // Pagination logic
+        skip,
     });
 
-    if (!responseList?.length) {
-        throw new AppError({
-            statusCode: 400,
-            data: [],
-            message: "No xls files found",
-        });
-    }
-
-    // ✅ Fetch S3 file sizes in parallel using `Promise.all`
+    // Parallel S3 size fetch
     const xlsFiles = await Promise.all(
-        responseList.map(async (xlsFile) => {
-            const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: xlsFile.xls_file_url });
+        responseList.map(async (file) => {
+            const { FileSize } = await extractS3BucketAndKeySize({
+                fileUrl: file.xls_file_url,
+            });
 
             return {
-                xls_file_name: xlsFile.xls_file_name,
-                xls_file_url: xlsFile.xls_file_url,
+                xls_file_name: file.xls_file_name,
                 xls_file_size: FileSize,
-                createdAt: formatDateTime(xlsFile.createdAt),
+                createdAt: formatDateTime(file.createdAt),
             };
         })
     );
 
-    // ✅ Compute total pages
-    const totalPages = Math.ceil(xls_files_count / perPage);
-
     return {
         xls_files: xlsFiles,
         xls_files_count,
-        totalPages,
+        totalPages: Math.ceil(xls_files_count / perPage),
         currentPage,
-        perPage
+        perPage,
     };
 };

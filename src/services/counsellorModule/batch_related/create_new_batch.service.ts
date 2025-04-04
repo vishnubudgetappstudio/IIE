@@ -1,7 +1,7 @@
 import { Readable } from "stream";
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
-import { parseCSVStream } from "../../../utils/commonUtils";
+import { parseCSVStream, parseDDMMYYYYToDate } from "../../../utils/commonUtils";
 import { uploadFileToS3 } from "../../s3/uploadFiles.service";
 import { CommonUserRole } from "@prisma/client";
 
@@ -50,7 +50,7 @@ export const createNewBatchService = async ({
 
     // 🚀 Step 1: Check if batch number already exists
     const existingBatch = await prisma.batchDetail.findUnique({
-        where: { batch_number },
+        where: { batch_number, deletedAt: null },
     });
 
     if (existingBatch) {
@@ -58,6 +58,26 @@ export const createNewBatchService = async ({
             statusCode: 409,
             message: "This Batch Number is already registered",
             data: {},
+        });
+    }
+
+    const batchStartDate = parseDDMMYYYYToDate(from_date);
+    const batchEndDate = parseDDMMYYYYToDate(to_date);
+    const today = new Date();
+
+    // 📌 Rule 1: from_date should not be in the past
+    if (batchStartDate < new Date(today.setHours(0, 0, 0, 0))) {
+        throw new AppError({
+            statusCode: 400,
+            message: `Batch start date (${from_date}) cannot be in the past`,
+        });
+    }
+
+    // 📌 Rule 2: to_date must be after from_date
+    if (batchEndDate <= batchStartDate) {
+        throw new AppError({
+            statusCode: 400,
+            message: `Batch end date (${to_date}) must be after the start date (${from_date})`,
         });
     }
 
@@ -110,7 +130,7 @@ export const createNewBatchService = async ({
         where: {
             student_id: { in: studentIdsArray },
             deletedAt: null,
-            batch_detail_relation: { slot },
+            // batch_detail_relation: { slot },
         },
         select: { student_id: true },
     });

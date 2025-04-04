@@ -22,6 +22,7 @@ import { getStudentStudyMaterialsController } from "../controllers/studentModule
 import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf_material_related/get_pdf_material_list.controller";
 import { editStudentMaterialAccessController } from "../controllers/staffModule/pdf_material_related/edit_student_material_access.controller";
 import { updateUserFcmTokenController } from "../controllers/update_user_fcm_token.controller";
+import { getStudentAttendanceController } from "../controllers/studentModule/get_attendance.controller";
 
 const router = Router();
 
@@ -53,6 +54,7 @@ router.use("/notification", notificationRoutes);// Counsellor Notification Route
 //Student API routes
 router.get("/student-home-details", studentHomeScreenController);
 router.get("/get-study-materials", getStudentStudyMaterialsController);
+router.get("/get-attendance-detail", getStudentAttendanceController);
 
 //Staff API routes
 router.post("/attendance/mark", markStudentAttendanceController);

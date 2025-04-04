@@ -13,9 +13,15 @@ export const getAllBatchesListController = async (
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const slot = req.query.slot as BatchSlotsType || 'all';
+        const search = req.query.searchQuery as string || null;
 
         // Fetch batches from service
-        const { batches, total } = await getAllBatchesListService(page, limit, slot);
+        const { batches, total } = await getAllBatchesListService({
+            page,
+            limit,
+            slot,
+            searchQuery: search,
+        });
 
         res.status(200).json({
             status: true,

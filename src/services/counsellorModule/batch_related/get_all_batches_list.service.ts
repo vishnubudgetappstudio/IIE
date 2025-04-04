@@ -2,11 +2,18 @@ import { BatchSlotsType } from "@prisma/client";
 import { AppError } from "../../../utils/errorHandler";
 import { prisma } from "../../../config/database";
 
-export const getAllBatchesListService = async (page: number, limit: number, slot: "all" | BatchSlotsType) => {
+export const getAllBatchesListService = async ({
+    limit, page, slot, searchQuery
+}: {
+    page: number,
+    limit: number,
+    slot: "all" | BatchSlotsType,
+    searchQuery: string | null
+}) => {
 
     if (page < 1 || limit < 1) {
         throw new AppError({
-            statusCode: 400, // Bad Request
+            statusCode: 400,
             message: "Page and limit must be greater than zero.",
             data: {},
         });
@@ -14,29 +21,40 @@ export const getAllBatchesListService = async (page: number, limit: number, slot
 
     const skip = (page - 1) * limit;
 
-    // Fetch batches with pagination
+    // Shared where condition
+    const whereCondition = {
+        deletedAt: null,
+        ...(slot !== "all" && { slot }),
+        ...(searchQuery && {
+            OR: [
+                { batch_number: { startsWith: searchQuery, mode: "insensitive" } },
+                { course: { startsWith: searchQuery, mode: "insensitive" } },
+                {
+                    management_staff_relation: {
+                        name: { startsWith: searchQuery, mode: "insensitive" },
+                    },
+                },
+            ],
+        }),
+    };
+
+    // Fetch batches
     const batches = await prisma.batchDetail.findMany({
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" }, // Order by latest created
-        where: slot === "all"
-            ? {
-                deletedAt: null,
-            }
-            : {
-                slot: slot as BatchSlotsType,
-                deletedAt: null
-            }, // Filters slot only if not "all" and Exclude soft deleted records
+        orderBy: { createdAt: "desc" },
+        where: whereCondition,
         include: {
             management_staff_relation: {
                 select: {
                     id: true,
                     name: true,
                     email: true,
-                    profile_img_url: true, // Assuming this field exists
+                    profile_img_url: true,
                 },
             },
             batchWithStudentModel: {
+                where: { deletedAt: null },
                 include: {
                     student_relation: {
                         select: {
@@ -46,21 +64,14 @@ export const getAllBatchesListService = async (page: number, limit: number, slot
                 },
             },
         },
-    }).catch(err => {
-        console.error({ err });
-        throw new AppError({
-            statusCode: 400,
-            data: [],
-            message: "Failed to retrieve batches",
-        });
     });
 
-    // Get total count
+    // Count total
     const total = await prisma.batchDetail.count({
-        where: slot === "all" ? { deletedAt: null } : { slot: slot as BatchSlotsType, deletedAt: null }, // Filters slot only if not "all" and Exclude soft deleted records
+        where: whereCondition,
     });
 
-    // Transform response to match required format
+    // Format response
     const formattedBatches = batches.map((batch) => ({
         id: batch.id,
         batch_number: batch.batch_number,
@@ -72,15 +83,14 @@ export const getAllBatchesListService = async (page: number, limit: number, slot
         createdAt: batch.createdAt,
         updatedAt: batch.updatedAt,
         deletedAt: batch.deletedAt,
-        // ✅ Count only students where deletedAt is null
-        students_count: batch.batchWithStudentModel.filter(s => s.deletedAt === null).length,
+        students_count: batch.batchWithStudentModel.length,
         student_image: batch.batchWithStudentModel
-            .filter(s => s.deletedAt === null) // ✅ Include only active students
-            .map((s) =>
-                s.student_relation?.profile_img_url ? s.student_relation.profile_img_url : "null"
-            )
-            .join(","), // Extract profile_img_url only
-        mentor: { ...batch.management_staff_relation, progress: null }, // Mentor stays the same
+            .map((s) => s.student_relation?.profile_img_url ?? "null")
+            .join(","),
+        mentor: {
+            ...batch.management_staff_relation,
+            progress: null,
+        },
     }));
 
     return { batches: formattedBatches, total };

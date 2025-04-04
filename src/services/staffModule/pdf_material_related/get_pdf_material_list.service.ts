@@ -41,7 +41,7 @@ export const getPDFMaterialFileListService = async ({
             deletedAt: null,
         },
         deletedAt: null, // ✅ Always filter out deleted records
-        ...(search && { material_file_name: { startsWith: search } }) // ✅ Conditionally add search
+        ...(search && { material_file_name: { startsWith: search, mode: "insensitive" } }) // ✅ Conditionally add search
     };
 
     // ✅ Count total records for pagination

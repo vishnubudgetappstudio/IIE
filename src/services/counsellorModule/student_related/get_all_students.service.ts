@@ -40,9 +40,9 @@ export const getAllStudentsListService = async ({
     }
 
     // 🔍 Define search conditions
-    const searchCondition: any = {
+    const searchCondition = {
         deletedAt: null,
-        ...(searchQuery && { name: { startsWith: searchQuery } }), // Search by name
+        ...(searchQuery && { name: { startsWith: searchQuery, mode: "insensitive" } }), // Search by name
         ...(batchId && {
             batchWithStudentModel: {
                 some: { batch_id: batchId, deletedAt: null } // Filter by batch ID
