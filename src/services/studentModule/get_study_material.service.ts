@@ -63,7 +63,7 @@ export const getStudentStudyMaterialsService = async ({
             deletedAt: null,
         },
         deletedAt: null,
-        ...(search && { material_file_name: { startsWith: searchTerm } }) // ✅ Conditionally add search
+        ...(search && { material_title: { startsWith: searchTerm } }) // ✅ Conditionally add search
     };
 
     // ✅ Get total count for pagination
