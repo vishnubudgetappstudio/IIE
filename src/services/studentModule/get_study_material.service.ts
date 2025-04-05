@@ -13,7 +13,7 @@ interface GetStudentStudyMaterialsParams {
 
 // ✅ Define Type for Material File Response
 interface MaterialFile {
-    material_file_name: string;
+    material_file_title: string;
     material_file_size: string;
     createdAt: string;
 }
@@ -95,7 +95,7 @@ export const getStudentStudyMaterialsService = async ({
             const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: pdfFile.material_file_url });
 
             return {
-                material_file_name: pdfFile.material_title,
+                material_file_title: pdfFile.material_title,
                 material_file_url: pdfFile.material_file_url,
                 material_file_size: FileSize,
                 createdAt: formatDateTime(pdfFile.createdAt),

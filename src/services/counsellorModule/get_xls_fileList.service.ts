@@ -27,6 +27,13 @@ export const getXLSFileListService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
+    const existCounsellor = await prisma.managementStaff.findUnique({
+        where: { id: counsellorId, role: "counsellor", deletedAt: null },
+        select: { id: true },
+    });
+
+    if (!existCounsellor) throw new AppError({ statusCode: 404, message: "Counsellor not found", data: {} })
+
     const whereCondition = {
         management_staff_id: counsellorId,
         deletedAt: null,
