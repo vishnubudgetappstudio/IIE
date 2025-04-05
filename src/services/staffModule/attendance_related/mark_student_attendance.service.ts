@@ -46,6 +46,7 @@ export const markAttendanceService = async ({
         throw new AppError({
             statusCode: 404,
             message: "Student not found in this batch",
+            data: {},
         });
     }
 
@@ -56,6 +57,7 @@ export const markAttendanceService = async ({
         throw new AppError({
             statusCode: 400,
             message: `Attendance allowed only between ${batchData.from_date} and ${batchData.to_date}`,
+            data: {},
         });
     }
 
@@ -75,6 +77,7 @@ export const markAttendanceService = async ({
         throw new AppError({
             statusCode: 400,
             message: "Attendance already marked for today",
+            data: {},
         });
     }
 
