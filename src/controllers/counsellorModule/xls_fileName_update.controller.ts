@@ -11,10 +11,6 @@ export const updateXlsFileNameController = async (req: AuthRequest, res: Respons
             throw new AppError({ statusCode: 401, message: "Unauthorized access", data: {} });
         }
 
-        if (!req.query.xls_file_id) {
-            throw new AppError({ statusCode: 400, message: "xls_file_id is required", data: {} });
-        }
-
         // Validate Request Body
         const validatedData = xlsFileUploadSchema.safeParse(req.body);
 
@@ -26,12 +22,12 @@ export const updateXlsFileNameController = async (req: AuthRequest, res: Respons
             });
         }
 
-        const { fileName: newFileName } = validatedData.data;
+        const { fileName: newFileName, xls_file_id } = validatedData.data;
 
         // Call Service to update the xls file name
         const { responseUpdateXlsFileName } = await updateXlsFileNameService({
             newFileName: newFileName,
-            xls_file_id: req.query.xls_file_id as string,
+            xls_file_id: xls_file_id,
             management_staff_id: req.user.id
         });
 

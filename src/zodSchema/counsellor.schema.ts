@@ -59,5 +59,6 @@ export const batchIdSchema = z.string().uuid({ message: "Invalid batch ID format
 
 //validation schema for xls file upload
 export const xlsFileUploadSchema = z.object({
+    xls_file_id: z.string({ required_error: "*xls_file_id is required" }).uuid({ message: "Invalid xls_file_id format" }),
     fileName: z.string({ required_error: "*file name is required" }).min(2, "Name must be at least 2 characters long"),
 });
