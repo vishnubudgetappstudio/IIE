@@ -64,19 +64,3 @@ export const applyLeaveService = async ({
     });
   });
 };
-
-// export const getLeaveRequests = async (management_staff_id: string) => {
-//   return await prisma.leaveRequest.findMany({
-//     where: { management_staff_id },
-//   });
-// };
-
-// export const updateLeaveStatus = async (
-//   leaveId: string,
-//   status: LeaveStatus
-// ) => {
-//   return await prisma.leaveRequest.update({
-//     where: { id: leaveId },
-//     data: { status },
-//   });
-// };

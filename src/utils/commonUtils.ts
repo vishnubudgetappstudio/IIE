@@ -113,3 +113,23 @@ export const convertTimeToDateFormat = (timeStr: string): Date => {
 
     return now;
 };
+
+export const formatDateToDDMMYYYY = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-based
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+};
+
+export const calculateAttendancePercentage = ({ present, total }: { present: bigint | null, total: bigint | null }): {
+    presentPercentage: number;
+    absentPercentage: number;
+} => {
+    const presentCount = Number(present || 0);
+    const totalCount = Number(total || 0);
+    const presentPercentage = totalCount > 0 ? +(presentCount / totalCount * 100).toFixed(2) : 0;
+    return {
+        presentPercentage,
+        absentPercentage: +(100 - presentPercentage).toFixed(2),
+    };
+};

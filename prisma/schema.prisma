@@ -199,6 +199,7 @@ enum LeaveType {
   Casual
   Earned
   Unpaid
+  Absent
   Other
 }
 
@@ -211,7 +212,7 @@ enum LeaveStatus {
   Pending
   Approved
   Rejected
-  Cancelled
+  Not_informed
 }
 
 // ==============================

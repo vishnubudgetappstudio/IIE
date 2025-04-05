@@ -88,7 +88,7 @@ export const extractS3BucketAndKeySize = async ({ fileUrl }: { fileUrl: string }
             throw new AppError({ statusCode: 403, message: "Access denied to S3 bucket." });
         }
 
-        throw new AppError({ statusCode: 500, message: "Failed to retrieve file size." });
+        throw new AppError({ statusCode: 400, message: "Failed to retrieve file size." });
     }
 };
 

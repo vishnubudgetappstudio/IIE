@@ -3,94 +3,119 @@ import { formatDateTime } from "../../../utils/commonUtils";
 import { AppError } from "../../../utils/errorHandler";
 import { extractS3BucketAndKeySize } from "../../../utils/s3";
 
+interface PDFMaterialFile {
+    material_file_name: string;
+    material_file_size: string;
+    createdAt: string;
+}
+
+interface PDFMaterialResponse {
+    material_files: PDFMaterialFile[];
+    material_files_count: number;
+    totalPages: number;
+    perPage: number;
+    currentPage: number;
+}
+
 export const getPDFMaterialFileListService = async ({
     batch_id,
     search,
     page,
     limit,
 }: {
-    batch_id?: string,
+    batch_id?: string;
     search?: string;
     page: number;
     limit: number;
-}): Promise<{
-    material_files: { material_file_name: string; material_file_size: string; createdAt: string }[];
-    material_files_count: number;
-    totalPages: number;
-    perPage: number;
-    currentPage: number;
-}> => {
-    // Apply default values if page or limit is undefined
-    const currentPage = page && page > 0 ? page : 1;
-    const perPage = limit && limit > 0 ? limit : 10;
+}): Promise<PDFMaterialResponse> => {
+    const currentPage = page > 0 ? page : 1;
+    const perPage = limit > 0 ? limit : 10;
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
-    // ✅ Common where condition
-    const whereCondition = {
-        batch_id: batch_id ? batch_id : undefined, // ✅ Only include if batch_id exists
+    const whereCondition: any = {
+        deletedAt: null,
+        ...(batch_id && { batch_id }),
+        ...(searchTerm && { material_file_name: { startsWith: searchTerm } }),
         studentMaterialAccessModel: {
             some: {
-                student_relation: {
-                    deletedAt: null
-                },
-                material_relation: {
-                    deletedAt: null
-                }
+                student_relation: { deletedAt: null },
+                material_relation: { deletedAt: null },
             },
         },
         batch_detail_relation: {
             deletedAt: null,
         },
-        deletedAt: null, // ✅ Always filter out deleted records
-        ...(search && { material_file_name: { startsWith: searchTerm } }) // ✅ Conditionally add search
     };
 
-    // ✅ Count total records for pagination
-    const material_files_count = await prisma.materialFileDetail.count({ where: whereCondition });
+    const [material_files_count, draft_files_count] = await Promise.all([
+        prisma.materialFileDetail.count({ where: whereCondition }),
+        prisma.materialFileDetail.count({
+            where: { status: "draft", deletedAt: null },
+        }),
+    ]);
 
-    if (material_files_count === 0) {
+    const totalFiles = material_files_count + draft_files_count;
+
+    if (totalFiles === 0) {
         throw new AppError({
-            statusCode: 400,
+            statusCode: 404,
+            message: "No material PDF files found.",
             data: [],
-            message: "No Material PDF files found",
         });
     }
 
-    const responseList = await prisma.materialFileDetail.findMany({
-        where: whereCondition,
-        select: {
-            material_title: true,
-            material_file_url: true,
-            createdAt: true
-        },
-        orderBy: { createdAt: "desc" }, // Sort by latest uploads
-        skip,
-        take: perPage, // Pagination logic
-    });
+    const [activeFiles, draftFiles] = await Promise.all([
+        prisma.materialFileDetail.findMany({
+            where: whereCondition,
+            select: {
+                material_title: true,
+                material_file_url: true,
+                createdAt: true,
+                status: true,
 
-    // ✅ Fetch S3 file sizes in parallel (error-safe with `Promise.allSettled`)
-    const pdfFiles = await Promise.all(
-        responseList.map(async (pdfFile) => {
-            const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: pdfFile.material_file_url });
+            },
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: perPage,
+        }),
+        prisma.materialFileDetail.findMany({
+            where: { status: "draft", deletedAt: null },
+            select: {
+                material_title: true,
+                material_file_url: true,
+                createdAt: true,
+                status: true,
+            },
+            orderBy: { createdAt: "desc" },
+        }),
+    ]);
 
+    const allFiles = [...activeFiles, ...draftFiles];
+
+
+
+    const resolvedFiles = await Promise.allSettled(
+        allFiles.map(async (file) => {
+            const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: file.material_file_url });
             return {
-                material_file_name: pdfFile.material_title,
-                material_file_url: pdfFile.material_file_url,
+                material_file_name: file.material_title,
                 material_file_size: FileSize,
-                createdAt: formatDateTime(pdfFile.createdAt),
+                createdAt: formatDateTime(file.createdAt),
+                status: file.status,
             };
         })
     );
 
-    // ✅ Compute total pages
-    const totalPages = Math.ceil(material_files_count / perPage);
+    const material_files: PDFMaterialFile[] = resolvedFiles
+        .filter((res) => res.status === "fulfilled")
+        .map((res) => (res as PromiseFulfilledResult<PDFMaterialFile>).value);
 
     return {
-        material_files: pdfFiles,
+        material_files,
         material_files_count,
-        totalPages,
+        totalPages: Math.ceil(totalFiles / perPage),
         currentPage,
-        perPage
+        perPage,
     };
-}
+};

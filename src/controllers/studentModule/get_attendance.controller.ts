@@ -16,7 +16,7 @@ export const getStudentAttendanceController = async (req: AuthRequest, res: Resp
 
         const studentId = req.user?.userId as string;
 
-        const { finalResult } = await getStudentAttendanceService({ studentId });
+        const finalResult = await getStudentAttendanceService({ studentId });
 
         res.status(200).json({
             status: true,
