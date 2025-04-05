@@ -94,9 +94,38 @@ export const convertToEpoch = ({ date, time }: { date: string, time: string }): 
 }
 
 export const parseDDMMYYYYToDate = (dateStr: string): Date => {
-    const [day, month, year] = dateStr.split('/').map(Number);
-    return new Date(year, month - 1, day); // Month is 0-based in JavaScript
+    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = dateStr.match(dateRegex);
+
+    if (!match) {
+        throw new AppError({
+            statusCode: 400,
+            message: "Invalid date format. Use DD/MM/YYYY.",
+        });
+    }
+
+    const [, dayStr, monthStr, yearStr] = match;
+    const day = Number(dayStr);
+    const month = Number(monthStr) - 1; // JavaScript months are 0-indexed
+    const year = Number(yearStr);
+
+    const date = new Date(year, month, day);
+
+    // Additional sanity check: ensure JS Date object matches input (prevents invalid dates like 32/01/2025)
+    if (
+        date.getDate() !== day ||
+        date.getMonth() !== month ||
+        date.getFullYear() !== year
+    ) {
+        throw new AppError({
+            statusCode: 400,
+            message: "Invalid date provided.",
+        });
+    }
+
+    return date;
 };
+
 
 export const convertTimeToDateFormat = (timeStr: string): Date => {
     const [time, modifier] = timeStr.split(" "); // Split "12:30 PM" into ["12:30", "PM"]

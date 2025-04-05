@@ -28,6 +28,10 @@ export const applyLeaveService = async ({
   const today = new Date();
   today.setHours(0, 0, 0, 0); // 🧼 Normalize for accurate comparison
 
+  console.log({ fromDateObj })
+
+  console.log({ today })
+
   // ❌ Validate: from_date must be today or future
   if (fromDateObj < today) {
     throw new AppError({
