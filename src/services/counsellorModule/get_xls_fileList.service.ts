@@ -14,7 +14,7 @@ export const getXLSFileListService = async ({
     page: number;
     limit: number;
 }): Promise<{
-    xls_files: { xls_file_name: string; xls_file_size: string; createdAt: string }[];
+    xls_files: { xls_file_id: string; xls_file_name: string; xls_file_size: string; createdAt: string }[];
     xls_files_count: number;
     totalPages: number;
     perPage: number;
@@ -59,6 +59,7 @@ export const getXLSFileListService = async ({
     const responseList = await prisma.xlsFileDetail.findMany({
         where: whereCondition,
         select: {
+            id: true,
             xls_file_name: true,
             xls_file_url: true,
             createdAt: true,
@@ -79,6 +80,7 @@ export const getXLSFileListService = async ({
             });
 
             return {
+                xls_file_id: file.id,
                 xls_file_name: file.xls_file_name,
                 xls_file_size: FileSize,
                 createdAt: formatDateTime(file.createdAt),
