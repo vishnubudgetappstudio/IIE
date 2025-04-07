@@ -243,8 +243,9 @@ model BatchDetail {
   SessionSheetDetailModel              SessionSheetDetail[]
   SessionSheetStudentReportDetailModel SessionSheetStudentReportDetail[]
   MaterialFileDetailModel              MaterialFileDetail[]
-  CourseTestDetailModel                Test_Course_Or_Mock[]
-  StudentCourseTestModel               Test_Course_Or_Mock_With_Student[]
+  CourseTestModel                      Test_Course[]
+  StudentCourseOrMockTestModel         Test_Course_Or_Mock_With_Student[]
+  MockTestModel                        Test_Mock[]
 
   @@index([id])
   @@index([mentor_id]) // Index for faster lookups
@@ -522,14 +523,13 @@ enum AttendanceStatus {
 // =============================================
 // ✅ Course Test or upload CSV Test file Schema 
 // =============================================
-model Test_Course_Or_Mock {
+model Test_Course {
   id               String    @id @default(uuid())
   batch_id         String
   batch_name       String
   test_title       String
   test_description String    @db.Text
   test_url         String?   @db.Text
-  test_type        TestType
   start_date       DateTime
   end_date         DateTime
   timer            String // e.g., "1:30 hours" or "45 mins"
@@ -541,8 +541,29 @@ model Test_Course_Or_Mock {
   batch_detail_relation            BatchDetail                        @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   TestCourseOrMockWithStudentModel Test_Course_Or_Mock_With_Student[]
 
-  @@index([batch_id, test_title, test_type])
-  @@map("test_course_or_mock")
+  @@index([batch_id, test_title])
+  @@map("test_course")
+}
+
+// =============================================
+// ✅ Mock Test or upload CSV Test file Schema 
+// =============================================
+model Test_Mock {
+  id         String       @id @default(uuid())
+  batch_id   String
+  batch_name String
+  test_url   String?      @db.Text
+  test_mode  MockTestMode @default(easy)
+  questions  String?      @db.Text
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  deletedAt  DateTime?
+
+  batch_detail_relation            BatchDetail                        @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  TestCourseOrMockWithStudentModel Test_Course_Or_Mock_With_Student[]
+
+  @@index([batch_id])
+  @@map("test_mock")
 }
 
 model Test_Course_Or_Mock_With_Student {
@@ -567,9 +588,11 @@ model Test_Course_Or_Mock_With_Student {
   updatedAt DateTime?
 
   // Relations
-  batch_detail_relation BatchDetail         @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  student_relation      Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  course_test_relation  Test_Course_Or_Mock @relation(fields: [courseTestId], references: [id], onDelete: Cascade)
+  batch_detail_relation BatchDetail @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student_relation      Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course_test_relation  Test_Course @relation(fields: [courseTestId], references: [id], onDelete: Cascade)
+  Test_Mock             Test_Mock?  @relation(fields: [test_MockId], references: [id])
+  test_MockId           String?
 
   @@index([studentId, courseTestId, status, test_type])
   @@map("test_course_or_mock_with_student")
@@ -586,4 +609,10 @@ enum StudentTestStatus {
 enum TestType {
   mock_test
   course_test
+}
+
+enum MockTestMode {
+  easy
+  medium
+  hard
 }

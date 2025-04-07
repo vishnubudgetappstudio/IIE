@@ -1,9 +1,9 @@
 import { prisma } from "../../../../config/database";
-import { parseDDMMYYYYToDate, parseTestCourseOrMock_CSV_Stream } from "../../../../utils/commonUtils";
-import { Prisma } from "@prisma/client";
+import { parseTestCourseOrMock_CSV_Stream } from "../../../../utils/commonUtils";
+import { MockTestMode, Prisma } from "@prisma/client";
 import { AppError } from "../../../../utils/errorHandler";
 import { Readable } from "stream";
-import { uploadBufferToS3, uploadFileToS3 } from "../../../s3/uploadFiles.service";
+import { uploadBufferToS3 } from "../../../s3/uploadFiles.service";
 
 interface Question {
     question: string;
@@ -15,24 +15,16 @@ interface Question {
 interface CreateCourseTestRequest {
     userId: string;
     batchId: string;
-    test_title: string;
-    test_description: string;
     test_csv_file?: Express.Multer.File;
-    startDate: string; // dd/MM/yyyy
-    endDate: string;   // dd/MM/yyyy
-    timer: string;     // HH:mm
+    test_mode: MockTestMode;
     questions?: Question[];
 }
 
-export const createCourseTestService = async ({
+export const createMockTestService = async ({
     userId,
     batchId,
-    test_title,
-    test_description,
     test_csv_file,
-    startDate,
-    endDate,
-    timer,
+    test_mode,
     questions,
 }: CreateCourseTestRequest) => {
     try {
@@ -64,26 +56,6 @@ export const createCourseTestService = async ({
             });
         }
 
-        const formattedStartDate = parseDDMMYYYYToDate(startDate);
-        const formattedEndDate = parseDDMMYYYYToDate(endDate);
-        const today = new Date();
-
-        // 📌 Rule 1: test start_date should not be in the past
-        if (formattedStartDate < new Date(today.setHours(0, 0, 0, 0))) {
-            throw new AppError({
-                statusCode: 400,
-                message: `Create Test start date (${startDate}) cannot be in the past`,
-            });
-        }
-
-        // 📌 Rule 2: test end_date must be after start_date
-        if (formattedEndDate <= formattedStartDate) {
-            throw new AppError({
-                statusCode: 400,
-                message: `Create Test End date (${endDate}) must be after the start date (${startDate})`,
-            });
-        }
-
         // 🚀 Step 4: Validate CSV File (if provided)
         if (test_csv_file) {
             try {
@@ -102,40 +74,38 @@ export const createCourseTestService = async ({
                     role: "staff",
                     userId: userId,
                     is_test_file: true,
-                    test_file_type: 'course_test'
+                    test_file_type: 'mock_test',
+                    mock_test_mode: test_mode
                 });
 
                 test_csv_FileUrl = s3url;
             } catch (error) {
-                console.error("❌ Upload CSV Test file Failed:", error);
+                console.error("❌ Upload CSV Mock Test file Failed:", error);
                 throw new AppError({
                     statusCode: 400,
-                    message: "Invalid CSV Test file data format. Please upload a valid CSV Test file data.",
+                    message: "Invalid CSV Mock Test file data format. Please upload a valid CSV Mock Test file data.",
                     data: {},
                 });
             }
         }
 
-        const courseTest = await prisma.test_Course.create({
+        const mockTestResponse = await prisma.test_Mock.create({
             data: {
                 batch_id: batchId,
                 batch_name: existingBatch.batchName || '',
-                test_title,
-                test_description,
                 test_url: test_csv_FileUrl || null,
-                start_date: formattedStartDate,
-                end_date: formattedEndDate,
-                timer,
                 questions: questions?.length ? JSON.stringify(questions) : null,
             },
         });
 
         return {
-            ...courseTest,
-            questions: JSON.parse(courseTest.questions || "[]"),
+            ...mockTestResponse,
+            mentor_id: existingStaff.id,
+            mentor_name: existingStaff.name,
+            questions: JSON.parse(mockTestResponse.questions || "[]"),
         };
     } catch (error: any) {
-        console.error("Error creating course test:", error);
+        console.error("Error Creating Mock Test:", error);
 
         // Prisma-specific error handling
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -150,7 +120,7 @@ export const createCourseTestService = async ({
 
         throw new AppError({
             statusCode: 400,
-            message: "Something went wrong while creating the course test.",
+            message: "Something went wrong while creating the mock test.",
             data: {}
         });
     }

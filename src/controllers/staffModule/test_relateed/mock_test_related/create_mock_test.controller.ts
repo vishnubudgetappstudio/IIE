@@ -1,11 +1,11 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../../../../middlewares/auth.middleware";
 import { AppError } from "../../../../utils/errorHandler";
-import { createCourseTestSchema } from "../../../../zodSchema/staff.schema";
-import { createCourseTestService } from "../../../../services/staffModule/test_related/course_test_related/create_course_test.service";
+import { createMockTestSchema } from "../../../../zodSchema/staff.schema";
 import { validateFile } from "../../../../utils/s3";
+import { createMockTestService } from "../../../../services/staffModule/test_related/mock_test_related/create_mock_test.service";
 
-export const createCourseTestController = async (
+export const createMockTestController = async (
     req: AuthRequest,
     res: Response,
     next: NextFunction
@@ -21,7 +21,7 @@ export const createCourseTestController = async (
         const testCSVFile = req.files ? (req.files as Express.Multer.File[])[0] : null;
 
         if (!testCSVFile) {
-            throw new AppError({ statusCode: 400, message: "Course Test CSV file is required", data: {} });
+            throw new AppError({ statusCode: 400, message: "Mock Test CSV file is required", data: {} });
         }
 
         // Validate file type (must be .csv)
@@ -45,7 +45,7 @@ export const createCourseTestController = async (
         }
 
         // Validate request body
-        const validation = createCourseTestSchema.safeParse(req.body);
+        const validation = createMockTestSchema.safeParse(req.body);
 
         if (!validation.success) {
             const firstError = validation.error.errors[0].message;
@@ -58,33 +58,25 @@ export const createCourseTestController = async (
 
         const {
             batch_id,
-            test_title,
-            test_description,
-            start_date,
-            end_date,
-            timer,
             questions,
+            test_mode
         } = validation.data;
 
-        const response = await createCourseTestService({
+        const response = await createMockTestService({
             userId: req.user?.userId as string,
             batchId: batch_id,
-            test_title,
-            test_description,
             test_csv_file: testCSVFile,
-            startDate: start_date,
-            endDate: end_date,
-            timer,
+            test_mode: test_mode,
             questions,
         });
 
         res.status(201).json({
             status: true,
             data: response,
-            message: "Course test created successfully",
+            message: "Mock Test Created Successfully",
         });
     } catch (error) {
-        console.error("Error creating course test:", error);
+        console.error("Error Creating Mock Test:", error);
         next(error);
     }
 };

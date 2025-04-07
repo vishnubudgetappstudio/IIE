@@ -72,10 +72,6 @@ export const createCourseTestSchema = z.object({
     batch_id: z.string({ required_error: "*Batch ID is required" }).min(1),
     test_title: z.string({ required_error: "*Test title is required" }).min(1),
     test_description: z.string({ required_error: "*Test description is required" }).min(1),
-    test_url: z.string().url("Invalid test URL").optional(),
-    test_type: z.enum(["mock_test", "course_test"], {
-        required_error: "*Test type is required",
-    }),
     start_date: z
         .string()
         .regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
@@ -107,5 +103,14 @@ export const createCourseTestSchema = z.object({
                 message: "Timer must be a valid HH:MM format (e.g., 1:30, 00:45)",
             }
         ),
+    questions: z.array(questionObjectSchema).optional(),
+});
+
+export const createMockTestSchema = z.object({
+    batch_id: z.string({ required_error: "*Batch ID is required" }).uuid({ message: "Invalid Batch ID format" }),
+    test_mode: z
+        .enum(["easy", "medium", "hard"], {
+            invalid_type_error: "Test mode must be one of: easy, medium, hard",
+        }),
     questions: z.array(questionObjectSchema).optional(),
 });

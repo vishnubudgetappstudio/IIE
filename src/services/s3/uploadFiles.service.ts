@@ -16,6 +16,7 @@ interface UploadBufferToS3Params {
     is_xls_file?: boolean
     is_test_file?: boolean
     test_file_type?: 'mock_test' | 'course_test'
+    mock_test_mode?: 'easy' | 'medium' | 'hard'
 }
 
 interface UploadBufferToS3Response {
@@ -79,6 +80,7 @@ export const uploadBufferToS3 = async ({
     is_xls_file,
     is_test_file,
     test_file_type,
+    mock_test_mode,
 }: UploadBufferToS3Params): Promise<UploadBufferToS3Response> => {
     // 🚨 File presence validation
     if (!file) {
@@ -118,7 +120,11 @@ export const uploadBufferToS3 = async ({
                     message: "Batch ID and Test File Type are required for test uploads.",
                 });
             }
-            folderPath = `files/${fileTypeFolder}/batch-${batchId}/${test_file_type}`;
+            if (mock_test_mode) {
+                folderPath = `files/${fileTypeFolder}/batch-${batchId}/${test_file_type}/${mock_test_mode}`
+            } else {
+                folderPath = `files/${fileTypeFolder}/batch-${batchId}/${test_file_type}`;
+            }
         } else if (!batchId) {
             if (!userId) {
                 throw new AppError({ statusCode: 400, message: "User ID is required for draft uploads." });
