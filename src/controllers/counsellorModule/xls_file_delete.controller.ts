@@ -1,7 +1,7 @@
 import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { AppError } from "../../utils/errorHandler";
-import { xlsFileUploadSchema } from "../../zodSchema/counsellor.schema";
+import { xlsFileEditOrDeleteSchema} from "../../zodSchema/counsellor.schema";
 import { updateXlsFileNameService } from "../../services/counsellorModule/xls_fileName_update.service";
 
 export const deleteXlsFileController = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -16,7 +16,7 @@ export const deleteXlsFileController = async (req: AuthRequest, res: Response, n
         }
 
         // Validate Request Body
-        const validatedData = xlsFileUploadSchema.safeParse(req.body);
+        const validatedData = xlsFileEditOrDeleteSchema.safeParse(req.body);
 
         if (!validatedData.success) {
             throw new AppError({

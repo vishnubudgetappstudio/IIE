@@ -52,3 +52,25 @@ export const editStudentMaterialFileAccessSchema = z.object({
 
     student_ids: studentIdsArraySchema, // Custom validation for student_ids
 });
+
+export const questionObjectSchema = z.object({
+    question: z.string({ required_error: "*question is required" }).min(1, "Question is required"),
+    options: z.array(z.string({ required_error: "*option is required" })).min(1, "Options are required"),
+    explanation: z.string({ required_error: "*explanation is required" }),
+    correctAnswer: z.string({ required_error: "*correct answer is required" }).min(1, "Correct answer is required"),
+});
+
+export const createCourseTestSchema = z.object({
+    batchId: z.string({ required_error: "*Batch ID is required" }).min(1, "Batch ID is required"),
+    test_title: z.string({ required_error: "*Test title is required" }).min(1, "Test title is required"),
+    test_url: z.string({}).url("Invalid test URL").optional(),
+    test_type: z.enum(["mock_test", "course_test"], { required_error: "*Test type is required" }),
+    startDate: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+        message: "Invalid date format (DD/MM/YYYY required)",
+    }),
+    endDate: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+        message: "Invalid date format (DD/MM/YYYY required)",
+    }),
+    timer: z.string().min(1, "Timer is required"),
+    questions: z.array(questionObjectSchema).optional(),
+});
