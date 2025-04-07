@@ -68,33 +68,3 @@ export const requestLeaveController = async (
     next(error);
   }
 };
-
-// export const fetchLeaves = async (req: AuthRequest, res: Response) => {
-//   try {
-//     if (!req.user) {
-//       return res.status(401).json({ message: "Unauthorized access" });
-//     }
-
-//     const leaves = await getLeaveRequests(req.user.id);
-//     return res.status(200).json({ leaves });
-//   } catch (error) {
-//     return res
-//       .status(500)
-//       .json({ message: "Error fetching leave requests", error });
-//   }
-// };
-
-// export const modifyLeaveStatus = async (req: Request, res: Response) => {
-//   try {
-//     const { leaveId, status } = req.body;
-
-//     const updatedLeave = await updateLeaveStatus(leaveId, status);
-//     return res
-//       .status(200)
-//       .json({ message: "Leave status updated", updatedLeave });
-//   } catch (error) {
-//     return res
-//       .status(500)
-//       .json({ message: "Error updating leave status", error });
-//   }
-// };
