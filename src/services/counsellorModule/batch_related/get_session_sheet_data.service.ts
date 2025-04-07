@@ -3,7 +3,7 @@ import { prisma } from "../../../config/database";
 import { extractS3BucketAndKeySize } from "../../../utils/s3";
 import s3 from "../../../config/s3Config";
 import { AppError } from "../../../utils/errorHandler";
-import { formatDateTime, parseCSVStream } from "../../../utils/commonUtils";
+import { formatDateTime, parseSessionSheet_CSV_Stream } from "../../../utils/commonUtils";
 import { Readable } from "stream";
 
 export const getSessionSheetDataService = async ({
@@ -52,7 +52,7 @@ export const getSessionSheetDataService = async ({
     }
 
     // ✅ Parse CSV data from the S3 stream
-    const allData = await parseCSVStream(response.Body as Readable).catch((error) => {
+    const allData = await parseSessionSheet_CSV_Stream(response.Body as Readable).catch((error) => {
         console.error("❌ Error parsing CSV from S3:", error);
         throw new AppError({ statusCode: 400, message: "Failed to parse CSV file from S3." });
     });

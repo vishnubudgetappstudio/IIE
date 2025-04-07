@@ -41,6 +41,7 @@ export const pdfMaterialFileUploadSchema = z.object({
 //     return val;
 // }, z.array(z.string().uuid("Invalid student ID format")).nonempty({ message: "*At least one student ID is required" }));
 
+// 🟢 Question Schema
 export const editStudentMaterialFileAccessSchema = z.object({
     material_title: z.string().optional(),
 
@@ -54,23 +55,57 @@ export const editStudentMaterialFileAccessSchema = z.object({
 });
 
 export const questionObjectSchema = z.object({
-    question: z.string({ required_error: "*question is required" }).min(1, "Question is required"),
-    options: z.array(z.string({ required_error: "*option is required" })).min(1, "Options are required"),
-    explanation: z.string({ required_error: "*explanation is required" }),
-    correctAnswer: z.string({ required_error: "*correct answer is required" }).min(1, "Correct answer is required"),
+    question: z
+        .string({ required_error: "*question is required" })
+        .min(1, "Question is required"),
+    options: z
+        .array(z.string({ required_error: "*option is required" }))
+        .min(1, "Options are required"),
+    explanation: z.string({ required_error: "*explanation is required" }).optional(),
+    correctAnswer: z
+        .string({ required_error: "*correct answer is required" })
+        .min(1, "Correct answer is required"),
 });
 
+// 🟢 Course Test Schema
 export const createCourseTestSchema = z.object({
-    batchId: z.string({ required_error: "*Batch ID is required" }).min(1, "Batch ID is required"),
-    test_title: z.string({ required_error: "*Test title is required" }).min(1, "Test title is required"),
-    test_url: z.string({}).url("Invalid test URL").optional(),
-    test_type: z.enum(["mock_test", "course_test"], { required_error: "*Test type is required" }),
-    startDate: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
-        message: "Invalid date format (DD/MM/YYYY required)",
+    batch_id: z.string({ required_error: "*Batch ID is required" }).min(1),
+    test_title: z.string({ required_error: "*Test title is required" }).min(1),
+    test_description: z.string({ required_error: "*Test description is required" }).min(1),
+    test_url: z.string().url("Invalid test URL").optional(),
+    test_type: z.enum(["mock_test", "course_test"], {
+        required_error: "*Test type is required",
     }),
-    endDate: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
-        message: "Invalid date format (DD/MM/YYYY required)",
-    }),
-    timer: z.string().min(1, "Timer is required"),
+    start_date: z
+        .string()
+        .regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+            message: "Invalid date format (DD/MM/YYYY required)",
+        }),
+    end_date: z
+        .string()
+        .regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+            message: "Invalid date format (DD/MM/YYYY required)",
+        }),
+    timer: z
+        .string()
+        .min(1, "Timer is required")
+        .refine(
+            (val) => {
+                const parts = val.split(":");
+                if (parts.length !== 2) return false;
+                const [hours, minutes] = parts.map(Number);
+                return (
+                    !isNaN(hours) &&
+                    !isNaN(minutes) &&
+                    hours >= 0 &&
+                    hours < 24 &&
+                    minutes >= 0 &&
+                    minutes < 60
+                );
+            },
+            {
+                message: "Timer must be a valid HH:MM format (e.g., 1:30, 00:45)",
+            }
+        ),
     questions: z.array(questionObjectSchema).optional(),
 });

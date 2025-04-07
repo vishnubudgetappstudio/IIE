@@ -14,6 +14,8 @@ interface UploadBufferToS3Params {
     batchId?: string;
     role?: CommonUserRole;
     is_xls_file?: boolean
+    is_test_file?: boolean
+    test_file_type?: 'mock_test' | 'course_test'
 }
 
 interface UploadBufferToS3Response {
@@ -74,42 +76,62 @@ export const uploadBufferToS3 = async ({
     userId,
     batchId,
     role,
-    is_xls_file
+    is_xls_file,
+    is_test_file,
+    test_file_type,
 }: UploadBufferToS3Params): Promise<UploadBufferToS3Response> => {
-
+    // 🚨 File presence validation
     if (!file) {
         throw new AppError({ statusCode: 400, message: "File is required." });
     }
 
-    const isImage = file.mimetype.startsWith("image/");
-    const isCounsellorUploadXLS = role === "counsellor";
+    const { mimetype, originalname } = file;
+    const isImage = mimetype.startsWith("image/");
+    const fileTypeFolder = FILE_TYPE_FOLDER_MAP[mimetype] || "other-files";
 
-    // ✅ Determine Folder Path
-    let folder = "";
+    // ✅ Determine folder path
+    let folderPath: string;
 
     if (isImage) {
-        if (!userId) throw new AppError({ statusCode: 400, message: "User ID is required for image uploads." });
-        folder = `images/${userId}`;
-    } else if (isCounsellorUploadXLS) {
-        const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
+        if (!userId) {
+            throw new AppError({ statusCode: 400, message: "User ID is required for image uploads." });
+        }
+        folderPath = `images/${userId}`;
+    } else if (role === "counsellor") {
         if (is_xls_file) {
-            // ✅ only xls file folder structure
-            folder = `files/${fileTypeFolder}/counsellor-${userId}`;
+            if (!userId) {
+                throw new AppError({ statusCode: 400, message: "User ID is required for XLS uploads." });
+            }
+            folderPath = `files/${fileTypeFolder}/counsellor-${userId}`;
         } else {
-            folder = `files/${fileTypeFolder}/batch-${batchId}`;
+            if (!batchId) {
+                throw new AppError({ statusCode: 400, message: "Batch ID is required for counsellor uploads." });
+            }
+            folderPath = `files/${fileTypeFolder}/batch-${batchId}`;
         }
     } else {
-        const fileTypeFolder = FILE_TYPE_FOLDER_MAP[file.mimetype] || "other-files";
-
-        if (!batchId) {
-            folder = `files/${fileTypeFolder}/material-draft/${role}-${userId}`;
+        // Other roles (e.g., admin/staff/etc.)
+        if (is_test_file) {
+            if (!batchId || !test_file_type) {
+                throw new AppError({
+                    statusCode: 400,
+                    message: "Batch ID and Test File Type are required for test uploads.",
+                });
+            }
+            folderPath = `files/${fileTypeFolder}/batch-${batchId}/${test_file_type}`;
+        } else if (!batchId) {
+            if (!userId) {
+                throw new AppError({ statusCode: 400, message: "User ID is required for draft uploads." });
+            }
+            folderPath = `files/${fileTypeFolder}/material-draft/${role}-${userId}`;
         } else {
-            folder = `files/${fileTypeFolder}/material-published/batch-${batchId}`;
+            folderPath = `files/${fileTypeFolder}/material-published/batch-${batchId}`;
         }
     }
 
-    // ✅ Construct the S3 file key
-    const fileKey = `${folder}/${Date.now()}-${sanitizeFileName(file.originalname)}`;
+    // 🧠 Construct final S3 key
+    const sanitizedName = sanitizeFileName(originalname);
+    const fileKey = `${folderPath}/${Date.now()}-${sanitizedName}`;
 
     try {
         await s3.send(
@@ -117,19 +139,22 @@ export const uploadBufferToS3 = async ({
                 Bucket: process.env.AWS_BUCKET_NAME!,
                 Key: fileKey,
                 Body: buffer,
-                ContentType: file.mimetype,
+                ContentType: mimetype,
             })
         );
 
+        const s3url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+
         return {
-            s3url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`,
-            fileName: file.originalname,
+            s3url,
+            fileName: originalname,
         };
     } catch (error) {
         console.error("🚨 S3 Upload Error:", error);
         throw new AppError({ statusCode: 500, message: "Failed to upload file to S3" });
     }
 };
+
 
 
 

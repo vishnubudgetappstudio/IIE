@@ -120,7 +120,7 @@ model Student {
   LeaveManagementStaffModel  LeaveDetail[]
   AttendanceDetailModel      StudentAttendanceDetail[]
   StudentMaterialAccessModel StudentMaterialAccess[]
-  StudentCourseTest          StudentCourseTest[]
+  StudentCourseTest          Test_Course_Or_Mock_With_Student[]
 
   @@index([name, roll_number, email, phone])
   @@map("student") // Mapping to actual table name
@@ -243,8 +243,8 @@ model BatchDetail {
   SessionSheetDetailModel              SessionSheetDetail[]
   SessionSheetStudentReportDetailModel SessionSheetStudentReportDetail[]
   MaterialFileDetailModel              MaterialFileDetail[]
-  CourseTestDetailModel                CourseTestCSVFile[]
-  StudentCourseTestModel               StudentCourseTest[]
+  CourseTestDetailModel                Test_Course_Or_Mock[]
+  StudentCourseTestModel               Test_Course_Or_Mock_With_Student[]
 
   @@index([id])
   @@index([mentor_id]) // Index for faster lookups
@@ -522,28 +522,30 @@ enum AttendanceStatus {
 // =============================================
 // ✅ Course Test or upload CSV Test file Schema 
 // =============================================
-model CourseTestCSVFile {
-  id         String    @id @default(uuid())
-  batchId    String
-  test_title String
-  test_url   String?   @db.Text
-  test_type  TestType
-  startDate  DateTime
-  endDate    DateTime
-  timer      String // e.g., "1:30 hours" or "45 mins"
-  questions  String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
+model Test_Course_Or_Mock {
+  id               String    @id @default(uuid())
+  batch_id         String
+  batch_name       String
+  test_title       String
+  test_description String    @db.Text
+  test_url         String?   @db.Text
+  test_type        TestType
+  start_date       DateTime
+  end_date         DateTime
+  timer            String // e.g., "1:30 hours" or "45 mins"
+  questions        String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
 
-  batch             BatchDetail         @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  StudentCourseTest StudentCourseTest[]
+  batch_detail_relation            BatchDetail                        @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  TestCourseOrMockWithStudentModel Test_Course_Or_Mock_With_Student[]
 
-  @@index([batchId, test_title, test_type])
-  @@map("course_test_csv_file")
+  @@index([batch_id, test_title, test_type])
+  @@map("test_course_or_mock")
 }
 
-model StudentCourseTest {
+model Test_Course_Or_Mock_With_Student {
   id           String   @id @default(uuid())
   batchId      String
   studentId    String
@@ -565,12 +567,12 @@ model StudentCourseTest {
   updatedAt DateTime?
 
   // Relations
-  batch_detail_relation BatchDetail       @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  student_relation      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  course_test_relation  CourseTestCSVFile @relation(fields: [courseTestId], references: [id], onDelete: Cascade)
+  batch_detail_relation BatchDetail         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student_relation      Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course_test_relation  Test_Course_Or_Mock @relation(fields: [courseTestId], references: [id], onDelete: Cascade)
 
   @@index([studentId, courseTestId, status, test_type])
-  @@map("student_course_test")
+  @@map("test_course_or_mock_with_student")
 }
 
 enum StudentTestStatus {

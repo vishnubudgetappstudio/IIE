@@ -29,7 +29,7 @@ export const roleSchema = z.enum(["staff", "counsellor", "student", "admin", "gu
 /**
  * Define the validation schema using Zod
  */
-export const csvSchema = z.object({
+export const csvSessionSheetSchema = z.object({
     "No.": z.string().regex(/^\d+$/, "No. must be a numeric value"),
     "Course Name": z.string().min(1, "Course Name cannot be empty"),
     "Course Id": z.string().min(1, "Course Id cannot be empty"),
@@ -41,4 +41,18 @@ export const csvSchema = z.object({
     "Completed Date": z.string().optional().refine((date) => {
         return !date || /^\d{4}-\d{2}-\d{2}$/.test(date);
     }, { message: "Completed Date must be in YYYY-MM-DD format" }),
+});
+
+/**
+ * Define the validation schema using Zod
+ */
+export const csvTestCourseOrMockSchema = z.object({
+    "No.": z.string().regex(/^\d+$/, "No. must be a numeric value"),
+    "Question": z.string({ required_error: "*Question is required" }).min(1, "Question is required"),
+    "Option_1": z.string({ required_error: "*Option_1 is required" }).min(1, "Option_1 are required"),
+    "Option_2": z.string({ required_error: "*Option_2 is required" }).min(1, "Option_2 are required"),
+    "Option_3": z.string().optional(),
+    "Option_4": z.string().optional(),
+    "Explanation": z.string({ required_error: "*Explanation is required" }).optional(),
+    "Correct Answer": z.string({ required_error: "*Correct Answer is required" }).min(1, "Correct Answer is required"),
 });

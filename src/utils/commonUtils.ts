@@ -2,13 +2,13 @@ import csvParser from "csv-parser";
 import { Readable } from "stream";
 import { AppError } from "./errorHandler";
 import { format } from "date-fns";
-import { csvSchema } from "../zodSchema/common.schema";
+import { csvSessionSheetSchema, csvTestCourseOrMockSchema } from "../zodSchema/common.schema";
 
 /**
  * Parses and validates CSV stream into JSON.
  * If an error occurs, it stops processing immediately.
  */
-export const parseCSVStream = async (stream: Readable): Promise<any[]> => {
+export const parseSessionSheet_CSV_Stream = async (stream: Readable): Promise<any[]> => {
     return new Promise((resolve, reject) => {
         const results: any[] = [];
         const noSet = new Set(); // Track uniqueness of "No."
@@ -18,7 +18,7 @@ export const parseCSVStream = async (stream: Readable): Promise<any[]> => {
         csvStream
             .on("data", (data) => {
                 // Validate row using safeParse
-                const validationResult = csvSchema.safeParse(data);
+                const validationResult = csvSessionSheetSchema.safeParse(data);
 
                 if (!validationResult.success) {
                     const firstErrorMessage = validationResult.error.errors[0].message;
@@ -47,8 +47,53 @@ export const parseCSVStream = async (stream: Readable): Promise<any[]> => {
             })
             .on("end", () => resolve(results))
             .on("error", (error) => {
-                console.error("❌ Error parsing CSV:", error);
-                reject(new AppError({ statusCode: 400, message: "Failed to parse CSV file.", data: {} }));
+                console.error("❌ Error parsing SessionSheets CSV:", error);
+                reject(new AppError({ statusCode: 400, message: "Failed to parse SessionSheet CSV file.", data: {} }));
+            });
+    });
+};
+
+export const parseTestCourseOrMock_CSV_Stream = async (stream: Readable): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        const results: any[] = [];
+        const noSet = new Set(); // Track uniqueness of "No."
+
+        const csvStream = stream.pipe(csvParser());
+
+        csvStream
+            .on("data", (data) => {
+                // Validate row using safeParse
+                const validationResult = csvTestCourseOrMockSchema.safeParse(data);
+
+                if (!validationResult.success) {
+                    const firstErrorMessage = validationResult.error.errors[0].message;
+                    csvStream.destroy(); // Stop stream immediately
+                    return reject(new AppError({
+                        statusCode: 400,
+                        message: `Validation Error in row: ${firstErrorMessage}`,
+                        data: {}
+                    }));
+                }
+
+                const validatedData = validationResult.data;
+
+                // Check uniqueness of "No."
+                if (noSet.has(validatedData["No."])) {
+                    csvStream.destroy(); // Stop stream immediately
+                    return reject(new AppError({
+                        statusCode: 400,
+                        message: `Duplicate "No." found: ${validatedData["No."]}`,
+                        data: {},
+                    }));
+                }
+                noSet.add(validatedData["No."]);
+
+                results.push(validatedData);
+            })
+            .on("end", () => resolve(results))
+            .on("error", (error) => {
+                console.error("❌ Error parsing TestCourseOrMockCSV CSV:", error);
+                reject(new AppError({ statusCode: 400, message: "Failed to parse TestCourseOrMockCSV file.", data: {} }));
             });
     });
 };

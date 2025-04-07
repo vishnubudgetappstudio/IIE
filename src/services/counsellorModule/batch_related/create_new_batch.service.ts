@@ -1,7 +1,7 @@
 import { Readable } from "stream";
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
-import { parseCSVStream, parseDDMMYYYYToDate } from "../../../utils/commonUtils";
+import { parseSessionSheet_CSV_Stream, parseDDMMYYYYToDate } from "../../../utils/commonUtils";
 import { uploadFileToS3 } from "../../s3/uploadFiles.service";
 import { CommonUserRole } from "@prisma/client";
 
@@ -112,7 +112,7 @@ export const createNewBatchService = async ({
             const fileStream = Readable.from(sessionSheetFile.buffer); // Convert Buffer to Stream
 
             // ✅ Read and validate CSV file
-            const parsedData = await parseCSVStream(fileStream);
+            const parsedData = await parseSessionSheet_CSV_Stream(fileStream);
 
             // console.log("✅ CSV Validation Passed: ", parsedData.length, "rows");
         } catch (error) {
@@ -147,6 +147,7 @@ export const createNewBatchService = async ({
     const newBatch = await prisma.batchDetail.create({
         data: {
             batch_number,
+            batchName: batch_number,
             course,
             from_date,
             to_date,
