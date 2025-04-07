@@ -46,7 +46,6 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 //login controller
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log("1111188888888=====>", req.body);
     // Validate Request Body (based on schema)
     const validatedData = loginSchema.safeParse(req.body);
 

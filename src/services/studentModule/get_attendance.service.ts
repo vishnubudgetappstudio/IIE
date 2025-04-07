@@ -111,6 +111,16 @@ export const getStudentAttendanceService = async ({
         },
     });
 
+    const leave_history = leaveHistory.map((leave) => {
+        return {
+            ...leave,
+            applied: leave.status !== 'Approved' ? true : false,
+            review: leave.status !== 'Approved' ? false : true,
+            approved: leave.status !== 'Approved' ? false : true,
+        }
+
+    })
+
     const finalResult: StudentAttendanceResponse = {
         id: student.id,
         name: student.name,
@@ -120,7 +130,7 @@ export const getStudentAttendanceService = async ({
         weekly: calculateAttendancePercentage({ present: stats.week_present, total: stats.week_total }),
         thisMonth: calculateAttendancePercentage({ present: stats.month_present, total: stats.month_total }),
         lastMonth: calculateAttendancePercentage({ present: stats.last_month_present, total: stats.last_month_total }),
-        leaveHistory,
+        leaveHistory: leave_history
     };
 
     return finalResult;

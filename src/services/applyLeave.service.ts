@@ -110,7 +110,13 @@ export const applyLeaveService = async ({
       },
     });
 
-    return leave;
+    return {
+      ...leave,
+      applied: leave.status !== 'Approved' ? true : false,
+      review: leave.status !== 'Approved' ? false : true,
+      approved: leave.status !== 'Approved' ? false : true,
+
+    };
   } catch (err) {
     console.error("Error creating leave request:", err);
     throw new AppError({
