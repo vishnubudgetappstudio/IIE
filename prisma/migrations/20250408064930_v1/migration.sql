@@ -101,12 +101,12 @@ CREATE TABLE `leave_detail` (
     `management_staff_id` VARCHAR(191) NULL,
     `student_id` VARCHAR(191) NULL,
     `role` ENUM('admin', 'counsellor', 'staff', 'guest', 'student') NOT NULL,
-    `leave_type` ENUM('Sick', 'Casual', 'Earned', 'Unpaid', 'Other') NOT NULL,
+    `leave_type` ENUM('Sick', 'Casual', 'Earned', 'Unpaid', 'Absent', 'Other') NOT NULL,
     `leave_mode` ENUM('Half_Day', 'Full_Day') NULL,
     `from_date` VARCHAR(191) NOT NULL,
     `to_date` VARCHAR(191) NOT NULL,
     `reason` VARCHAR(191) NOT NULL,
-    `status` ENUM('Pending', 'Approved', 'Rejected', 'Cancelled') NOT NULL DEFAULT 'Pending',
+    `status` ENUM('Pending', 'Approved', 'Rejected', 'Not_informed') NOT NULL DEFAULT 'Pending',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `deletedAt` DATETIME(3) NULL,
@@ -302,6 +302,65 @@ CREATE TABLE `student_attendance` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `test_course` (
+    `id` VARCHAR(191) NOT NULL,
+    `batch_id` VARCHAR(191) NOT NULL,
+    `batch_name` VARCHAR(191) NOT NULL,
+    `test_title` VARCHAR(191) NOT NULL,
+    `test_description` TEXT NOT NULL,
+    `test_url` TEXT NULL,
+    `start_date` DATETIME(3) NOT NULL,
+    `end_date` DATETIME(3) NOT NULL,
+    `timer` VARCHAR(191) NOT NULL,
+    `questions` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deletedAt` DATETIME(3) NULL,
+
+    INDEX `test_course_batch_id_test_title_idx`(`batch_id`, `test_title`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `test_mock` (
+    `id` VARCHAR(191) NOT NULL,
+    `batch_id` VARCHAR(191) NOT NULL,
+    `batch_name` VARCHAR(191) NOT NULL,
+    `test_url` TEXT NULL,
+    `test_mode` ENUM('easy', 'medium', 'hard') NOT NULL DEFAULT 'easy',
+    `questions` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `deletedAt` DATETIME(3) NULL,
+
+    INDEX `test_mock_batch_id_idx`(`batch_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `test_course_or_mock_with_student` (
+    `id` VARCHAR(191) NOT NULL,
+    `batchId` VARCHAR(191) NOT NULL,
+    `studentId` VARCHAR(191) NOT NULL,
+    `courseTestId` VARCHAR(191) NULL,
+    `mockTestId` VARCHAR(191) NULL,
+    `test_type` ENUM('mock_test', 'course_test') NOT NULL,
+    `status` ENUM('NOT_STARTED', 'IN_PROGRESS', 'DRAFTED', 'COMPLETED', 'EXPIRED') NOT NULL DEFAULT 'NOT_STARTED',
+    `submittedAt` DATETIME(3) NULL,
+    `timeSpent` VARCHAR(191) NULL,
+    `score` VARCHAR(191) NULL,
+    `total_questions_count` VARCHAR(191) NULL,
+    `correct_answers_count` VARCHAR(191) NULL,
+    `incorrect_answers_count` VARCHAR(191) NULL,
+    `is_passed` BOOLEAN NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NULL,
+
+    INDEX `test_course_or_mock_with_student_studentId_courseTestId_mock_idx`(`studentId`, `courseTestId`, `mockTestId`, `status`, `test_type`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `student` ADD CONSTRAINT `student_counsellor_id_fkey` FOREIGN KEY (`counsellor_id`) REFERENCES `management_staff`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -367,3 +426,21 @@ ALTER TABLE `student_attendance` ADD CONSTRAINT `student_attendance_batch_id_fke
 
 -- AddForeignKey
 ALTER TABLE `student_attendance` ADD CONSTRAINT `student_attendance_student_id_fkey` FOREIGN KEY (`student_id`) REFERENCES `student`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `test_course` ADD CONSTRAINT `test_course_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `test_mock` ADD CONSTRAINT `test_mock_batch_id_fkey` FOREIGN KEY (`batch_id`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `test_course_or_mock_with_student` ADD CONSTRAINT `test_course_or_mock_with_student_batchId_fkey` FOREIGN KEY (`batchId`) REFERENCES `batch_detail`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `test_course_or_mock_with_student` ADD CONSTRAINT `test_course_or_mock_with_student_studentId_fkey` FOREIGN KEY (`studentId`) REFERENCES `student`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `test_course_or_mock_with_student` ADD CONSTRAINT `test_course_or_mock_with_student_courseTestId_fkey` FOREIGN KEY (`courseTestId`) REFERENCES `test_course`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `test_course_or_mock_with_student` ADD CONSTRAINT `test_course_or_mock_with_student_mockTestId_fkey` FOREIGN KEY (`mockTestId`) REFERENCES `test_mock`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

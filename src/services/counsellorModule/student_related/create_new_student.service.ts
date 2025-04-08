@@ -6,6 +6,7 @@ interface CreateNewStudentResponse {
     data: {
         name: string;
         roll_number: string;
+        course_name: string;
         course_id: string;
         phone?: string;
         alt_phone?: string;
@@ -19,6 +20,7 @@ export const createNewStudentService = async (
         name,
         email,
         roll_number,
+        course_name,
         course_id,
         phone,
         alt_phone,
@@ -29,6 +31,7 @@ export const createNewStudentService = async (
         name: string,
         email: string,
         roll_number: string,
+        course_name: string,
         course_id: string,
         phone?: string,
         alt_phone?: string,
@@ -37,6 +40,13 @@ export const createNewStudentService = async (
         counsellor_id: string,
     }
 ): Promise<CreateNewStudentResponse> => {
+
+    const existingCounsellor = await prisma.managementStaff.findUnique({
+        where: { id: counsellor_id, role: "counsellor", deletedAt: null },
+    })
+
+    if (!existingCounsellor) throw new AppError({ statusCode: 404, message: "Counsellor not found", data: {} });
+
     // Check if student email already exists
     const existingStudentEmail = await prisma.student.findUnique({
         where: { email: email },
@@ -89,6 +99,7 @@ export const createNewStudentService = async (
             password: hashedPassword,
             lms_id: roll_number!,
             course_id: course_id,
+            Course: course_name,
             phone: phone ? phone : "",
             alt_phone: alt_phone ? alt_phone : "",
             email: email,
@@ -120,6 +131,7 @@ export const createNewStudentService = async (
         data: {
             name: newStudent.name,
             roll_number: newStudent.roll_number,
+            course_name: newStudent.Course as string,
             course_id: newStudent.course_id,
             email: newStudent.email,
             phone: phone ?? "",

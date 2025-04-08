@@ -570,31 +570,32 @@ model Test_Course_Or_Mock_With_Student {
   id           String   @id @default(uuid())
   batchId      String
   studentId    String
-  courseTestId String
+  courseTestId String? // Only used if test_type = COURSE
+  mockTestId   String? // Only used if test_type = MOCK
   test_type    TestType
 
   // Core fields
-  status                  StudentTestStatus @default(NOT_STARTED) // Enum-based for clean status control
-  submittedAt             DateTime? // When test was submitted
-  timeSpent               String? // e.g., "1:30" or "1 hr 45 min"
-  feedback                String? // Optional remarks from student or evaluator
-  score                   String? // Nullable until completed
-  total_questions_count   String? // Nullable until completed
-  correct_answers_count   String? // Nullable until completed
-  incorrect_answers_count String? // Nullable until completed
-  is_passed               Boolean? // Nullable until completed
+  status                  StudentTestStatus @default(NOT_STARTED)
+  submittedAt             DateTime?
+  timeSpent               String?
+  score                   String?
+  total_questions_count   String?
+  correct_answers_count   String?
+  incorrect_answers_count String?
+  is_passed               Boolean?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime?
+  deletedAt DateTime?
 
   // Relations
   batch_detail_relation BatchDetail @relation(fields: [batchId], references: [id], onDelete: Cascade)
   student_relation      Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  course_test_relation  Test_Course @relation(fields: [courseTestId], references: [id], onDelete: Cascade)
-  Test_Mock             Test_Mock?  @relation(fields: [test_MockId], references: [id])
-  test_MockId           String?
 
-  @@index([studentId, courseTestId, status, test_type])
+  course_test_relation Test_Course? @relation(fields: [courseTestId], references: [id], onDelete: Cascade)
+  mock_test_relation   Test_Mock?   @relation(fields: [mockTestId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, courseTestId, mockTestId, status, test_type])
   @@map("test_course_or_mock_with_student")
 }
 
