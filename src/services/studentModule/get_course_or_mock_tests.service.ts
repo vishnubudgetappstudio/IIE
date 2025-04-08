@@ -58,7 +58,9 @@ export const studentGetAllCourseOrMockTestsService = async ({
         deletedAt: null,
     };
     if (searchTerm && test_type === "course_test") {
-        whereCondition.test_title = { startsWith: searchTerm };
+        whereCondition.course_test_relation = {
+            test_title: { startsWith: searchTerm }
+        };
     }
 
     // ✅ Fetch test records and count
@@ -74,6 +76,10 @@ export const studentGetAllCourseOrMockTestsService = async ({
                 mockTestId: true,
                 test_type: true,
                 status: true,
+                course_test_relation: {
+                    select: { test_title: true },
+                },
+
             },
         }),
         prisma.test_Course_Or_Mock_With_Student.count({ where: whereCondition }),
