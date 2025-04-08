@@ -19,101 +19,93 @@ export const getAllCourseTestsService = async ({
     page,
     limit,
 }: GetAllCourseTestsParams) => {
-    try {
-        // Apply default values if page or limit is undefined
-        const currentPage = page && page > 0 ? page : 1;
-        const perPage = limit && limit > 0 ? limit : 10;
-        const skip = (currentPage - 1) * perPage;
-        const searchTerm = search?.trim();
+    // Apply default values if page or limit is undefined
+    const currentPage = page && page > 0 ? page : 1;
+    const perPage = limit && limit > 0 ? limit : 10;
+    const skip = (currentPage - 1) * perPage;
+    const searchTerm = search?.trim();
 
-        const existingBatch = await prisma.batchDetail.findUnique({
-            where: { id: batchId, deletedAt: null },
-        });
+    const existingBatch = await prisma.batchDetail.findUnique({
+        where: { id: batchId, deletedAt: null },
+    });
 
-        if (!existingBatch) throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
+    if (!existingBatch) throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
 
-        const whereCondition: any = {
-            batch_id: existingBatch.id,
-            deletedAt: null,
-        };
+    const whereCondition: any = {
+        batch_id: existingBatch.id,
+        deletedAt: null,
+    };
 
-        if (searchTerm) {
-            whereCondition.test_title = { startsWith: searchTerm };
-        }
-
-        const [courseTests, totalTests] = await Promise.all([
-            prisma.test_Course.findMany({
-                where: whereCondition,
-                skip,
-                take: perPage,
-                orderBy: { createdAt: "desc" },
-                select: {
-                    id: true,
-                    test_title: true,
-                    test_url: true,
-                    end_date: true,
-                    timer: true,
-                    questions: true,
-                    batch_detail_relation: {
-                        select: {
-                            batch_number: true,
-                        }
-                    }
-                },
-            }),
-            prisma.test_Course.count({ where: whereCondition }),
-        ]);
-
-        const enhancedTests = await Promise.all(
-            courseTests.map(async (test) => {
-                let total_questions = 0;
-
-                const end_date = formatDateOnly(test.end_date);
-
-                const batch_number = test.batch_detail_relation.batch_number
-
-                const duration = formatDurationFromTimeString(test.timer);
-
-                if (test.test_url && !test.questions) {
-                    try {
-                        const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: test.test_url });
-                        const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
-
-                        if (response.Body) {
-                            const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
-                            total_questions = rows.length;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Error reading/parsing test CSV: ${test.test_title}`, err);
-                    }
-                } else {
-                    total_questions = JSON.parse(test.questions as string)?.length
-                }
-
-                return {
-                    id: test.id,
-                    test_title: test.test_title,
-                    test_url: test.test_url,
-                    end_date: end_date,
-                    timer: duration,
-                    batch_number: batch_number,
-                    total_questions,
-                };
-            })
-        );
-
-        return {
-            enhancedTests,
-            totalTests,
-            currentPage,
-            perPage,
-            totalPages: Math.ceil(totalTests / perPage),
-        };
-    } catch (error) {
-        console.error("❌ getAllCourseTestsService error:", error);
-        throw new AppError({
-            statusCode: 500,
-            message: "Unable to fetch course tests",
-        });
+    if (searchTerm) {
+        whereCondition.test_title = { startsWith: searchTerm };
     }
+
+    const [courseTests, totalTests] = await Promise.all([
+        prisma.test_Course.findMany({
+            where: whereCondition,
+            skip,
+            take: perPage,
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                test_title: true,
+                test_url: true,
+                end_date: true,
+                timer: true,
+                questions: true,
+                batch_detail_relation: {
+                    select: {
+                        batch_number: true,
+                    }
+                }
+            },
+        }),
+        prisma.test_Course.count({ where: whereCondition }),
+    ]);
+
+    const enhancedTests = await Promise.all(
+        courseTests.map(async (test) => {
+            let total_questions = 0;
+
+            const end_date = formatDateOnly(test.end_date);
+
+            const batch_number = test.batch_detail_relation.batch_number
+
+            const duration = formatDurationFromTimeString(test.timer);
+
+            if (test.test_url && !test.questions) {
+                try {
+                    const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: test.test_url });
+                    const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
+
+                    if (response.Body) {
+                        const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
+                        total_questions = rows.length;
+                    }
+                } catch (err) {
+                    console.warn(`⚠️ Error reading/parsing test CSV: ${test.test_title}`, err);
+                }
+            } else {
+                total_questions = JSON.parse(test.questions as string)?.length
+            }
+
+            return {
+                id: test.id,
+                test_title: test.test_title,
+                test_url: test.test_url,
+                end_date: end_date,
+                timer: duration,
+                batch_number: batch_number,
+                total_questions,
+            };
+        })
+    );
+
+    return {
+        enhancedTests,
+        totalTests,
+        currentPage,
+        perPage,
+        totalPages: Math.ceil(totalTests / perPage),
+    };
 };
