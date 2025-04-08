@@ -135,7 +135,7 @@ export const createCourseTestService = async ({
         studentId: student.student_id,
         courseTestId: courseTest.id,
         test_type: TestType.course_test,
-        status: StudentTestStatus.NOT_STARTED,
+        status: StudentTestStatus.yet_to_start,
         createdAt: new Date(),
         updatedAt: null,
     }));

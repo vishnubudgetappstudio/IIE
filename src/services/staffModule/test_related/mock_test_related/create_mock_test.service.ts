@@ -97,6 +97,7 @@ export const createMockTestService = async ({
             batch_id: batchId,
             batch_name: existingBatch.batchName || "",
             test_url: test_csv_FileUrl || null,
+            test_mode,
             questions: questions?.length ? JSON.stringify(questions) : null,
         },
     }).catch((error) => {
@@ -114,7 +115,7 @@ export const createMockTestService = async ({
         courseTestId: null,
         mockTestId: mockTestResponse.id,
         test_type: TestType.mock_test,
-        status: StudentTestStatus.NOT_STARTED,
+        status: StudentTestStatus.yet_to_start,
         createdAt: new Date(),
         updatedAt: null,
     }));

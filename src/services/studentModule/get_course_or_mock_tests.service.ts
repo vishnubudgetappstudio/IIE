@@ -128,10 +128,13 @@ export const studentGetAllCourseOrMockTestsService = async ({
                     id: test.id,
                     test_title: testData.test_title,
                     test_description: testData.test_description,
+                    test_type: test.test_type,
                     end_date: formatDateOnly(testData.end_date),
                     timer: formatDurationFromTimeString(testData.timer),
                     batch_number: testData.batch_detail_relation.batch_number,
                     status: test.status,
+                    test_mode: null,
+                    management_staff_name: null,
                     total_questions,
                 };
             }
@@ -180,8 +183,14 @@ export const studentGetAllCourseOrMockTestsService = async ({
 
                 return {
                     id: test.id,
+                    test_title: null,
+                    test_description: null,
                     test_type: test.test_type,
+                    end_date: null,
+                    timer: null,
                     batch_number: testData.batch_detail_relation.batch_number,
+                    status: null,
+                    test_mode: testData.test_mode,
                     management_staff_name: testData.batch_detail_relation.management_staff_relation.name,
                     total_questions,
                 };
