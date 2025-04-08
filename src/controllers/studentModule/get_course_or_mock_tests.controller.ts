@@ -15,7 +15,6 @@ export const studentGetAllCourseOrMockTestsController = async (
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const search = req.query.searchQuery as string || null;
-        const batchId = req.query.batch_id as string || null;
         const testType = req.query.test_type as TestType;
 
         if (!req.user) throw new AppError({ statusCode: 404, message: "User not found", data: [] });
@@ -30,18 +29,8 @@ export const studentGetAllCourseOrMockTestsController = async (
             });
         }
 
-        // Validate required param
-        if (!batchId || typeof batchId !== "string") {
-            throw new AppError({
-                statusCode: 400,
-                message: "Batch ID is required and must be a string",
-                data: [],
-            });
-        }
-
         // Call service
         const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await studentGetAllCourseOrMockTestsService({
-            batchId,
             studentId: req.user?.userId,
             test_type: testType,
             search,

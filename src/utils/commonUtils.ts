@@ -224,3 +224,33 @@ export const calculateAttendancePercentage = ({ present, total }: { present: big
         absentPercentage: +(100 - presentPercentage).toFixed(2),
     };
 };
+
+export const getCourseDuration = (startDate: Date, endDate: Date): string => {
+    if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return "";
+    }
+
+    let years = endDate.getFullYear() - startDate.getFullYear();
+    let months = endDate.getMonth() - startDate.getMonth();
+    let days = endDate.getDate() - startDate.getDate();
+
+    if (days < 0) {
+        months -= 1;
+        const prevMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0);
+        days += prevMonth.getDate();
+    }
+
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+
+    const totalMonths = years * 12 + months;
+
+    const parts: string[] = [];
+
+    if (totalMonths > 0) parts.push(`${totalMonths} month${totalMonths > 1 ? "s" : ""}`);
+    if (days > 0) parts.push(`${days} day${days > 1 ? "s" : ""}`);
+
+    return parts.join(" ") || "0 days";
+};
