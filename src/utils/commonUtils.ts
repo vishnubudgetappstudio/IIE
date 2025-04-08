@@ -132,6 +132,23 @@ export const formatTimeOnly = (date: string | Date): string => {
     return format(parsedDate, "h:mm a"); // 2:30 PM
 };
 
+export const formatDurationFromTimeString = (time: string): string => {
+    const [hoursStr, minutesStr] = time.split(":");
+
+    const hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+
+    const hourPart = hours > 0 ? `${hours} hour${hours > 1 ? "s" : ""}` : "";
+    const minutePart = minutes > 0 ? `${minutes} minute${minutes > 1 ? "s" : ""}` : "";
+
+    if (hourPart && minutePart) {
+        return `${hourPart} ${minutePart}`;
+    }
+
+    return hourPart || minutePart || "0 minutes";
+};
+
+
 export const convertToEpoch = ({ date, time }: { date: string, time: string }): number => {
     const dateStr = `${date}, ${time} `
     const dateObj = new Date(dateStr);

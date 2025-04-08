@@ -25,6 +25,8 @@ import { updateUserFcmTokenController } from "../controllers/update_user_fcm_tok
 import { getStudentAttendanceController } from "../controllers/studentModule/get_attendance.controller";
 import { createCourseTestController } from "../controllers/staffModule/test_relateed/couse_test_related/create_course_test.controller";
 import { createMockTestController } from "../controllers/staffModule/test_relateed/mock_test_related/create_mock_test.controller";
+import { getAllCourseTestsController } from "../controllers/staffModule/test_relateed/couse_test_related/get_course_test.controller";
+import { getAllMockTestsController } from "../controllers/staffModule/test_relateed/mock_test_related/get_mock_test.controller";
 
 const router = Router();
 
@@ -65,6 +67,8 @@ router.post("/upload-pdfMaterial-students", uploadPDFMaterialFileController);
 router.post("/edit-pdfMaterial-students-access", editStudentMaterialAccessController);
 router.get("/get-pdf-Materials", getPDFMaterialFileListController);
 router.post("/create-course-test", createCourseTestController);
+router.get("/get-course-tests", getAllCourseTestsController);
 router.post("/create-mock-test", createMockTestController);
+router.get("/get-mock-tests", getAllMockTestsController);
 
 export default router;
