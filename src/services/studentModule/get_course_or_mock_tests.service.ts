@@ -73,6 +73,7 @@ export const studentGetAllCourseOrMockTestsService = async ({
                 courseTestId: true,
                 mockTestId: true,
                 test_type: true,
+                status: true,
             },
         }),
         prisma.test_Course_Or_Mock_With_Student.count({ where: whereCondition }),
@@ -81,115 +82,109 @@ export const studentGetAllCourseOrMockTestsService = async ({
     // ✅ Map and enrich test data
     const enhancedTests = await Promise.all(
         tests.map(async (test) => {
-            try {
-                let testData: any;
-                let total_questions = 0;
+            let testData: any;
+            let total_questions = 0;
 
-                if (test.test_type === "course_test" && test.courseTestId) {
-                    testData = await prisma.test_Course.findFirst({
-                        where: { id: test.courseTestId, deletedAt: null },
-                        select: {
-                            test_title: true,
-                            test_url: true,
-                            end_date: true,
-                            timer: true,
-                            questions: true,
-                            batch_detail_relation: {
-                                select: { batch_number: true },
-                            },
+            if (test.test_type === "course_test" && test.courseTestId) {
+                testData = await prisma.test_Course.findFirst({
+                    where: { id: test.courseTestId, deletedAt: null },
+                    select: {
+                        test_title: true,
+                        test_url: true,
+                        end_date: true,
+                        timer: true,
+                        questions: true,
+                        batch_detail_relation: {
+                            select: { batch_number: true },
                         },
-                    });
+                    },
+                });
 
-                    if (!testData) throw new AppError({ statusCode: 404, message: "Course Test not found", data: [] });
+                if (!testData) throw new AppError({ statusCode: 404, message: "Course Test not found", data: [] });
 
-                    if (testData.test_url && !testData.questions) {
-                        try {
-                            const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: testData.test_url });
-                            const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
-                            if (response.Body) {
-                                const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
-                                total_questions = rows.length;
-                            }
-                        } catch (err) {
-                            console.warn(`⚠️ Failed to parse CSV for test: ${testData.test_title}`, err);
-                            throw new AppError({ statusCode: 404, message: `Failed to parse CSV for test: ${testData.test_title}`, data: [] });
+                if (testData.test_url && !testData.questions) {
+                    try {
+                        const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: testData.test_url });
+                        const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
+                        if (response.Body) {
+                            const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
+                            total_questions = rows.length;
                         }
-                    } else if (testData.questions) {
-                        try {
-                            const parsed = JSON.parse(testData.questions);
-                            total_questions = Array.isArray(parsed) ? parsed.length : 0;
-                        } catch {
-                            console.warn(`⚠️ Invalid JSON in questions for test: ${testData.test_title}`);
-                            throw new AppError({ statusCode: 404, message: `Invalid JSON in questions for test: ${testData.test_title}`, data: [] });
-                        }
+                    } catch (err) {
+                        console.warn(`⚠️ Failed to parse CSV for test: ${testData.test_title}`, err);
+                        throw new AppError({ statusCode: 404, message: `Failed to parse CSV for test: ${testData.test_title}`, data: [] });
                     }
-
-                    return {
-                        id: test.id,
-                        test_title: testData.test_title,
-                        test_url: testData.test_url,
-                        end_date: formatDateOnly(testData.end_date),
-                        timer: formatDurationFromTimeString(testData.timer),
-                        batch_number: testData.batch_detail_relation.batch_number,
-                        total_questions,
-                    };
+                } else if (testData.questions) {
+                    try {
+                        const parsed = JSON.parse(testData.questions);
+                        total_questions = Array.isArray(parsed) ? parsed.length : 0;
+                    } catch {
+                        console.warn(`⚠️ Invalid JSON in questions for test: ${testData.test_title}`);
+                        throw new AppError({ statusCode: 404, message: `Invalid JSON in questions for test: ${testData.test_title}`, data: [] });
+                    }
                 }
 
-                if (test.test_type === "mock_test" && test.mockTestId) {
-                    testData = await prisma.test_Mock.findFirst({
-                        where: { id: test.mockTestId, deletedAt: null },
-                        select: {
-                            test_url: true,
-                            questions: true,
-                            batch_detail_relation: {
-                                select: {
-                                    batch_number: true,
-                                    management_staff_relation: {
-                                        select: { name: true },
-                                    },
+                return {
+                    id: test.id,
+                    test_title: testData.test_title,
+                    test_description: testData.test_description,
+                    end_date: formatDateOnly(testData.end_date),
+                    timer: formatDurationFromTimeString(testData.timer),
+                    batch_number: testData.batch_detail_relation.batch_number,
+                    status: test.status,
+                    total_questions,
+                };
+            }
+
+            if (test.test_type === "mock_test" && test.mockTestId) {
+                testData = await prisma.test_Mock.findFirst({
+                    where: { id: test.mockTestId, deletedAt: null },
+                    select: {
+                        test_url: true,
+                        test_mode: true,
+                        questions: true,
+                        batch_detail_relation: {
+                            select: {
+                                batch_number: true,
+                                management_staff_relation: {
+                                    select: { name: true },
                                 },
                             },
                         },
-                    });
+                    },
+                });
 
-                    if (!testData) throw new AppError({ statusCode: 404, message: "Mock Test not found", data: [] });
+                if (!testData) throw new AppError({ statusCode: 404, message: "Mock Test not found", data: [] });
 
-                    if (testData.test_url && !testData.questions) {
-                        try {
-                            const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: testData.test_url });
-                            const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
-                            if (response.Body) {
-                                const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
-                                total_questions = rows.length;
-                            }
-                        } catch (err) {
-                            console.warn(`⚠️ Failed to parse CSV for mock test: ${testData.test_type}`, err);
-                            throw new AppError({ statusCode: 404, message: `Failed to parse CSV for mock test: ${testData.test_type}`, data: [] });
+                if (testData.test_url && !testData.questions) {
+                    try {
+                        const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: testData.test_url });
+                        const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
+                        if (response.Body) {
+                            const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
+                            total_questions = rows.length;
                         }
-                    } else if (testData.questions) {
-                        try {
-                            const parsed = JSON.parse(testData.questions);
-                            total_questions = Array.isArray(parsed) ? parsed.length : 0;
-                        } catch {
-                            console.warn(`⚠️ Invalid JSON in questions for mock test: ${testData.test_title}`);
-                            throw new AppError({ statusCode: 404, message: `Invalid JSON in questions for mock test: ${testData.test_type}`, data: [] });
-                        }
+                    } catch (err) {
+                        console.warn(`⚠️ Failed to parse CSV for mock test: ${testData.test_type}`, err);
+                        throw new AppError({ statusCode: 404, message: `Failed to parse CSV for mock test: ${testData.test_type}`, data: [] });
                     }
-
-                    return {
-                        id: test.id,
-                        test_title: testData.test_title,
-                        test_url: testData.test_url,
-                        batch_number: testData.batch_detail_relation.batch_number,
-                        management_staff_name: testData.batch_detail_relation.management_staff_relation.name,
-                        total_questions,
-                    };
+                } else if (testData.questions) {
+                    try {
+                        const parsed = JSON.parse(testData.questions);
+                        total_questions = Array.isArray(parsed) ? parsed.length : 0;
+                    } catch {
+                        console.warn(`⚠️ Invalid JSON in questions for mock test: ${testData.test_title}`);
+                        throw new AppError({ statusCode: 404, message: `Invalid JSON in questions for mock test: ${testData.test_type}`, data: [] });
+                    }
                 }
 
-                return null;
-            } catch (err) {
-                console.error(`❌ Failed to process test ID ${test.id}:`, err);
-                throw new AppError({ statusCode: 404, message: `Failed to process test ID ${test.id}`, data: [] });
+                return {
+                    id: test.id,
+                    test_type: test.test_type,
+                    batch_number: testData.batch_detail_relation.batch_number,
+                    management_staff_name: testData.batch_detail_relation.management_staff_relation.name,
+                    total_questions,
+                };
             }
         })
     );
