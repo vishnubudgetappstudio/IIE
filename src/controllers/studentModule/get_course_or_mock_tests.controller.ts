@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { AppError } from "../../utils/errorHandler";
-import { studentGetAllCourseOrMockTestsService } from "../../services/studentModule/get_course_tests.service";
+import { studentGetAllCourseOrMockTestsService } from "../../services/studentModule/get_course_or_mock_tests.service";
 import { TestType } from "@prisma/client";
 
 // Controller to fetch all course tests
