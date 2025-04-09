@@ -98,7 +98,7 @@ export const uploadBufferToS3 = async ({
         if (!userId) {
             throw new AppError({ statusCode: 400, message: "User ID is required for image uploads." });
         }
-        folderPath = `images/${userId}`;
+        folderPath = `images/${role}/${userId}`;
     } else if (role === "counsellor") {
         if (is_xls_file) {
             if (!userId) {
