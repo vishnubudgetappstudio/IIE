@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { getProfileController, updateProfileController } from "../controllers/profile.controller";
+import { getProfileDetailsController } from "../controllers/profile/get_profile_details.controller";
+import { updateProfileDetailsController } from "../controllers/profile/update_profile_details.controller";
 
 
 const router = Router();
 
-router.get("/get", getProfileController); // get Profile route
-router.post("/update", updateProfileController); // update Profile route
+router.get("/get", getProfileDetailsController); // get Profile route
+router.post("/update", updateProfileDetailsController); // update Profile route
 
 export default router;

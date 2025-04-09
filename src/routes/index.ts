@@ -5,6 +5,7 @@ import batchRoutes from "./batch.route";
 import { verifyToken } from "../middlewares/auth.middleware";
 import s3Routes from "./s3/s3.route";
 import notificationRoutes from "./notification.route";
+import profileRoutes from "./profile.route";
 import { raiseSupportTicket } from "../controllers/counsellorModule/supportTicket.controller";
 import { getStaff_Student_BatchController } from "../controllers/counsellorModule/get_Staff_Student_Batch.controller";
 import { requestLeaveController } from "../controllers/applyLeave.controller";
@@ -28,8 +29,6 @@ import { getAllCourseTestsController } from "../controllers/staffModule/test_rel
 import { getAllMockTestsController } from "../controllers/staffModule/test_relateed/mock_test_related/get_mock_test.controller";
 import { studentGetAllCourseOrMockTestsController } from "../controllers/studentModule/get_course_or_mock_tests.controller";
 import { getQuestionsListController } from "../controllers/studentModule/get_test_qustions.controller";
-import { getProfileDetailsController } from "../controllers/profile/get_profile_details.controller";
-import { updateProfileDetailsController } from "../controllers/profile/update_profile_details.controller";
 
 const router = Router();
 
@@ -42,9 +41,7 @@ router.use("/s3", s3Routes); //upload files and profile images
 router.post("/update-fcm-token", updateUserFcmTokenController); //update fcm token for user
 
 //common API routes
-router.get("/profile", getProfileDetailsController) // get Profile route
-router.post("/update-profile", updateProfileDetailsController); // update Profile route
-// router.use("/profile", profileRoutes); // Profile routes
+router.use("/profile", profileRoutes) // get Profile routes
 router.post("/apply-leave", requestLeaveController); // Apply Leave route
 router.post("/rise-support-ticket", raiseSupportTicket); // Support ticket route
 router.post("/upload-xls-file", uploadXlsFileController); // Upload XLS or XLSX route
