@@ -44,9 +44,6 @@ router.post("/update-fcm-token", updateUserFcmTokenController); //update fcm tok
 router.use("/profile", profileRoutes) // get Profile routes
 router.post("/apply-leave", requestLeaveController); // Apply Leave route
 router.post("/rise-support-ticket", raiseSupportTicket); // Support ticket route
-router.post("/upload-xls-file", uploadXlsFileController); // Upload XLS or XLSX route
-router.post("/update-xls-fileName", updateXlsFileNameController); // Update XLS or XLSX route
-router.get("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
 
 //Counsellor API routes
 router.post("/add-new-student", createNewStudentController); // Create New Student route
@@ -54,6 +51,9 @@ router.use("/batch", batchRoutes); // Batch routes
 router.get("/get-staff-student-batch", getStaff_Student_BatchController); // get Staff or Student or Batch route
 router.get("/all-students", getAllStudentsController);// Get students with pagination & search
 router.use("/notification", notificationRoutes);// Counsellor Notification Routes
+router.post("/upload-xls-file", uploadXlsFileController); // Upload XLS or XLSX route
+router.post("/update-xls-fileName", updateXlsFileNameController); // Update XLS or XLSX route
+router.get("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
 
 //Student API routes
 router.get("/student-home-details", studentHomeScreenController);
