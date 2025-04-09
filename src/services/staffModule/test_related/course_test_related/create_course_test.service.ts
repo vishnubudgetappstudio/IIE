@@ -17,7 +17,7 @@ interface CreateCourseTestRequest {
     batchId: string;
     test_title: string;
     test_description: string;
-    test_csv_file?: Express.Multer.File;
+    test_csv_file?: Express.Multer.File | null;
     startDate: string; // dd/MM/yyyy
     endDate: string;   // dd/MM/yyyy
     timer: string;     // HH:mm

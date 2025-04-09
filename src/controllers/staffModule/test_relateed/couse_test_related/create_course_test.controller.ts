@@ -20,16 +20,12 @@ export const createCourseTestController = async (
         // ✅ Retrieve file (If single file upload)
         const testCSVFile = req.files ? (req.files as Express.Multer.File[])[0] : null;
 
-        if (!testCSVFile) {
-            throw new AppError({ statusCode: 400, message: "Course Test CSV file is required", data: {} });
-        }
-
         // Validate file type (must be .csv)
-        if (!testCSVFile.mimetype.includes("csv")) {
+        if (testCSVFile && !testCSVFile.mimetype.includes("csv")) {
             throw new AppError({ statusCode: 400, message: "Only CSV files are allowed", data: {} });
         }
 
-        validateFile(testCSVFile);
+        if (testCSVFile) validateFile(testCSVFile);
 
         // Parse JSON string fields from form-data
         if (typeof req.body.questions === "string") {

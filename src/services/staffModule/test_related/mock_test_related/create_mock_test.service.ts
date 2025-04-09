@@ -15,7 +15,7 @@ interface Question {
 interface CreateCourseTestRequest {
     userId: string;
     batchId: string;
-    test_csv_file?: Express.Multer.File;
+    test_csv_file?: Express.Multer.File | null;
     test_mode: MockTestMode;
     questions?: Question[];
 }
