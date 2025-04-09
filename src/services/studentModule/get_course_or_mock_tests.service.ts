@@ -95,6 +95,7 @@ export const studentGetAllCourseOrMockTestsService = async ({
                 testData = await prisma.test_Course.findFirst({
                     where: { id: test.courseTestId, deletedAt: null },
                     select: {
+                        id: true,
                         test_title: true,
                         test_url: true,
                         end_date: true,
@@ -131,7 +132,7 @@ export const studentGetAllCourseOrMockTestsService = async ({
                 }
 
                 return {
-                    id: test.id,
+                    test_id: testData.id,
                     test_title: testData.test_title,
                     test_description: testData.test_description,
                     test_type: test.test_type,
@@ -149,6 +150,7 @@ export const studentGetAllCourseOrMockTestsService = async ({
                 testData = await prisma.test_Mock.findFirst({
                     where: { id: test.mockTestId, deletedAt: null },
                     select: {
+                        id: true,
                         test_url: true,
                         test_mode: true,
                         questions: true,
@@ -188,7 +190,7 @@ export const studentGetAllCourseOrMockTestsService = async ({
                 }
 
                 return {
-                    id: test.id,
+                    test_id: testData.id,
                     test_title: null,
                     test_description: null,
                     test_type: test.test_type,

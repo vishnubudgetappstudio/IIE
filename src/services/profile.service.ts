@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { AppError } from "../utils/errorHandler";
+import { compressImage, validateFile } from "../utils/s3";
+import { uploadBufferToS3 } from "./s3/uploadFiles.service";
 
 const prisma = new PrismaClient();
 
@@ -76,14 +78,24 @@ const updateManagementStaffProfile = async ({ id, email, role, data }: {
   email: string,
   role: "counsellor" | "staff",
   data: {
-    name?: string,
-    phone?: string,
-    alt_phone?: string,
+    name?: string | null,
+    phone?: string | null,
+    alt_phone?: string | null,
+    profile_img?: Express.Multer.File | null
   }
 }) => {
+  let profileImageUrl: string | null = null;
+
   const profile = await prisma.managementStaff.findUnique({
     where: { id, email, role, deletedAt: null },
-    select: { id: true }
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      alt_phone: true,
+      profile_img_url: true
+    }
   });
 
   if (!profile) {
@@ -94,18 +106,35 @@ const updateManagementStaffProfile = async ({ id, email, role, data }: {
     });
   }
 
+  if (data.profile_img) {
+    validateFile(data.profile_img, true);
+
+    const optimizedBuffer = await compressImage(data.profile_img);
+
+    const { s3url } = await uploadBufferToS3({
+      buffer: optimizedBuffer,
+      file: data.profile_img,
+      userId: profile.id,
+    });
+
+    profileImageUrl = s3url;
+
+  }
+
   return await prisma.managementStaff.update({
     where: { id, email, role, deletedAt: null },
     data: {
-      name: data.name,
-      phone: data.phone,
-      alt_phone: data.alt_phone,
+      name: data.name ? data.name : profile.name,
+      phone: data.phone ? data.phone : profile.phone,
+      alt_phone: data.alt_phone ? data.alt_phone : profile.alt_phone,
+      profile_img_url: data.profile_img ? profileImageUrl : profile.profile_img_url
     },
     select: {
       email: true,
       name: true,
       phone: true,
       alt_phone: true,
+      profile_img_url: true
     }
   });
 }
@@ -158,15 +187,25 @@ export const updateStudentProfileService = async ({ student_id, email, role, dat
     alt_phone?: string,
     roll_number?: string,
     course_id?: string,
+    profile_img?: Express.Multer.File
   }
 }) => {
+  let profileImageUrl: string | null = null;
+
   const profile = await prisma.student.findUnique({
     where: {
       id: student_id,
       email: email,
       deletedAt: null
     },
-    select: { id: true }
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      alt_phone: true,
+      profile_img_url: true,
+    }
   });
 
   if (!profile) {
@@ -177,18 +216,35 @@ export const updateStudentProfileService = async ({ student_id, email, role, dat
     });
   }
 
+  if (data.profile_img) {
+    validateFile(data.profile_img, true);
+
+    const optimizedBuffer = await compressImage(data.profile_img);
+
+    const { s3url } = await uploadBufferToS3({
+      buffer: optimizedBuffer,
+      file: data.profile_img,
+      userId: profile.id,
+    });
+
+    profileImageUrl = s3url;
+
+  }
+
   const updateStudentProfile = await prisma.student.update({
     where: { id: student_id, email, deletedAt: null },
     data: {
-      name: data.name,
-      phone: data.phone,
-      alt_phone: data.alt_phone,
+      name: data.name ? data.name : profile.name,
+      phone: data.phone ? data.phone : profile.phone,
+      alt_phone: data.alt_phone ? data.alt_phone : profile.alt_phone,
+      profile_img_url: data.profile_img ? profileImageUrl : profile.profile_img_url
     },
     select: {
       email: true,
       name: true,
       phone: true,
       alt_phone: true,
+      profile_img_url: true
     }
   });
 
