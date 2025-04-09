@@ -39,21 +39,30 @@ export const getStudentStudyMaterialsService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
-    if (!student_id) {
-        throw new AppError({
-            statusCode: 400,
-            message: "Student ID is required",
-        });
-    }
+    if (!student_id) throw new AppError({
+        statusCode: 400,
+        message: "Student ID is required",
+        data: [],
+    });
+
+    const existingStudent = await prisma.student.findUnique({
+        where: { id: student_id, deletedAt: null },
+        select: { id: true },
+    });
+
+    if (!existingStudent) throw new AppError({
+        statusCode: 404,
+        message: "Student not found",
+        data: [],
+    });
 
     // ✅ Common where condition
     const whereCondition = {
         studentMaterialAccessModel: {
             some: {
-                access_granted: true,
                 student_id,
-                student_relation: { deletedAt: null },
-                material_relation: { deletedAt: null }
+                access_granted: true,
+                student_relation: { id: student_id, deletedAt: null },
             }
         },
         batch_detail_relation: {
@@ -73,21 +82,20 @@ export const getStudentStudyMaterialsService = async ({
         throw new AppError({
             statusCode: 404,
             message: "study material files not found!",
+            data: [],
         });
     }
 
     // ✅ Fetch paginated material files
+    console.log({ student_id })
     const responseList = await prisma.materialFileDetail.findMany({
         where: whereCondition,
-        select: {
-            material_title: true,
-            material_file_url: true,
-            createdAt: true
-        },
         orderBy: { createdAt: "desc" }, // Sort by latest uploads
         skip,
         take: perPage, // Pagination logic
     });
+
+    console.log({ responseList })
 
     // ✅ Fetch S3 file sizes in parallel (error-safe with `Promise.allSettled`)
     const pdfFiles = await Promise.all(

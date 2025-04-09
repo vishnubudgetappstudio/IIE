@@ -36,7 +36,7 @@ export const getStudentStudyMaterialsController = async (req: AuthRequest, res: 
             data: material_files,
             currentPage: currentPage,
             limit: perPage,
-            xls_files_count: material_files_count,
+            material_files_count: material_files_count,
             totalPages: totalPages,
             message: "Study Material Files List fetched successfully",
         });
