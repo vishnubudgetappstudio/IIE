@@ -57,7 +57,19 @@ export const getTestQuestionsListService = async ({
 
                 if (response.Body) {
                     const parsedRows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
-                    return parsedRows;
+
+                    const formattedRows = parsedRows.map((row) => ({
+                        question: row.Question?.trim(),
+                        options: [
+                            row.Option_1?.trim(),
+                            row.Option_2?.trim(),
+                            row.Option_3?.trim(),
+                            row.Option_4?.trim(),
+                        ].filter(Boolean), // removes empty strings
+                        explanation: row.Explanation?.trim(),
+                        correctAnswer: row['Correct Answer']?.trim(),
+                    }));
+                    return formattedRows;
                 }
 
                 return []; // S3 file is empty
@@ -77,7 +89,7 @@ export const getTestQuestionsListService = async ({
                 const parsed = JSON.parse(test.questions);
                 return Array.isArray(parsed) ? parsed : [];
             } catch (err) {
-                console.warn(`⚠️ Malformed JSON in DB for ${testType}:`, err);
+                console.warn(`⚠️ Malformed JSON in DB for ${testType}:`, err)
                 throw new AppError({
                     statusCode: 500,
                     message: `Stored questions are not in valid format for ${testType.replace("_", " ")}`,
