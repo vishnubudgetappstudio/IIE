@@ -10,7 +10,10 @@ export const updateProfileDetailsController = async (req: AuthRequest, res: Resp
         const userEmail = req.user?.email as string; // Logged-in user Email
         const role = req.user?.role as UserRole;
 
-        const imageFile = req.files ? (req.files as Express.Multer.File[])[0] : null;
+        // const imageFile = req.files ? (req.files as Express.Multer.File[])[0] : null;
+        const imageFile = req.files?.['image']
+            ? (req.files['image'] as Express.Multer.File[])[0]
+            : null;
 
         if (!userId || !role) {
             return next(
