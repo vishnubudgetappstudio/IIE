@@ -29,6 +29,7 @@ import { getAllCourseTestsController } from "../controllers/staffModule/test_rel
 import { getAllMockTestsController } from "../controllers/staffModule/test_relateed/mock_test_related/get_mock_test.controller";
 import { studentGetAllCourseOrMockTestsController } from "../controllers/studentModule/get_course_or_mock_tests.controller";
 import { getQuestionsListController } from "../controllers/studentModule/get_test_qustions.controller";
+import { testSubmitController } from "../controllers/studentModule/test_submit.controller";
 
 const router = Router();
 
@@ -60,7 +61,8 @@ router.get("/student-home-details", studentHomeScreenController);
 router.get("/get-study-materials", getStudentStudyMaterialsController);
 router.get("/get-attendance-detail", getStudentAttendanceController);
 router.get("/get-course-or-mock-tests", studentGetAllCourseOrMockTestsController);
-router.get("/get-questions-list", getQuestionsListController)
+router.get("/get-questions-list", getQuestionsListController);
+router.post("/submit-test", testSubmitController);
 
 //Staff API routes
 router.post("/attendance/mark", markStudentAttendanceController);

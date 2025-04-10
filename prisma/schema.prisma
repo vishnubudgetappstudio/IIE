@@ -577,12 +577,11 @@ model Test_Course_Or_Mock_With_Student {
   // Core fields
   status                  StudentTestStatus @default(yet_to_start)
   submittedAt             DateTime?
-  timeSpent               String?
   score                   String?
   total_questions_count   String?
   correct_answers_count   String?
   incorrect_answers_count String?
-  is_passed               Boolean?
+  score_status            ScoreStatus?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime?
@@ -603,6 +602,12 @@ enum StudentTestStatus {
   yet_to_start
   drafted
   completed
+}
+
+enum ScoreStatus {
+  poor
+  average
+  good
 }
 
 enum TestType {
