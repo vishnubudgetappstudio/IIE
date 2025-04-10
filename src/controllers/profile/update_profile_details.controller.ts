@@ -15,6 +15,8 @@ export const updateProfileDetailsController = async (req: AuthRequest, res: Resp
             ? (req.files['image'] as Express.Multer.File[])[0]
             : null;
 
+        console.log({ imageFile })
+
         if (!userId || !role) {
             return next(
                 new AppError({
