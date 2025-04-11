@@ -180,8 +180,8 @@ model LeaveDetail {
   role       CommonUserRole
   leave_type LeaveType
   leave_mode LeaveMode?
-  from_date  String // Leave start date
-  to_date    String // Leave end date
+  from_date  DateTime // Leave start date
+  to_date    DateTime // Leave end date
   reason     String // Reason for leave
   status     LeaveStatus    @default(Pending) // Leave approval status
   createdAt  DateTime       @default(now())
