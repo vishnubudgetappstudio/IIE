@@ -61,6 +61,8 @@ export const applyLeaveService = async ({
     },
   });
 
+  console.log({ overlapLeave })
+
   if (overlapLeave) {
     throw new AppError({
       statusCode: 400,
