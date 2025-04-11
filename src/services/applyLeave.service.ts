@@ -74,8 +74,8 @@ export const applyLeaveService = async ({
   const leaveData: any = {
     role,
     reason,
-    from_date: fromDateObj,
-    to_date: toDateObj,
+    from_date: fromDateObj.toString(),
+    to_date: toDateObj.toString(),
     leave_type,
     leave_mode,
     status: LeaveStatus.Pending,
