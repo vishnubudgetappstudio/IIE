@@ -98,17 +98,7 @@ export const applyLeaveService = async ({
     throw new AppError({
       statusCode: 400,
       message: `❗ Your leave overlaps on ${overlapDate} with an existing leave from ${formattedFrom} to ${formattedTo}.`,
-      data: {
-        overlap_on: overlapDate,
-        existing_leave: {
-          from_date: formattedFrom,
-          to_date: formattedTo,
-          leave_type: overlapLeave.leave_type,
-          leave_mode: overlapLeave.leave_mode,
-          reason: overlapLeave.reason,
-          status: overlapLeave.status,
-        },
-      },
+      data: {},
     });
   }
 
