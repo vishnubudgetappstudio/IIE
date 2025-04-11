@@ -53,8 +53,8 @@ export const applyLeaveService = async ({
     where: {
       role,
       deletedAt: null,
-      from_date: { lte: to_date },
-      to_date: { gte: from_date },
+      from_date: { lte: toDateObj.toString() },
+      to_date: { gte: fromDateObj.toString() },
       ...(role === "student"
         ? { student_id: userId }
         : { management_staff_id: userId }),
@@ -74,8 +74,8 @@ export const applyLeaveService = async ({
   const leaveData: any = {
     role,
     reason,
-    from_date,
-    to_date,
+    from_date: fromDateObj,
+    to_date: toDateObj,
     leave_type,
     leave_mode,
     status: LeaveStatus.Pending,
