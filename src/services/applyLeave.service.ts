@@ -2,7 +2,7 @@ import { LeaveStatus, LeaveMode, LeaveType } from "@prisma/client";
 import { prisma } from "../config/database";
 import { AppError } from "../utils/errorHandler";
 import { UserRole } from "../types/common.type";
-import { parseDDMMYYYYToDate } from "../utils/commonUtils";
+import { formatDateToDDMMYYYY, parseDDMMYYYYToDate } from "../utils/commonUtils";
 
 export const applyLeaveService = async ({
   userId,
@@ -54,23 +54,50 @@ export const applyLeaveService = async ({
     where: {
       role,
       deletedAt: null,
-      from_date: { lte: toDateObj },
-      to_date: { gte: fromDateObj },
       ...(role === "student"
         ? { student_id: userId }
         : { management_staff_id: userId }),
+      AND: [
+        { from_date: { lte: toDateObj } },
+        { to_date: { gte: fromDateObj } },
+      ],
     },
   });
 
-  console.log({ overlapLeave })
-
   if (overlapLeave) {
+    // 🧠 Convert overlapLeave dates safely (supporting string or Date)
+    const existingFrom = typeof overlapLeave.from_date === "string"
+      ? parseDDMMYYYYToDate(overlapLeave.from_date)
+      : new Date(overlapLeave.from_date);
+
+    const existingTo = typeof overlapLeave.to_date === "string"
+      ? parseDDMMYYYYToDate(overlapLeave.to_date)
+      : new Date(overlapLeave.to_date);
+
+    // 🔍 Find the first overlapping date
+    let overlapDate: string | null = null;
+    let current = new Date(fromDateObj);
+    current.setHours(0, 0, 0, 0);
+
+    while (current <= toDateObj) {
+      const day = new Date(current);
+      if (day >= existingFrom && day <= existingTo) {
+        overlapDate = formatDateToDDMMYYYY(day);
+        break;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    const formattedFrom = formatDateToDDMMYYYY(existingFrom);
+    const formattedTo = formatDateToDDMMYYYY(existingTo);
+
     throw new AppError({
       statusCode: 400,
-      message: "A leave request already exists for the selected date range.",
-      data: {}
+      message: `Your leave overlaps on ${overlapDate} with an existing leave from ${formattedFrom} to ${formattedTo}.`,
+      data: {},
     });
   }
+
 
   // ✅ Prepare data
   const leaveData: any = {
