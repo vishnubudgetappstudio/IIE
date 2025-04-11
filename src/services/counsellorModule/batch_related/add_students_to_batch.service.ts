@@ -8,7 +8,7 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
     });
 
     if (!batchExists) {
-        throw new AppError({ statusCode: 404, message: "Batch not found", data: {} });
+        throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
     }
 
     const sameSlot = await prisma.batchWithStudent.findMany({
@@ -24,7 +24,7 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
         throw new AppError({
             statusCode: 400,
             message: "Some students are already assigned to a batch in the same slot as the batch.",
-            data: {},
+            data: [],
         });
     }
 
@@ -54,7 +54,7 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
         throw new AppError({
             statusCode: 409,
             message: `The following students are already in the batch: ${[...existingStudentNames].join(", ")}`,
-            data: {},
+            data: [],
         });
     }
 
@@ -74,7 +74,7 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
             })
         ).catch((err) => {
             console.error("Error in addStudentsToBatch Service:", err);
-            throw new AppError({ statusCode: 400, message: "Error adding students to batch", data: {} });
+            throw new AppError({ statusCode: 400, message: "Error adding students to batch", data: [] });
         });
     }
 
