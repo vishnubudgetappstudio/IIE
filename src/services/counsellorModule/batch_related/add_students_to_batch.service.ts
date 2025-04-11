@@ -31,15 +31,20 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
     // Find students who are already in the batch
     const existingStudents = await prisma.batchWithStudent.findMany({
         where: {
-            batch_id,
             student_id: { in: student_ids },
             deletedAt: null, // Check if any of the provided students already exist in this batch
         },
-        select: { student_id: true },
+        select: {
+            student_id: true,
+            student_relation: {
+                select: { name: true }
+            },
+        },
     });
 
     // Extract existing student IDs from the query result
     const existingStudentIds = new Set(existingStudents.map((s) => s.student_id));
+    const existingStudentNames = new Set(existingStudents.map((s) => s.student_relation.name));
 
     // Identify new students (not already in the batch)
     const newStudents = student_ids.filter((id) => !existingStudentIds.has(id));
@@ -48,7 +53,7 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
     if (existingStudentIds.size > 0) {
         throw new AppError({
             statusCode: 409,
-            message: `The following students are already in the batch: ${[...existingStudentIds].join(", ")}`,
+            message: `The following students are already in the batch: ${[...existingStudentNames].join(", ")}`,
             data: {},
         });
     }
