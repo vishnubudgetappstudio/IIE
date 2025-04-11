@@ -114,8 +114,8 @@ export const getStudentAttendanceService = async ({
     const leave_history = leaveHistory.map((leave) => {
         return {
             ...leave,
-            from_date: formatDateToDDMMYYYY(new Date(leave.from_date)),
-            to_date: formatDateToDDMMYYYY(new Date(leave.to_date)),
+            from_date: formatDateToDDMMYYYY(leave.from_date),
+            to_date: formatDateToDDMMYYYY(leave.to_date),
             applied: leave.status !== 'Approved' ? true : false,
             review: leave.status !== 'Approved' ? false : true,
             approved: leave.status !== 'Approved' ? false : true,

@@ -45,6 +45,7 @@ export const applyLeaveService = async ({
     throw new AppError({
       statusCode: 400,
       message: "To Date must be greater than or equal to From Date.",
+      data: {}
     });
   }
 
@@ -53,8 +54,8 @@ export const applyLeaveService = async ({
     where: {
       role,
       deletedAt: null,
-      from_date: { lte: toDateObj.toString() },
-      to_date: { gte: fromDateObj.toString() },
+      from_date: { lte: toDateObj },
+      to_date: { gte: fromDateObj },
       ...(role === "student"
         ? { student_id: userId }
         : { management_staff_id: userId }),
@@ -67,6 +68,7 @@ export const applyLeaveService = async ({
     throw new AppError({
       statusCode: 400,
       message: "A leave request already exists for the selected date range.",
+      data: {}
     });
   }
 
@@ -74,8 +76,8 @@ export const applyLeaveService = async ({
   const leaveData: any = {
     role,
     reason,
-    from_date: fromDateObj.toString(),
-    to_date: toDateObj.toString(),
+    from_date: fromDateObj,
+    to_date: toDateObj,
     leave_type,
     leave_mode,
     status: LeaveStatus.Pending,
@@ -94,6 +96,7 @@ export const applyLeaveService = async ({
       throw new AppError({
         statusCode: 400,
         message: "Invalid role provided.",
+        data: {}
       });
   }
 
@@ -124,6 +127,7 @@ export const applyLeaveService = async ({
     throw new AppError({
       statusCode: 500,
       message: "Leave request failed. Please try again.",
+      data: {}
     });
   }
 };
