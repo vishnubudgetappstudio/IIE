@@ -29,13 +29,15 @@ export const createMockTestService = async ({
 }: CreateCourseTestRequest) => {
     let test_csv_FileUrl: string = "";
 
+    let test_questions = [];
+
     // Step 1: Validate staff
     const existingStaff = await prisma.managementStaff.findUnique({
         where: { id: userId, role: "staff", deletedAt: null },
     });
 
     if (!existingStaff) {
-        throw new AppError({ statusCode: 404, message: "User not found!" });
+        throw new AppError({ statusCode: 404, message: "User not found!", data: {} });
     }
 
     // Step 2: Validate batch
@@ -45,7 +47,7 @@ export const createMockTestService = async ({
     });
 
     if (!existingBatch) {
-        throw new AppError({ statusCode: 404, message: "Batch not found!" });
+        throw new AppError({ statusCode: 404, message: "Batch not found!", data: {} });
     }
 
     // Step 3: Get students in batch
@@ -55,8 +57,14 @@ export const createMockTestService = async ({
     });
 
     if (!getBatchStudents.length) {
-        throw new AppError({ statusCode: 404, message: "No students found in the batch!" });
+        throw new AppError({ statusCode: 404, message: "No students found in the batch!", data: {} });
     }
+
+    if (!questions?.length && !test_csv_file) throw new AppError({
+        statusCode: 400,
+        message: "Please provide either questions or a CSV file",
+        data: {}
+    });
 
     // 🚀 Step 4: Validate CSV File (if provided)
     if (test_csv_file) {
@@ -90,6 +98,18 @@ export const createMockTestService = async ({
             });
         }
     }
+
+    // if (questions?.length) {
+    //     questions.map((question, index) => {
+    //         test_questions.push({
+    //             id: index + 1,
+    //             question: question.question as string,
+    //             options: question.options as string[],
+    //             explanation: question.explanation as string,
+    //             correctAnswer: question.correctAnswer as string,
+    //         });
+    //     })
+    // }
 
     // Step 6: Create Course Test
     const mockTestResponse = await prisma.test_Mock.create({

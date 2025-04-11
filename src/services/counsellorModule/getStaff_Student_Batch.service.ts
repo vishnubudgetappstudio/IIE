@@ -1,35 +1,61 @@
 import { prisma } from "../../config/database";
 import { AppError } from "../../utils/errorHandler";
 
-
 export const getStaff_Student_BatchService = async (search: string) => {
-  switch (search.toLowerCase()) {
+  const keyword = search.toLowerCase();
+
+  switch (keyword) {
     case "staff":
-      return prisma.managementStaff.findMany({
+      return await prisma.managementStaff.findMany({
         orderBy: { createdAt: "desc" },
-        where: { role: "staff", deletedAt: null }, // Exclude soft deleted records
-        select: { id: true, name: true, profile_img_url: true },
+        where: { role: "staff", deletedAt: null },
+        select: {
+          id: true,
+          name: true,
+          profile_img_url: true,
+        },
       });
 
-    case "student":
-      return prisma.student.findMany({
-        orderBy: { createdAt: "desc" },
-        where: { deletedAt: null }, // Exclude soft deleted records
-        select: { id: true, name: true },
+    case "student": {
+      const assignedStudents = await prisma.batchWithStudent.findMany({
+        where: { deletedAt: null },
+        select: { student_id: true },
       });
+
+      const assignedIds = assignedStudents.map((s) => s.student_id);
+
+      const unassignedStudents = await prisma.student.findMany({
+        orderBy: { createdAt: "desc" },
+        where: {
+          deletedAt: null,
+          id: { notIn: assignedIds },
+        },
+        select: {
+          id: true,
+          name: true,
+          // profile_img_url: true, // 👉 include more fields if needed
+        },
+      });
+
+      return unassignedStudents;
+    }
 
     case "batch":
-      return prisma.batchDetail.findMany({
+      return await prisma.batchDetail.findMany({
         orderBy: { createdAt: "desc" },
-        where: { deletedAt: null }, // Exclude soft deleted records
-        select: { id: true, batch_number: true, batchName: true },
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          batch_number: true,
+          batchName: true,
+        },
       });
 
     default:
       throw new AppError({
         statusCode: 400,
-        data: [], // Always send an empty object
-        message: "Invalid search parameter. Use 'staff', 'student', or 'batch'",
+        message: "Invalid search parameter. Use 'staff', 'student', or 'batch'.",
+        data: [],
       });
   }
 };
