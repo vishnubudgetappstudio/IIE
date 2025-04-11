@@ -83,6 +83,7 @@ export const getXLSFileListService = async ({
                 xls_file_id: file.id,
                 xls_file_name: file.xls_file_name,
                 xls_file_size: FileSize,
+                xls_file_url: file.xls_file_url,
                 createdAt: formatDateTime(file.createdAt),
             };
         })
