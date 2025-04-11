@@ -1,5 +1,5 @@
 import { prisma } from "../../config/database";
-import { calculateAttendancePercentage } from "../../utils/commonUtils";
+import { calculateAttendancePercentage, formatDateToDDMMYYYY } from "../../utils/commonUtils";
 import { AppError } from "../../utils/errorHandler";
 
 interface AttendancePercentages {
@@ -114,6 +114,8 @@ export const getStudentAttendanceService = async ({
     const leave_history = leaveHistory.map((leave) => {
         return {
             ...leave,
+            from_date: formatDateToDDMMYYYY(new Date(leave.from_date)),
+            to_date: formatDateToDDMMYYYY(new Date(leave.to_date)),
             applied: leave.status !== 'Approved' ? true : false,
             review: leave.status !== 'Approved' ? false : true,
             approved: leave.status !== 'Approved' ? false : true,
