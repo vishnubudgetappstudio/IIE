@@ -65,38 +65,53 @@ export const applyLeaveService = async ({
   });
 
   if (overlapLeave) {
-    // 🧠 Convert overlapLeave dates safely (supporting string or Date)
-    const existingFrom = typeof overlapLeave.from_date === "string"
-      ? parseDDMMYYYYToDate(overlapLeave.from_date)
-      : new Date(overlapLeave.from_date);
+    // 🔁 Normalize dates to midnight (avoid time-based overlap issues)
+    const normalizeDate = (d: Date) => {
+      const newDate = new Date(d);
+      newDate.setHours(0, 0, 0, 0);
+      return newDate;
+    };
 
-    const existingTo = typeof overlapLeave.to_date === "string"
-      ? parseDDMMYYYYToDate(overlapLeave.to_date)
-      : new Date(overlapLeave.to_date);
+    const existingFrom = normalizeDate(overlapLeave.from_date);
+    const existingTo = normalizeDate(overlapLeave.to_date);
+    const userFrom = normalizeDate(fromDateObj);
+    const userTo = normalizeDate(toDateObj);
 
-    // 🔍 Find the first overlapping date
+    // 📆 Find the first overlapping date
     let overlapDate: string | null = null;
-    let current = new Date(fromDateObj);
-    current.setHours(0, 0, 0, 0);
-
-    while (current <= toDateObj) {
-      const day = new Date(current);
-      if (day >= existingFrom && day <= existingTo) {
-        overlapDate = formatDateToDDMMYYYY(day);
+    for (
+      let current = new Date(userFrom);
+      current <= userTo;
+      current.setDate(current.getDate() + 1)
+    ) {
+      if (current >= existingFrom && current <= existingTo) {
+        overlapDate = formatDateToDDMMYYYY(current);
         break;
       }
-      current.setDate(current.getDate() + 1);
     }
 
+    // 🧾 Format existing leave details
     const formattedFrom = formatDateToDDMMYYYY(existingFrom);
     const formattedTo = formatDateToDDMMYYYY(existingTo);
 
+    // ❌ Throw error with clear and detailed information
     throw new AppError({
       statusCode: 400,
-      message: `Your leave overlaps on ${overlapDate} with an existing leave from ${formattedFrom} to ${formattedTo}.`,
-      data: {},
+      message: `❗ Your leave overlaps on ${overlapDate} with an existing leave from ${formattedFrom} to ${formattedTo}.`,
+      data: {
+        overlap_on: overlapDate,
+        existing_leave: {
+          from_date: formattedFrom,
+          to_date: formattedTo,
+          leave_type: overlapLeave.leave_type,
+          leave_mode: overlapLeave.leave_mode,
+          reason: overlapLeave.reason,
+          status: overlapLeave.status,
+        },
+      },
     });
   }
+
 
 
   // ✅ Prepare data
