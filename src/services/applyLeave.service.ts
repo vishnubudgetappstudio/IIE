@@ -2,7 +2,7 @@ import { LeaveStatus, LeaveMode, LeaveType } from "@prisma/client";
 import { prisma } from "../config/database";
 import { AppError } from "../utils/errorHandler";
 import { UserRole } from "../types/common.type";
-import { parseDDMMYYYYToDate } from "../utils/commonUtils";
+import { formatDateToDDMMYYYY, parseDDMMYYYYToDate } from "../utils/commonUtils";
 
 export const applyLeaveService = async ({
   userId,
@@ -53,8 +53,8 @@ export const applyLeaveService = async ({
     where: {
       role,
       deletedAt: null,
-      from_date: { lte: toDateObj.toString() },
-      to_date: { gte: fromDateObj.toString() },
+      from_date: { lte: (formatDateToDDMMYYYY(toDateObj)).toString() },
+      to_date: { gte: (formatDateToDDMMYYYY(fromDateObj)).toString() },
       ...(role === "student"
         ? { student_id: userId }
         : { management_staff_id: userId }),
@@ -74,8 +74,8 @@ export const applyLeaveService = async ({
   const leaveData: any = {
     role,
     reason,
-    from_date: fromDateObj.toString(),
-    to_date: toDateObj.toString(),
+    from_date: (formatDateToDDMMYYYY(fromDateObj)).toString(),
+    to_date: (formatDateToDDMMYYYY(toDateObj)).toString(),
     leave_type,
     leave_mode,
     status: LeaveStatus.Pending,
