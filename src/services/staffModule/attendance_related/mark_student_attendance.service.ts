@@ -86,8 +86,8 @@ export const markAttendanceService = async ({
         where: {
             student_id: studentId,
             deletedAt: null,
-            from_date: { lte: todayStr },
-            to_date: { gte: todayStr },
+            from_date: { lte: today },
+            to_date: { gte: today },
         },
     });
 
@@ -97,8 +97,8 @@ export const markAttendanceService = async ({
             data: {
                 student_id: studentId,
                 leave_type: "Absent",
-                from_date: todayStr,
-                to_date: todayStr,
+                from_date: today,
+                to_date: today,
                 reason: "Absent",
                 role: "student",
                 status: "Not_informed",

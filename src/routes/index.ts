@@ -23,10 +23,13 @@ import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf
 import { editStudentMaterialAccessController } from "../controllers/staffModule/pdf_material_related/edit_student_material_access.controller";
 import { updateUserFcmTokenController } from "../controllers/update_user_fcm_token.controller";
 import { getStudentAttendanceController } from "../controllers/studentModule/get_attendance.controller";
+import { getAllBatchesListController } from "../controllers/studentModule/get_attendance.controller";
 import { createCourseTestController } from "../controllers/staffModule/test_relateed/couse_test_related/create_course_test.controller";
 import { createMockTestController } from "../controllers/staffModule/test_relateed/mock_test_related/create_mock_test.controller";
 import { getAllCourseTestsController } from "../controllers/staffModule/test_relateed/couse_test_related/get_course_test.controller";
 import { getAllMockTestsController } from "../controllers/staffModule/test_relateed/mock_test_related/get_mock_test.controller";
+import { getStaffBatchesListController } from "../controllers/staffModule/getStaffBatchesListController";
+
 import { studentGetAllCourseOrMockTestsController } from "../controllers/studentModule/get_course_or_mock_tests.controller";
 import { getQuestionsListController } from "../controllers/studentModule/get_test_qustions.controller";
 import { testSubmitController } from "../controllers/studentModule/test_submit.controller";
@@ -58,6 +61,7 @@ router.post("/update-xls-fileName", updateXlsFileNameController); // Update XLS 
 router.get("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
 
 //Student API routes
+
 router.get("/student-home-details", studentHomeScreenController);
 router.get("/get-study-materials", getStudentStudyMaterialsController);
 router.get("/get-attendance-detail", getStudentAttendanceController);
@@ -67,6 +71,7 @@ router.post("/submit-test", testSubmitController);
 router.get("/get-mock-test-questions", getMockTestQuestionsController);
 
 //Staff API routes
+router.get("/get-batch-details", getStaffBatchesListController); // Get Batch Details route
 router.post("/attendance/mark", markStudentAttendanceController);
 router.get("/attendance/percentage", getStudentAttendanceStatsController);
 router.post("/upload-pdfMaterial-students", uploadPDFMaterialFileController);
