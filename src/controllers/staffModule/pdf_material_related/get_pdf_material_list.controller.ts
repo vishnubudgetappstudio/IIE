@@ -25,8 +25,9 @@ export const getPDFMaterialFileListController = async (req: AuthRequest, res: Re
         if (!req.user) {
             throw new AppError({ statusCode: 401, message: "Unauthorized access", data: [] });
         }
+        console.log("sdfsdfsd");
 
-        if (!req.user?.role || req.user?.role !== 'counsellor') {
+        if (!req.user?.role || req.user?.role !== 'staff') {
             throw new AppError({ statusCode: 401, message: "Invalid role", data: [] });
         }
 

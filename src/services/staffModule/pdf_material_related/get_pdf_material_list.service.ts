@@ -100,6 +100,7 @@ export const getPDFMaterialFileListService = async ({
             const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: file.material_file_url });
             return {
                 material_file_name: file.material_title,
+                material_file_url: file.material_file_url,
                 material_file_size: FileSize,
                 createdAt: formatDateTime(file.createdAt),
                 status: file.status,
