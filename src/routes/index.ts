@@ -29,6 +29,11 @@ import { createMockTestController } from "../controllers/staffModule/test_relate
 import { getAllCourseTestsController } from "../controllers/staffModule/test_relateed/couse_test_related/get_course_test.controller";
 import { getAllMockTestsController } from "../controllers/staffModule/test_relateed/mock_test_related/get_mock_test.controller";
 import { getStaffBatchesListController } from "../controllers/staffModule/getStaffBatchesListController";
+import { getAllStudentsFromBatchController } from "../controllers/staffModule/attendance_related/get_batch_students.controller";
+import { getSessionSheetDataController } from "../controllers/staffModule/session_sheet/get_batch_session_sheet.controller";
+import { updateSessionSheetStatusController } from "../controllers/staffModule/session_sheet/update_sessionsheet_status.controller";
+
+
 
 import { studentGetAllCourseOrMockTestsController } from "../controllers/studentModule/get_course_or_mock_tests.controller";
 import { getQuestionsListController } from "../controllers/studentModule/get_test_qustions.controller";
@@ -71,7 +76,10 @@ router.post("/submit-test", testSubmitController);
 router.get("/get-mock-test-questions", getMockTestQuestionsController);
 
 //Staff API routes
-router.get("/get-batch-details", getStaffBatchesListController); // Get Batch Details route
+router.get("/get-batch-details", getStaffBatchesListController);
+router.get("/get-batch-students", getAllStudentsFromBatchController); // Get Batch Details route
+router.get("/get-session-sheet", getSessionSheetDataController);
+router.post("/update-session-sheet-status", updateSessionSheetStatusController); // Get Batches List route
 router.post("/attendance/mark", markStudentAttendanceController);
 router.get("/attendance/percentage", getStudentAttendanceStatsController);
 router.post("/upload-pdfMaterial-students", uploadPDFMaterialFileController);
