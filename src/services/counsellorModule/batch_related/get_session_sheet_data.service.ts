@@ -9,13 +9,19 @@ import { Readable } from "stream";
 export const getSessionSheetDataService = async ({
     batch_id,
     search,
+    noParam,
+    statusParam,
     page,
     limit,
+    //userId,
 }: {
     batch_id: string;
     search?: string;
+    noParam: string;       // e.g., from URL like ?no=102
+    statusParam: string; // e.g., ?status=completed
     page: number;
     limit: number;
+   // userId: string;
 }): Promise<{
     session_file_name: string;
     session_file_size: string;
@@ -25,10 +31,12 @@ export const getSessionSheetDataService = async ({
     totalPages: number;
     currentPage: number;
 }> => {
+    
     // ✅ Fetch session sheet URL from database
     const sessionSheet = await prisma.sessionSheetDetail.findFirst({
         where: { batch_id, deletedAt: null },
         select: {
+            id: true,
             session_file_name: true,
             session_file_url: true,
             createdAt: true
@@ -52,10 +60,12 @@ export const getSessionSheetDataService = async ({
     }
 
     // ✅ Parse CSV data from the S3 stream
-    const allData = await parseSessionSheet_CSV_Stream(response.Body as Readable).catch((error) => {
+    const allData = await parseSessionSheet_CSV_Stream(response.Body as Readable, noParam,statusParam              // The "No." value you want to target
+         ).catch((error) => {
         console.error("❌ Error parsing CSV from S3:", error);
         throw new AppError({ statusCode: 400, message: "Failed to parse CSV file from S3." });
     });
+    console.log("Parsed CSV Data:", allData);
 
     // ✅ Search Filtering Based on Topics with Explicit Type Casting
     const filteredData = search
@@ -70,6 +80,7 @@ export const getSessionSheetDataService = async ({
     const paginatedData = filteredData.slice((page - 1) * limit, page * limit);
 
     return {
+       // id: sessionSheet.id,
         session_file_name: sessionSheet.session_file_name,
         session_file_size: FileSize,
         createdAt: formatDateTime(sessionSheet.createdAt),
