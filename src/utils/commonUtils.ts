@@ -8,10 +8,12 @@ import { csvSessionSheetSchema, csvTestCourseOrMockSchema } from "../zodSchema/c
  * Parses and validates CSV stream into JSON.
  * If an error occurs, it stops processing immediately.
  */
-export const parseSessionSheet_CSV_Stream = async (stream: Readable): Promise<any[]> => {
+export const parseSessionSheet_CSV_Stream = async (stream: Readable, noParam?: string,
+    statusParam?: string): Promise<any[]> => {
     return new Promise((resolve, reject) => {
         const results: any[] = [];
         const noSet = new Set(); // Track uniqueness of "No."
+        
 
         const csvStream = stream.pipe(csvParser());
 
@@ -42,7 +44,15 @@ export const parseSessionSheet_CSV_Stream = async (stream: Readable): Promise<an
                     }));
                 }
                 noSet.add(validatedData["No."]);
+                
 
+                if (
+                    validatedData["No."] === noParam &&
+                    (statusParam === "completed" || statusParam === "pending")
+                ) {
+                    validatedData.Status = statusParam;
+                }
+                
                 results.push(validatedData);
             })
             .on("end", () => resolve(results))

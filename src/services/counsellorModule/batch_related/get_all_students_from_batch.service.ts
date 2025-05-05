@@ -81,23 +81,9 @@ export const getAllStudentsFromBatchService = async (
             return {
                 id: student.id,
                 name: student.name,
-                email: student.email,
-                mobile: student.phone,
-                alternate_mobile: student.alt_phone,
                 roll_number: student.roll_number,
-                course_id: student.course_id,
-                course: student.Course,
                 image: student.profile_img_url,
                 over_all_present: stats.overAll.presentPercentage,
-                over_all_absent: stats.overAll.absentPercentage,
-                weekly_present: stats.weekly.presentPercentage,
-                weekly_absent: stats.weekly.absentPercentage,
-                this_monthly_present: stats.thisMonth.presentPercentage,
-                this_monthly_absent: stats.thisMonth.absentPercentage,
-                last_monthly_present: stats.lastMonth.presentPercentage,
-                last_monthly_absent: stats.lastMonth.absentPercentage,
-                course_test: "14", // Placeholder
-                mock_test: "2",    // Placeholder
             };
         })
     );
