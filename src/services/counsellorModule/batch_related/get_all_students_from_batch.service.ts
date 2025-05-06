@@ -89,7 +89,7 @@ export const getAllStudentsFromBatchService = async (
     );
 
     return {
-        students: studentsData,
+        data: studentsData,
         currentPage,
         perPage,
         totalPages: Math.ceil(totalStudents / perPage),

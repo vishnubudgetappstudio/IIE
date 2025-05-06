@@ -34,7 +34,7 @@ export const getAllStudentsFromBatchController = async (
         }
 
         // Fetch batch and students with optional search
-        const { students, currentPage, totalPages, perPage, totalStudents } = await getAllStudentsFromBatchService(
+        const { data, currentPage, totalPages, perPage, totalStudents } = await getAllStudentsFromBatchService(
             batchId,
             page,
             limit,
@@ -42,14 +42,14 @@ export const getAllStudentsFromBatchController = async (
         );
 
         // If no students are found, return 404
-        if (!students.length) {
+        if (!data.length) {
             throw new AppError({ statusCode: 404, message: "Batch Students not found", data: [] });
         }
 
         // Return the batch details with student list
         res.status(200).json({
             status: true,
-            data: students,
+            data: data,
             page: currentPage,
             limit: perPage,
             totalPages,
