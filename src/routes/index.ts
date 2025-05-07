@@ -31,6 +31,7 @@ import { getAllMockTestsController } from "../controllers/staffModule/test_relat
 import { getStaffBatchesListController } from "../controllers/staffModule/getStaffBatchesListController";
 import { getAllStudentsFromBatchController } from "../controllers/staffModule/attendance_related/get_batch_students.controller";
 import { getSessionSheetDataController } from "../controllers/staffModule/session_sheet/get_batch_session_sheet.controller";
+import { getSessionSheetReport } from "../controllers/staffModule/session_sheet/get_batch_session_sheet.controller";
 //import { updateSessionSheetStatusController } from "../controllers/staffModule/session_sheet/update_sessionsheet_status.controller";
 
 
@@ -79,6 +80,7 @@ router.get("/get-mock-test-questions", getMockTestQuestionsController);
 router.get("/get-batch-details", getStaffBatchesListController);
 router.get("/get-batch-students", getAllStudentsFromBatchController); // Get Batch Details route
 router.get("/get-session-sheet", getSessionSheetDataController);
+router.get('/session-sheet-report', getSessionSheetReport);
 //router.post("/update-session-sheet-status", updateSessionSheetStatusController); // Get Batches List route
 router.post("/attendance/mark", markStudentAttendanceController);
 router.get("/attendance/percentage", getStudentAttendanceStatsController);

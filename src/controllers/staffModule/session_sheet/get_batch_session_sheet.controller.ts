@@ -2,7 +2,9 @@ import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../../middlewares/auth.middleware";
 import { AppError } from "../../../utils/errorHandler";
 import { getSessionSheetDataService } from "../../../services/counsellorModule/batch_related/get_session_sheet_data.service";
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 /**
  * ✅ Handles fetching and parsing session sheet data from S3.
  * @param req - Express request object.
@@ -44,4 +46,54 @@ export const getSessionSheetDataController = async (req: AuthRequest, res: Respo
         console.error("❌ Error fetching session sheet:", error);
         next(error);
     }
+};
+
+
+export const getSessionSheetReport = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  const page = parseInt(req.query.page as string, 10) || 1;
+  const limit = parseInt(req.query.limit as string, 10) || 10;
+  const offset = (page - 1) * limit;
+
+  try {
+    const records = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT 
+        sssrd.id,
+        sssrd.student_id,
+        sssrd.status,
+        s.name AS student_name,
+        s.email AS student_email,
+        s.roll_number AS roll_number
+      FROM session_sheet_student_report_detail sssrd
+      LEFT JOIN student s ON sssrd.student_id = s.id
+      ORDER BY sssrd.id
+      LIMIT ${limit} OFFSET ${offset};
+    `);
+
+    const totalResult = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT COUNT(*) AS count FROM session_sheet_student_report_detail;
+    `);
+
+    const totalRecords = parseInt(totalResult[0].count, 10);
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    res.json({
+      success: true,
+      data: {
+        records,
+        pagination: {
+          page,
+          limit,
+          totalPages,
+          totalRecords,
+        },
+      },
+      message: 'Session sheet data fetched successfully',
+    });
+  } catch (error) {
+    console.error('Error fetching session sheet report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+    });
+  }
 };
