@@ -95,6 +95,6 @@ router.get("/get-course-tests", getAllCourseTestsController);
 router.post("/create-mock-test", createMockTestController);
 router.get("/get-mock-tests", getAllMockTestsController);
 router.get("/getNotificationList", staff_NotificationList);
-router.get("/get-course-tests-results/", getTestResultsController);
+router.get("/get-course-tests-results", getTestResultsController);
 
 export default router;
