@@ -41,6 +41,8 @@ import { getQuestionsListController } from "../controllers/studentModule/get_tes
 import { testSubmitController } from "../controllers/studentModule/test_submit.controller";
 import { getMockTestQuestionsController } from "../controllers/studentModule/get_mock_test_questions.controller";
 
+import { staff_NotificationList } from "../controllers/staffModule/getStaffNotificationController";
+
 const router = Router();
 
 //Authorization routes:
@@ -91,5 +93,6 @@ router.post("/create-course-test", createCourseTestController);
 router.get("/get-course-tests", getAllCourseTestsController);
 router.post("/create-mock-test", createMockTestController);
 router.get("/get-mock-tests", getAllMockTestsController);
+router.get("/getNotificationList", staff_NotificationList);
 
 export default router;
