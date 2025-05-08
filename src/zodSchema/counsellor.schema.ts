@@ -30,6 +30,20 @@ export const createNewBatchSchema = z.object({
     to_date: z.string().regex(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/, {
         message: "Invalid date format (DD/MM/YYYY required)",
     }),
+    
+    start_time: z
+        .string()
+        .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+            message: "Start time must be in HH:mm format (24-hour)",
+        }),
+
+    end_time: z
+        .string()
+        .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+            message: "End time must be in HH:mm format (24-hour)",
+        }),
+
+    
     course: z
         .string()
         .min(3, { message: "Course name must be at least 3 characters long" }),

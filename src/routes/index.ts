@@ -32,6 +32,7 @@ import { getStaffBatchesListController } from "../controllers/staffModule/getSta
 import { getAllStudentsFromBatchController } from "../controllers/staffModule/attendance_related/get_batch_students.controller";
 import { getSessionSheetDataController } from "../controllers/staffModule/session_sheet/get_batch_session_sheet.controller";
 import { getSessionSheetReport } from "../controllers/staffModule/session_sheet/get_batch_session_sheet.controller";
+import { getTestResultsController } from "../controllers/staffModule/test_relateed/couse_test_related/get_course_test.controller";
 //import { updateSessionSheetStatusController } from "../controllers/staffModule/session_sheet/update_sessionsheet_status.controller";
 
 
@@ -94,5 +95,6 @@ router.get("/get-course-tests", getAllCourseTestsController);
 router.post("/create-mock-test", createMockTestController);
 router.get("/get-mock-tests", getAllMockTestsController);
 router.get("/getNotificationList", staff_NotificationList);
+router.get("/get-course-tests-results/", getTestResultsController);
 
 export default router;

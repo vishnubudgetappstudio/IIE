@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { getAllCourseTestsService } from "../../../../services/staffModule/test_related/course_test_related/get_course_test.service";
 import { AppError } from "../../../../utils/errorHandler";
 import { AuthRequest } from "../../../../middlewares/auth.middleware";
+import { prisma } from "../../../../config/database";
+import { Console } from "console";
 
 // Controller to fetch all course tests
 export const getAllCourseTestsController = async (
@@ -52,3 +54,78 @@ export const getAllCourseTestsController = async (
         next(error); // Pass error to centralized error handler
     }
 };
+
+export const getTestResultsController = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    const batchId = (req.query.batchId as string) ?? null;
+    const testId = (req.query.testId as string) ?? null;
+//     const batchId = req.params.batchId;
+// const testId = req.params.testId;
+    console.log("batchId ===>", batchId);
+    if (!batchId) {
+      res.status(400).json({ error: "Batch ID is required" });
+      return;
+    }
+   // const testId = req.query.testId as string || null;
+    console.log("testId ===>", testId); 
+    
+  //  const testId = req.params.testId;
+    if (!testId) {
+       res.status(400).json({ error: "Test ID is required" });
+        return;
+    }
+  
+    try {
+      // Step 1: Fetch test results (students who attended)
+      const testResults = await prisma.test_Course_Or_Mock_With_Student.findMany({
+        where: {
+          batchId: batchId,
+          courseTestId: testId,
+        },
+        select: {
+          studentId: true,
+          score: true,
+          score_status: true,
+        },
+      });
+  console.log("testResults ===>", testResults); 
+      const attendedStudentIds = testResults.map((r) => r.studentId);
+  
+      // Step 2: Fetch student details for attended students
+      const attendedStudents = await prisma.student.findMany({
+        where: {
+          id: { in: attendedStudentIds },
+        },
+        select: {
+          id: true,
+          name: true,
+          roll_number: true,
+          profile_img_url: true,
+        },
+      });
+  
+      const resultMap = new Map(testResults.map((r) => [r.studentId, r]));
+  
+      const attended = attendedStudents.map((student) => {
+        const result = resultMap.get(student.id);
+        return {
+          student_name: student.name,
+          roll_number: student.roll_number,
+          profile_image: student.profile_img_url,
+          score: result?.score ?? '-',
+          score_status: result?.score_status ?? 'Not attended',
+        };
+      });
+  
+      res.json({ attended, message: "Test results fetched successfully" });
+      return;
+    } catch (error) {
+      console.error('Error fetching test results:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+  };
+  

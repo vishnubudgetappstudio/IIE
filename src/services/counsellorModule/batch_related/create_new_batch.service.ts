@@ -10,6 +10,8 @@ interface CreateBatchRequest {
     batch_number: string;
     from_date: string;
     to_date: string;
+    start_time: string;
+    end_time: string;
     course: string;
     sessionSheetFile?: Express.Multer.File;
     slot: "morning" | "evening";
@@ -26,6 +28,8 @@ interface CreateNewBatchResponse {
         course: string;
         from_date: string;
         to_date: string;
+        start_time: string;
+        end_time: string;
         slot: string;
         mentor_id: string;
         students_id: string;
@@ -38,6 +42,8 @@ export const createNewBatchService = async ({
     batch_number,
     from_date,
     to_date,
+    start_time,
+    end_time,
     course,
     sessionSheetFile,
     slot,
@@ -151,7 +157,10 @@ export const createNewBatchService = async ({
             course,
             from_date,
             to_date,
+            start_time,
+            end_time,
             slot,
+            batch_status: "progress",
             management_staff_relation: { connect: { id: mentor_id } },
             batch_stud_count: studentIdsArray.length.toString(),
             batchWithStudentModel: {
@@ -217,6 +226,8 @@ export const createNewBatchService = async ({
             course: newBatch.course,
             from_date: newBatch.from_date,
             to_date: newBatch.to_date,
+            start_time: newBatch.start_time, // ✅ add this
+            end_time: newBatch.end_time,     // ✅ add this
             slot: newBatch.slot,
             mentor_id: newBatch.mentor_id,
             students_id: newBatch.batchWithStudentModel.map((student) => student.student_id).join(","),

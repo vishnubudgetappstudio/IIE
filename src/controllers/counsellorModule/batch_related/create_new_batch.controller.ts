@@ -47,13 +47,15 @@ export const createNewBatchController = async (
             });
         }
 
-        const { batch_number, from_date, to_date, course, slot, mentor_id, students_id } = validatedData.data;
+        const { batch_number, from_date, to_date, start_time, end_time,course, slot, mentor_id, students_id } = validatedData.data;
 
         // Call Service to Create New Batch
         const response = await createNewBatchService({
             batch_number: batch_number!,
             from_date: from_date!,
             to_date: to_date!,
+            start_time: start_time!,
+            end_time: end_time!,    
             course: course!,
             slot: slot!,
             mentor_id: mentor_id!, // Attach mentor ID to request body data

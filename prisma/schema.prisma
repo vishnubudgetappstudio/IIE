@@ -98,9 +98,13 @@ model Student {
   Remarks              String?   @db.VarChar(100)
 
   // One-to-One: A student is assigned to one counsellor
+  //sessionReports SessionSheetStudentReportDetail[]
+  sessionReports SessionSheetStudentReportDetail[]
   counsellor_id             String          @db.VarChar(191)
   counsellor_name           String          @db.VarChar(191) // Not a relation, Just a stored field
   management_staff_relation ManagementStaff @relation(fields: [counsellor_id], references: [id], onDelete: Cascade)
+  
+  
 
   Walkin_By       String?   @db.VarChar(20)
   Walkin_Date     DateTime? @db.Date
@@ -225,6 +229,9 @@ model BatchDetail {
   batch_stud_count String
   from_date        String
   to_date          String
+  start_time       String
+  end_time         String
+  batch_status     String?
   course           String
   slot             BatchSlotsType
 
@@ -288,32 +295,33 @@ model StoredOTPDetail {
 }
 
 model Notification {
-  id          String                @id @default(uuid())
-  senderId    String // Foreign key for sender (ManagementStaff)
-  title       String
-  description String
-  image       String?
-  type        NotificationType
-  category    NotificationCategory? // Optional category
-  batch_ids   String // Optional: Comma-separated batch IDs
-  student_ids String // Optional: Comma-separated student IDs
-  date        String
-  time        String
-  scheduledAt BigInt? // Timestamp when notification should be sent
-  status      NotificationStatus    @default(Scheduled)
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  deletedAt   DateTime? // Soft delete field
+  id          String                @id @default(uuid()) // Notification ID
+  senderId    String                // Foreign key for sender (ManagementStaff)
+  title       String                // Title of the notification
+  description String                // Description of the notification
+  image       String?               // Optional image field
+  type        NotificationType      // Type of notification (custom type)
+  category    NotificationCategory? // Optional category (custom type)
+  batch_ids   String?               // Optional: Comma-separated batch IDs (nullable)
+  student_ids String?               // Optional: Comma-separated student IDs (nullable)
+  date        String                // Date of the notification
+  time        String                // Time of the notification
+  scheduledAt BigInt?               // Timestamp when notification should be sent (nullable)
+  status      NotificationStatus    @default(Scheduled) // Default status is Scheduled
+  createdAt   DateTime              @default(now())    // Timestamp of creation
+  updatedAt   DateTime              @updatedAt          // Auto-updated on changes
+  deletedAt   DateTime?             // Soft delete field (nullable)
 
   // Relations
-  management_staff_relation  ManagementStaff         @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  notificationRecipientModel NotificationRecipient[]
+  management_staff_relation  ManagementStaff         @relation(fields: [senderId], references: [id], onDelete: Cascade) // Foreign key to ManagementStaff
+  notificationRecipientModel NotificationRecipient[] // Related recipients
 
   // Indexes for faster queries
-  @@index([senderId, status])
-  @@index([scheduledAt])
-  @@map("notification")
+  @@index([senderId, status]) // Index for fast queries on sender and status
+  @@index([scheduledAt])       // Index for fast queries on scheduledAt
+  @@map("notification")        // Map the table name to "notification"
 }
+
 
 model NotificationRecipient {
   id                String             @id @default(uuid())
@@ -413,6 +421,8 @@ model SessionSheetStudentReportDetail {
   deletedAt        DateTime? // Nullable field for soft delete
 
   // Relation: Each session sheet belongs to a specific batch (One-to-One)
+  student    Student @relation(fields: [student_id], references: [id])
+ // student    Student @relation(fields: [student_id], references: [id])
   batch_detail_relation         BatchDetail        @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   session_sheet_detail_relation SessionSheetDetail @relation(fields: [session_sheet_id], references: [id], onDelete: Cascade)
 
@@ -544,6 +554,8 @@ model Test_Course {
   @@index([batch_id, test_title])
   @@map("test_course")
 }
+
+
 
 // =============================================
 // ✅ Mock Test or upload CSV Test file Schema 

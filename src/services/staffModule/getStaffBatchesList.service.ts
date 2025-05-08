@@ -46,7 +46,25 @@ export const getStaffBatchesListService = async ({
           ],
         }),
       };
-      
+      const now = new Date();
+
+      // Find batches where to_date and end_time are before current time and status is not already 'complete'
+      const batchesToUpdate = await prisma.batchDetail.findMany({
+          where: {
+              deletedAt: null,
+              batch_status: { not: "complete" }, // Replace 'batch_status' with the correct field name from your schema
+              to_date: { lte: now.toISOString().split("T")[0] }, // to_date is on or before now
+              end_time: { lte: now.toTimeString().split(" ")[0] }, // only time part (HH:mm:ss)
+          },
+      });
+
+      for (const batch of batchesToUpdate) {
+          await prisma.batchDetail.update({
+              where: { id: batch.id },
+              data: { batch_status: "complete" },
+          });
+      }
+
 
     const batches = await prisma.batchDetail.findMany({
         skip,
@@ -83,6 +101,9 @@ export const getStaffBatchesListService = async ({
         batchName: batch.batchName,
         from_date: batch.from_date,
         to_date: batch.to_date,
+        start_time: batch.start_time,
+        end_time: batch.end_time,
+        batch_status: batch.batch_status,
         course: batch.course,
         slot: batch.slot,
         createdAt: batch.createdAt,
