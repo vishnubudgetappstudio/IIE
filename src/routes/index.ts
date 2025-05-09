@@ -14,6 +14,7 @@ import { createNewStudentController } from "../controllers/counsellorModule/stud
 import { getAllStudentsController } from "../controllers/counsellorModule/student_related/get_all_students.controller";
 import { markStudentAttendanceController } from "../controllers/staffModule/attendance_related/mark_student_attendance.controller";
 import { getStudentAttendanceStatsController } from "../controllers/staffModule/attendance_related/get_student_attendance_stats.controller";
+import { getStaffAttendanceController } from "../controllers/staffModule/attendance_related/get_student_attendance_stats.controller";
 import { uploadXlsFileController } from "../controllers/counsellorModule/xls_file_upload.controller";
 import { updateXlsFileNameController } from "../controllers/counsellorModule/xls_fileName_update.controller";
 import { getXLSFileListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
@@ -87,6 +88,7 @@ router.get('/session-sheet-report', getSessionSheetReport);
 //router.post("/update-session-sheet-status", updateSessionSheetStatusController); // Get Batches List route
 router.post("/attendance/mark", markStudentAttendanceController);
 router.get("/attendance/percentage", getStudentAttendanceStatsController);
+router.get("/get-staff-attendance-details", getStaffAttendanceController); // Get Batch Students Attendance route
 router.post("/upload-pdfMaterial-students", uploadPDFMaterialFileController);
 router.post("/edit-pdfMaterial-students-access", editStudentMaterialAccessController);
 router.get("/get-pdf-Materials", getPDFMaterialFileListController);

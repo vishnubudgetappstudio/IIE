@@ -109,7 +109,7 @@ export const getTestResultsController = async (
   
       const resultMap = new Map(testResults.map((r) => [r.studentId, r]));
   
-      const attended = attendedStudents.map((student) => {
+      const data = attendedStudents.map((student) => {
         const result = resultMap.get(student.id);
         return {
           student_name: student.name,
@@ -120,7 +120,7 @@ export const getTestResultsController = async (
         };
       });
   
-      res.json({ attended, message: "Test results fetched successfully" });
+      res.json({ status: true, data, message: "Test results fetched successfully" });
       return;
     } catch (error) {
       console.error('Error fetching test results:', error);
