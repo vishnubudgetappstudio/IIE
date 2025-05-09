@@ -4,6 +4,10 @@ import { AppError } from "../utils/errorHandler";
 import { applyLeaveService } from "../services/applyLeave.service";
 import { leaveRequestSchema } from "../zodSchema/common.schema";
 import { UserRole } from "../types/common.type";
+import { getFCMTokensByBatchId } from '../services/notification.service';
+// import * as admin from 'firebase-admin';
+import { prisma } from "../config/database";
+import admin from '../config/firebase';
 
 export const requestLeaveController = async (
   req: AuthRequest,
@@ -56,6 +60,85 @@ export const requestLeaveController = async (
       reason: reason,
 
     });
+
+    try {
+      // 1. Find the student's batch
+      const studentBatch = await prisma.batchWithStudent.findFirst({
+          where: { student_id: userId },
+          select: { batch_id: true },
+      });
+  
+      if (!studentBatch) {
+          console.warn("No batch found for student");
+          throw new AppError({
+              statusCode: 404,
+              message: "No batch found for student",
+              data: {},
+          });
+      }
+  
+      const batchId = studentBatch.batch_id;
+  
+      // 2. Get the mentor ID from batch_detail
+      const batchDetail = await prisma.batchDetail.findFirst({
+          where: { id: batchId },
+          select: { mentor_id: true },
+      });
+  
+      if (!batchDetail || !batchDetail.mentor_id) {
+          throw new AppError({
+              statusCode: 404,
+              message: "Mentor not found for the batch",
+              data: {},
+          });
+      }
+  
+      const mentorId = batchDetail.mentor_id;
+  
+      // 3. Get mentor's FCM token from management_staff
+      const mentor = await prisma.managementStaff.findFirst({
+          where: { id: mentorId },
+          select: { fcm_token: true },
+      });
+  
+      if (!mentor || !mentor.fcm_token) {
+          throw new AppError({
+              statusCode: 404,
+              message: "Mentor FCM token not found",
+              data: {},
+          });
+      }
+  
+      const fcmToken = mentor.fcm_token;
+  
+      // 4. Send push notification to the mentor
+      const message = {
+          notification: {
+              title: 'Leave Request Submitted',
+              body: `A student has submitted a leave request.`,
+          },
+          token: fcmToken,
+      };
+  
+      await admin.messaging().send(message);
+  
+      // Optional: Save the notification in DB if needed
+      await prisma.notificationRecipient.create({
+        data: {
+          notificationId: '54426469-2bf9-11f0-af62-0affd2ae0401', // Replace with a unique ID generator if needed
+          title: message.notification.title,
+          description: message.notification.body,
+          receiverRole: 'staff',
+          type: 'leave',
+          isRead: false,
+          status: 'Sent',
+          managementStaffId: mentorId,
+        },
+      });
+  
+  } catch (notificationError) {
+      console.error('Error sending notification to mentor:', notificationError);
+  }
 
     res.status(201).json({
       status: true,

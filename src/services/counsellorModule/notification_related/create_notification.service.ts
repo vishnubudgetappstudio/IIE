@@ -123,6 +123,8 @@ export const createNotificationService = async (data: CreateNotificationData) =>
                 receiverRole: r.receiverRole,
                 status: "Pending",
                 createdAt: new Date(),
+                title: newNotification.title,
+                description: newNotification.description,
             })),
         });
 

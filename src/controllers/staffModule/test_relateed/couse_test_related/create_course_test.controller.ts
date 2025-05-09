@@ -4,6 +4,8 @@ import { AppError } from "../../../../utils/errorHandler";
 import { createCourseTestSchema } from "../../../../zodSchema/staff.schema";
 import { createCourseTestService } from "../../../../services/staffModule/test_related/course_test_related/create_course_test.service";
 import { validateFile } from "../../../../utils/s3";
+import admin from '../../../../config/firebase';
+import { getFCMTokensByBatchId } from '../../../../services/notification.service'; // implement this service
 
 export const createCourseTestController = async (
     req: AuthRequest,
@@ -73,6 +75,27 @@ export const createCourseTestController = async (
             timer,
             questions,
         });
+
+        try {
+            const fcmTokens = await getFCMTokensByBatchId(batch_id); // You must implement this logic
+        
+            const sendPromises = fcmTokens.map(token => {
+                const message = {
+                    notification: {
+                        title: 'New Course Test Available',
+                        body: `A new test "${test_title}" has been scheduled.`,
+                    },
+                    token,
+                };
+                return admin.messaging().send(message).catch(err => {
+                    console.error(`Failed to send to token ${token}:`, err);
+                });
+            });
+            
+            await Promise.all(sendPromises);
+        } catch (notificationError) {
+            console.error('Error sending notification:', notificationError);
+        }
 
         res.status(201).json({
             status: true,

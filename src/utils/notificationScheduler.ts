@@ -1,92 +1,157 @@
 import cron from "node-cron";
 import { prisma } from "../config/database";
-import { NotificationStatus } from "@prisma/client";
+import admin from "firebase-admin";
 
 const processScheduledNotifications = async () => {
-    try {
-        const currentEpoch = BigInt(Math.floor(Date.now() / 1000)); // Get current time in seconds as BigInt
+  const now = new Date();
 
-        // Step 1: Update "Scheduled" notifications to "Pending" if their time has arrived
-        await prisma.notificationRecipient.updateMany({
-            where: {
-                status: "Scheduled",
-                sentAt: { lte: currentEpoch }, // ✅ Compare BigInt with BigInt
-            },
-            data: { status: "Pending" },
-        });
+  const pad = (n: number) => n.toString().padStart(2, "0");
 
-        // Step 2: Fetch "Pending" notifications for processing
-        const pendingNotifications = await prisma.notificationRecipient.findMany({
-            where: { status: "Pending" },
-            include: { notification_relation: true },
-        });
+  const date = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
 
-        if (pendingNotifications.length === 0) {
-            console.log("No pending notifications to process.");
-            return;
-        }
+  let hours = now.getHours();
+  const minutes = pad(now.getMinutes());
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
 
-        console.log(`Processing ${pendingNotifications.length} pending notifications...`);
+  const time = `${pad(hours)}:${minutes} ${ampm}`;
 
-        // Step 3: Send notifications
-        const results = await Promise.all(
-            pendingNotifications.map(async (recipient) => {
-                try {
-                    // Simulate sending logic (Replace with actual push/email logic)
-                    console.log(`Sending notification to ${recipient.studentId || recipient.managementStaffId}`);
+  const notifications = await prisma.notification.findMany({
+    where: {
+      date: date,
+      time: time,
+      status: "Pending",
+    },
+  });
 
-                    return {
-                        id: recipient.id,
-                        status: "Sent",
-                        sentAt: BigInt(Math.floor(Date.now() / 1000)), // ✅ Store as BigInt epoch
-                        notificationId: recipient.notification_relation.id
-                    };
-                } catch (error) {
-                    return {
-                        id: recipient.id,
-                        status: "Failed",
-                        sentAt: null,
-                        notificationId: recipient.notification_relation.id
-                    };
-                }
-            })
-        );
+  console.log("Check Notifications schedule are there", date, time, notifications);
 
-        // Step 4: Batch update statuses
-        await prisma.$transaction(
-            results.map((result) =>
-                prisma.notificationRecipient.update({
-                    where: { id: result.id },
-                    data: {
-                        status: result.status as NotificationStatus,
-                        sentAt: result.sentAt, // ✅ No need to convert, stays BigInt
-                    },
-                })
-            )
-        );
-
-        // Step 4: Batch update statuses
-        await prisma.$transaction(
-            results.map((result) =>
-                prisma.notification.update({
-                    where: { id: result.notificationId },
-                    data: {
-                        status: result.status as NotificationStatus,
-                    },
-                })
-            )
-        );
-
-        console.log("Notification processing completed.");
-    } catch (error) {
-        console.error("Error processing scheduled notifications:", error);
+  for (const notif of notifications) {
+    const sentAt = Math.floor(Date.now() / 1000);
+  
+    // 1. Process direct student_ids (with batchid = null)
+    let individualStudentIds: string[] = [];
+  
+    if (notif.student_ids) {
+      individualStudentIds = notif.student_ids.split(",").map((id) => id.trim());
     }
+  
+    const individualStudents = await prisma.student.findMany({
+      where: {
+        id: { in: individualStudentIds },
+        fcm_token: { not: null },
+      },
+      select: { id: true, fcm_token: true },
+    });
+  
+    const individualTokens = individualStudents.map((s) => s.fcm_token).filter((token): token is string => !!token);
+  
+    // 2. Process batch_ids
+    let batchRecipients: any[] = [];
+    let batchTokens: string[] = [];
+  
+    if (notif.batch_ids) {
+      const batchIds = notif.batch_ids.split(",").map((id) => id.trim());
+  
+      for (const batchId of batchIds) {
+        const batchStudents = await prisma.batchWithStudent.findMany({
+          where: {
+            batch_id: batchId,
+          },
+          select: { student_id: true },
+        });
+  
+        const studentIds = batchStudents.map((b) => b.student_id);
+  
+        const students = await prisma.student.findMany({
+          where: {
+            id: { in: studentIds },
+            fcm_token: { not: null },
+          },
+          select: { id: true, fcm_token: true },
+        });
+  
+        const tokens = students.map((s) => s.fcm_token).filter((token): token is string => !!token);
+        batchTokens.push(...tokens);
+  
+        batchRecipients.push(
+          ...students.map((s) => ({
+            notificationId: notif.id,
+            title: notif.title,
+            description: notif.description,
+            studentId: s.id,
+            batchId: batchId,
+            managementStaffId: null,
+            receiverRole: "student",
+            isRead: false,
+            status: "Sent",
+            type: notif.type,
+            sentAt: sentAt,
+          }))
+        );
+      }
+    }
+  
+    // 3. Combine all tokens and recipients
+    const allTokens = [...individualTokens, ...batchTokens];
+    const allRecipients = [
+      ...individualStudents.map((s) => ({
+        notificationId: notif.id,
+        title: notif.title,
+        description: notif.description,
+        studentId: s.id,
+        batchId: null,
+        managementStaffId: null,
+        receiverRole: "student",
+        isRead: false,
+        status: "Sent",
+        type: notif.type,
+        sentAt: sentAt,
+      })),
+      ...batchRecipients,
+    ];
+  
+    if (!allTokens.length) {
+      console.log(`No valid tokens found for notification ID ${notif.id}`);
+      continue;
+    }
+  
+    // 4. Send notification
+    const payload = {
+      notification: {
+        title: notif.title,
+        body: notif.description,
+      },
+    };
+  
+    try {
+      const response = await admin.messaging().sendEachForMulticast({
+        tokens: allTokens,
+        notification: payload.notification,
+      });
+  
+      console.log(`Sent to ${allTokens.length} users:`, response);
+  
+      await prisma.notification.update({
+        where: { id: notif.id },
+        data: { status: "Sent" },
+      });
+  
+      await prisma.notificationRecipient.createMany({
+        data: allRecipients,
+        skipDuplicates: true,
+      });
+    } catch (error) {
+      console.error(`Error sending notification ID ${notif.id}:`, error);
+    }
+  }
+  
 };
 
-// Schedule cron job to run every minute
+// Run every minute
 cron.schedule("* * * * *", async () => {
-    console.log("Running notification scheduler...");
-    await processScheduledNotifications();
+  console.log("Running notification scheduler...");
+  await processScheduledNotifications();
 });
 
 console.log("Notification scheduler started.");

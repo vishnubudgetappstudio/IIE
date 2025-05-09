@@ -326,6 +326,8 @@ model Notification {
 model NotificationRecipient {
   id                String             @id @default(uuid())
   notificationId    String // Foreign key for Notification
+  title             String
+  description       String
   managementStaffId String? // Foreign key for staff
   studentId         String? // Foreign key for student
   batchId           String? // Foreign key for batch
