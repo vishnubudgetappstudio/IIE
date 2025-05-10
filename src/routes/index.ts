@@ -45,6 +45,7 @@ import { testSubmitController } from "../controllers/studentModule/test_submit.c
 import { getMockTestQuestionsController } from "../controllers/studentModule/get_mock_test_questions.controller";
 
 import { staff_NotificationList } from "../controllers/staffModule/getStaffNotificationController";
+import { raiseHaveADoubt } from "../controllers/studentModule/raise_have_a_doubt.controller";
 
 const router = Router();
 
@@ -100,5 +101,6 @@ router.delete("/delete-course-test/:testId", deleteCourseTestController);
 router.get("/get-mock-tests", getAllMockTestsController);
 router.get("/getNotificationList", staff_NotificationList);
 router.get("/get-course-tests-results", getTestResultsController);
+router.post("/raise-have-a-doubt", raiseHaveADoubt);
 
 export default router;
