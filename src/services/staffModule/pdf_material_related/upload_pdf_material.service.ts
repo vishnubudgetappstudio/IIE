@@ -55,7 +55,7 @@ export const uploadPDFMaterialFileService = async ({
     } else {
         // Validate Students in Batch
         const validStudents = await prisma.batchWithStudent.findMany({
-            where: { batch_id: batchId!, student_id: { in: studentIds }, deletedAt: null },
+            where: { batch_id: batchId!},
             select: { student_id: true },
         });
 
@@ -71,7 +71,6 @@ export const uploadPDFMaterialFileService = async ({
             userId
         }));
     }
-
     // ✅ Step 3: Save Material File in Database
     const material = await prisma.materialFileDetail.create({
         data: {
@@ -79,20 +78,39 @@ export const uploadPDFMaterialFileService = async ({
             batch_id: batchId || null,
             material_file_url: fileUrl,
             status: batchId ? "published" : "draft",
+            staff_id: userId,
         },
     });
-
     // ✅ Step 4: Assign Material to Students (If Batch Exists)
     if (batchId) {
-        await prisma.studentMaterialAccess.createMany({
-            data: studentIds.map(student_id => ({
-                student_id,
-                material_id: material.id,
-                access_granted: true,
-            })),
-            skipDuplicates: true, // Avoid duplicate entries
+        const normalizedStudentIds = studentIds.flatMap(id => id.split(',').map(s => s.trim()));
+    
+        console.log("Normalized student IDs:", normalizedStudentIds);
+    
+        const validStudents = await prisma.student.findMany({
+            where: { id: { in: normalizedStudentIds } },
+            select: { id: true },
         });
+    
+        const validStudentIds = validStudents.map(s => s.id);
+    
+        console.log("Valid student IDs:", validStudentIds);
+    
+        if (validStudentIds.length > 0) {
+            await prisma.studentMaterialAccess.createMany({
+                data: validStudentIds.map(student_id => ({
+                    student_id,
+                    material_id: material.id,
+                    access_granted: true,
+                })),
+                skipDuplicates: true,
+            });
+        } else {
+            console.log("No valid student IDs found. Skipping insert.");
+        }
     }
+    
+    
 
     // ✅ Step 5: Return Response
     return {
