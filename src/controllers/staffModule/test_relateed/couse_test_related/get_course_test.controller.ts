@@ -37,6 +37,7 @@ export const getAllCourseTestsController = async (
             search,
             page,
             limit,
+            studentId: req.user.id, // 👈 important
         });
 
         // Send response
