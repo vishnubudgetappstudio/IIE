@@ -37,6 +37,8 @@ export const EditStudentMaterialFileAccessService = async ({
             status: true,
         },
     });
+   // console.log("existMaterial ===>", existMaterial);
+    
 
     if (!existMaterial) throw new AppError({ statusCode: 404, message: "Material file not found!" });
 
@@ -59,19 +61,34 @@ export const EditStudentMaterialFileAccessService = async ({
         };
     }
 
-    // ✅ Step 3: Validate Batch & Students
-    if (batchId && !studentIds?.length) throw new AppError({ statusCode: 400, message: "At least one student must be selected." });
+   // ✅ Step 3: Validate Batch & Students
+if (batchId && !studentIds?.length) {
+    throw new AppError({ statusCode: 400, message: "At least one student must be selected." });
+}
 
-    const validStudents = await prisma.batchWithStudent.findMany({
-        where: { batch_id: batchId!, student_id: { in: studentIds }, deletedAt: null },
-        select: { student_id: true },
-    });
+// ✅ Normalize studentIds (handles comma-separated string)
+const normalizedStudentIds = (studentIds ?? []).flatMap(id => id.split(',').map(s => s.trim()));
 
-    if (!validStudents.length) throw new AppError({ statusCode: 404, message: "No valid students found in this batch." });
+const validStudents = await prisma.batchWithStudent.findMany({
+    where: {
+        batch_id: batchId!,
+        student_id: { in: normalizedStudentIds },
+        deletedAt: null,
+    },
+    select: { student_id: true },
+});
+
+if (!validStudents.length) {
+    throw new AppError({ statusCode: 404, message: "No valid students found in this batch." });
+}
+
 
     // ✅ Step 4: Move File in S3 (If Batch ID Changes or Moving from Draft)
     let newS3Url = existMaterial.material_file_url;
+  //  console.log("existMaterial.batch_id ===>", existMaterial, batchId);
     if (batchId !== existMaterial.batch_id || existMaterial.status === "draft") {
+      //  console.log("Moving file in S3...");
+
         const oldS3Url = existMaterial.material_file_url;
         const fileKey = oldS3Url.split(".amazonaws.com/")[1]; // Extract S3 file path
 
@@ -81,6 +98,7 @@ export const EditStudentMaterialFileAccessService = async ({
 
         newS3Url = await moveFileInS3(fileKey, newS3Key);
     }
+    //console.log("newS3Url ===>", newS3Url);
 
     // ✅ Step 5: Assign Students & Update Material in Transaction
     const assignedStudents = validStudents.map(({ student_id }) => ({
