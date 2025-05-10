@@ -24,8 +24,9 @@ import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf
 import { editStudentMaterialAccessController } from "../controllers/staffModule/pdf_material_related/edit_student_material_access.controller";
 import { updateUserFcmTokenController } from "../controllers/update_user_fcm_token.controller";
 import { getStudentAttendanceController } from "../controllers/studentModule/get_attendance.controller";
-//import { getAllBatchesListController } from "../controllers/studentModule/get_attendance.controller";
+//import { getAllBatchesListController } from "../controllers/studentModule/get_attendance.controller";deleteCourseTestController
 import { createCourseTestController } from "../controllers/staffModule/test_relateed/couse_test_related/create_course_test.controller";
+import { deleteCourseTestController } from "../controllers/staffModule/test_relateed/couse_test_related/create_course_test.controller";
 import { createMockTestController } from "../controllers/staffModule/test_relateed/mock_test_related/create_mock_test.controller";
 import { getAllCourseTestsController } from "../controllers/staffModule/test_relateed/couse_test_related/get_course_test.controller";
 import { getAllMockTestsController } from "../controllers/staffModule/test_relateed/mock_test_related/get_mock_test.controller";
@@ -95,6 +96,7 @@ router.get("/get-pdf-Materials", getPDFMaterialFileListController);
 router.post("/create-course-test", createCourseTestController);
 router.get("/get-course-tests", getAllCourseTestsController);
 router.post("/create-mock-test", createMockTestController);
+router.delete("/delete-course-test/:testId", deleteCourseTestController);
 router.get("/get-mock-tests", getAllMockTestsController);
 router.get("/getNotificationList", staff_NotificationList);
 router.get("/get-course-tests-results", getTestResultsController);

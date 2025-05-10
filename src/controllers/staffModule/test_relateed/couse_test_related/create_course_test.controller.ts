@@ -3,6 +3,7 @@ import { AuthRequest } from "../../../../middlewares/auth.middleware";
 import { AppError } from "../../../../utils/errorHandler";
 import { createCourseTestSchema } from "../../../../zodSchema/staff.schema";
 import { createCourseTestService } from "../../../../services/staffModule/test_related/course_test_related/create_course_test.service";
+import { deleteCourseTestService } from "../../../../services/staffModule/test_related/course_test_related/create_course_test.service";
 import { validateFile } from "../../../../utils/s3";
 import admin from '../../../../config/firebase';
 import { getFCMTokensByBatchId } from '../../../../services/notification.service'; // implement this service
@@ -107,3 +108,35 @@ export const createCourseTestController = async (
         next(error);
     }
 };
+
+export const deleteCourseTestController = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const { testId } = req.params;
+
+        if (!req.user) throw new AppError({ statusCode: 401, message: "Unauthorized" });
+
+        if (req.user.role !== 'staff') {
+            throw new AppError({ statusCode: 403, message: "Forbidden: Invalid role" });
+        }
+
+        if (!testId || typeof testId !== "string") {
+            throw new AppError({ statusCode: 400, message: "Test ID is required and must be a string" });
+        }
+
+        await deleteCourseTestService(testId);
+
+        res.status(200).json({
+            status: true,
+            message: "Course test deleted successfully",
+            data: [],
+        });
+    } catch (error) {
+        console.error("Error deleting course test:", error);
+        next(error);
+    }
+};
+

@@ -156,3 +156,40 @@ export const createCourseTestService = async ({
         questions: JSON.parse(courseTest.questions || "[]"),
     };
 };
+
+export const deleteCourseTestService = async (testId: string) => {
+    const existingTest = await prisma.test_Course.findUnique({
+        where: { id: testId, deletedAt: null },
+    });
+
+    if (!existingTest) {
+        throw new AppError({ statusCode: 404, message: "Test not found", data: [] });
+    }
+
+    // // Check if any students have already started or submitted this test
+    // const studentAttempts = await prisma.test_Course_Or_Mock_With_Student.findMany({
+    //     where: {
+    //         courseTestId: testId,
+    //         test_type: 'course_test',
+    //         deletedAt: null,
+    //     },
+    // });
+
+    // if (studentAttempts.length > 0) {
+    //     throw new AppError({
+    //         statusCode: 400,
+    //         message: "Cannot delete test: One or more students have already attempted or been assigned this test.",
+    //     });
+    // }
+
+    // Soft delete the test
+    await prisma.test_Course.update({
+        where: { id: testId },
+        data: {
+            deletedAt: new Date(),
+        },
+    });
+
+    return true;
+};
+
