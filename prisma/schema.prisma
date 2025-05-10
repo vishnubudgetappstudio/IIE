@@ -229,8 +229,8 @@ model BatchDetail {
   batch_stud_count String
   from_date        String
   to_date          String
-  start_time       String
-  end_time         String
+  start_time       String    // Added start_time field
+  end_time         String 
   batch_status     String?
   course           String
   slot             BatchSlotsType
@@ -538,20 +538,20 @@ enum AttendanceStatus {
 // =============================================
 model Test_Course {
   id               String    @id @default(uuid())
-  batch_id         String
+  batch_id         String?   // Made optional
   batch_name       String
   test_title       String
   test_description String    @db.Text
   test_url         String?   @db.Text
   start_date       DateTime
   end_date         DateTime
-  timer            String // e.g., "1:30 hours" or "45 mins"
+  timer            String    // e.g., "1:30 hours" or "45 mins"
   questions        String?   @db.Text
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
 
-  batch_detail_relation            BatchDetail                        @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  batch_detail_relation            BatchDetail?                       @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   TestCourseOrMockWithStudentModel Test_Course_Or_Mock_With_Student[]
 
   @@index([batch_id, test_title])
@@ -560,12 +560,13 @@ model Test_Course {
 
 
 
+
 // =============================================
 // ✅ Mock Test or upload CSV Test file Schema 
 // =============================================
 model Test_Mock {
   id         String       @id @default(uuid())
-  batch_id   String
+  batch_id   String?      // ✅ batch_id is optional
   batch_name String
   test_url   String?      @db.Text
   test_mode  MockTestMode @default(easy)
@@ -574,12 +575,15 @@ model Test_Mock {
   updatedAt  DateTime     @updatedAt
   deletedAt  DateTime?
 
-  batch_detail_relation            BatchDetail                        @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  // ✅ Relation is optional by using `?` on the relation name
+  batch_detail_relation  BatchDetail?  @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+
   TestCourseOrMockWithStudentModel Test_Course_Or_Mock_With_Student[]
 
   @@index([batch_id])
   @@map("test_mock")
 }
+
 
 model Test_Course_Or_Mock_With_Student {
   id           String   @id @default(uuid())

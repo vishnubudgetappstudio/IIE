@@ -56,7 +56,7 @@ export const createCourseTestController = async (
         }
 
         const {
-            batch_id,
+            // batch_id,
             test_title,
             test_description,
             start_date,
@@ -65,9 +65,11 @@ export const createCourseTestController = async (
             questions,
         } = validation.data;
 
+        const batchId = req.body.batch_id;
+
         const response = await createCourseTestService({
             userId: req.user?.userId as string,
-            batchId: batch_id,
+            batchId: batchId,
             test_title,
             test_description,
             test_csv_file: testCSVFile,
@@ -78,7 +80,7 @@ export const createCourseTestController = async (
         });
 
         try {
-            const fcmTokens = await getFCMTokensByBatchId(batch_id); // You must implement this logic
+            const fcmTokens = await getFCMTokensByBatchId(batchId); // You must implement this logic
         
             const sendPromises = fcmTokens.map(token => {
                 const message = {

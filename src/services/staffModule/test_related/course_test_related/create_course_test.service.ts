@@ -47,18 +47,27 @@ export const createCourseTestService = async ({
     }
 
     // Step 2: Validate batch
-    const existingBatch = await prisma.batchDetail.findUnique({
-        where: { id: batchId, deletedAt: null },
-        select: { id: true, batchName: true },
+    let existingBatch = await prisma.batchDetail.findFirst({
+        where: {
+            id: batchId ?? '',
+            deletedAt: null,
+        },
+        select: {
+            id: true,
+            batchName: true,
+        },
     });
 
     if (!existingBatch) {
-        throw new AppError({ statusCode: 404, message: "Batch not found!" });
+        existingBatch = await prisma.batchDetail.findFirst({
+            where: { deletedAt: null },
+            select: { id: true, batchName: true },
+        });
     }
 
     // Step 3: Get students in batch
     const getBatchStudents = await prisma.batchWithStudent.findMany({
-        where: { batch_id: existingBatch.id, deletedAt: null },
+        where: { batch_id: existingBatch?.id, deletedAt: null },
         select: { student_id: true },
     });
 
@@ -111,8 +120,8 @@ export const createCourseTestService = async ({
     // Step 6: Create Course Test
     const courseTest = await prisma.test_Course.create({
         data: {
-            batch_id: batchId,
-            batch_name: existingBatch.batchName || "",
+            batch_id: existingBatch?.id || "",
+            batch_name: existingBatch?.batchName || "",
             test_title,
             test_description,
             test_url: test_csv_FileUrl || null,
@@ -131,7 +140,7 @@ export const createCourseTestService = async ({
 
     // Step 7: Assign test to students
     const assignmentPayload = getBatchStudents.map((student) => ({
-        batchId,
+        batchId: existingBatch?.id || "",
         studentId: student.student_id,
         courseTestId: courseTest.id,
         test_type: TestType.course_test,

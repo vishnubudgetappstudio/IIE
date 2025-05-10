@@ -53,14 +53,16 @@ export const createMockTestController = async (
         }
 
         const {
-            batch_id,
+            // batch_id,
             questions,
             test_mode
         } = validation.data;
 
+        const batchId = req.body.batch_id;
+
         const response = await createMockTestService({
             userId: req.user?.userId as string,
-            batchId: batch_id,
+            batchId: batchId,
             test_csv_file: testCSVFile,
             test_mode: test_mode,
             questions,

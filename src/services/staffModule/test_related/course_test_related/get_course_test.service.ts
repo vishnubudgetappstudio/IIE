@@ -142,7 +142,7 @@ export const getAllCourseTestsService = async ({
         return {
             id: test.id,
             batch_id: test.batch_id,
-            batch_name: test.batch_detail_relation.batch_number,
+            batch_name: test.batch_detail_relation?.batch_number || null,
             test_title: test.test_title,
             test_description: test.test_description,
             test_url: test.test_url,

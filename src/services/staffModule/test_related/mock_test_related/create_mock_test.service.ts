@@ -39,24 +39,52 @@ export const createMockTestService = async ({
     }
 
     // Step 2: Validate batch
-    const existingBatch = await prisma.batchDetail.findUnique({
-        where: { id: batchId, deletedAt: null },
-        select: { id: true, batchName: true },
-    });
+    // const existingBatch = await prisma.batchDetail.findUnique({
+    //     where: { id: batchId ?? '', deletedAt: null },
+    //     select: { id: true, batchName: true },
+    // });
 
-    if (!existingBatch) {
-        throw new AppError({ statusCode: 404, message: "Batch not found!" });
-    }
+    let existingBatch = await prisma.batchDetail.findFirst({
+        where: {
+            id: batchId ?? '',
+            deletedAt: null,
+        },
+        select: {
+            id: true,
+            batchName: true,
+        },
+    });
 
     // Step 3: Get students in batch
-    const getBatchStudents = await prisma.batchWithStudent.findMany({
-        where: { batch_id: existingBatch.id, deletedAt: null },
-        select: { student_id: true },
-    });
+    // const getBatchStudents = await prisma.batchWithStudent.findMany({
+    //     where: { batch_id: existingBatch.id, deletedAt: null },
+    //     select: { student_id: true },
+    // });
 
-    if (!getBatchStudents.length) {
-        throw new AppError({ statusCode: 404, message: "No students found in the batch!" });
+    let getBatchStudents: { student_id: string }[] = [];
+
+    if (existingBatch?.id) {
+        getBatchStudents = await prisma.batchWithStudent.findMany({
+            where: {
+                batch_id: existingBatch?.id || "",
+                deletedAt: null,
+            },
+            select: {
+                student_id: true,
+            },
+        });
     }
+
+    if (!existingBatch) {
+        existingBatch = await prisma.batchDetail.findFirst({
+            where: { deletedAt: null },
+            select: { id: true, batchName: true },
+        });
+    }
+
+    // if (!getBatchStudents.length) {
+    //     throw new AppError({ statusCode: 404, message: "No students found in the batch!" });
+    // }
 
     // 🚀 Step 4: Validate CSV File (if provided)
     if (test_csv_file) {
@@ -94,8 +122,8 @@ export const createMockTestService = async ({
     // Step 6: Create Course Test
     const mockTestResponse = await prisma.test_Mock.create({
         data: {
-            batch_id: batchId,
-            batch_name: existingBatch.batchName || "",
+            batch_id: existingBatch?.id || "",
+            batch_name: existingBatch?.batchName || "",
             test_url: test_csv_FileUrl || null,
             test_mode,
             questions: questions?.length ? JSON.stringify(questions) : null,
