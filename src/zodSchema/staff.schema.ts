@@ -69,7 +69,7 @@ export const questionObjectSchema = z.object({
 
 // 🟢 Course Test Schema
 export const createCourseTestSchema = z.object({
-    batch_id: z.string({ required_error: "*Batch ID is required" }).min(1),
+    // batch_id: z.string({ required_error: "*Batch ID is required" }).min(1),
     test_title: z.string({ required_error: "*Test title is required" }).min(1),
     test_description: z.string({ required_error: "*Test description is required" }).min(1),
     start_date: z
@@ -107,7 +107,7 @@ export const createCourseTestSchema = z.object({
 });
 
 export const createMockTestSchema = z.object({
-    batch_id: z.string({ required_error: "*Batch ID is required" }).uuid({ message: "Invalid Batch ID format" }),
+    // batch_id: z.string({ required_error: "*Batch ID is required" }).uuid({ message: "Invalid Batch ID format" }),
     test_mode: z
         .enum(["easy", "medium", "hard"], {
             invalid_type_error: "Test mode must be one of: easy, medium, hard",
