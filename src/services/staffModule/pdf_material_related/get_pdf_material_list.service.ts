@@ -73,6 +73,7 @@ export const getPDFMaterialFileListService = async ({
         prisma.materialFileDetail.findMany({
             where: whereCondition,
             select: {
+                id: true,
                 material_title: true,
                 material_file_url: true,
                 createdAt: true,
@@ -86,6 +87,7 @@ export const getPDFMaterialFileListService = async ({
         prisma.materialFileDetail.findMany({
             where: { status: "draft", deletedAt: null },
             select: {
+                id: true,
                 material_title: true,
                 material_file_url: true,
                 createdAt: true,
@@ -102,6 +104,7 @@ export const getPDFMaterialFileListService = async ({
         allFiles.map(async (file) => {
             const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: file.material_file_url });
             return {
+                material_file_id: file.id,
                 material_file_name: file.material_title,
                 material_file_url: file.material_file_url,
                 material_file_size: FileSize,
