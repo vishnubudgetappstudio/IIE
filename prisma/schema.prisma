@@ -444,6 +444,7 @@ enum SessionSheetReportStatus {
 model MaterialFileDetail {
   id                String                   @id @unique @default(uuid())
   batch_id          String?
+  staff_id          String
   material_title    String                   @unique
   material_file_url String                   @db.Text
   status            MaterialFileDetailStatus @default(draft)
