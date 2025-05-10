@@ -35,6 +35,7 @@ export const getPDFMaterialFileListController = async (req: AuthRequest, res: Re
         const { material_files, material_files_count, currentPage, totalPages, perPage } = await getPDFMaterialFileListService({
             batch_id: batchId,
             search: search,
+            userId: req.user.userId,
             page: page,
             limit: limit
         });

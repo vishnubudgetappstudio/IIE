@@ -20,12 +20,14 @@ interface PDFMaterialResponse {
 export const getPDFMaterialFileListService = async ({
     batch_id,
     search,
+    userId,
     page,
     limit,
 }: {
     batch_id?: string;
     search?: string;
     page: number;
+    userId?: string;
     limit: number;
 }): Promise<PDFMaterialResponse> => {
     const currentPage = page > 0 ? page : 1;
@@ -35,7 +37,8 @@ export const getPDFMaterialFileListService = async ({
 
     const whereCondition: any = {
         deletedAt: null,
-        ...(batch_id && { batch_id }),
+        staff_id : userId,
+       // ...(batch_id && { batch_id }),
         ...(searchTerm && { material_file_name: { startsWith: searchTerm } }),
         studentMaterialAccessModel: {
             some: {
@@ -56,6 +59,7 @@ export const getPDFMaterialFileListService = async ({
     ]);
 
     const totalFiles = material_files_count + draft_files_count;
+    console.log("Total Files: ", totalFiles);
 
     if (totalFiles === 0) {
         throw new AppError({
@@ -92,7 +96,6 @@ export const getPDFMaterialFileListService = async ({
     ]);
 
     const allFiles = [...activeFiles, ...draftFiles];
-
 
 
     const resolvedFiles = await Promise.allSettled(
