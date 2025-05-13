@@ -33,6 +33,7 @@ export const studentGetAllCourseOrMockTestsController = async (
         const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await studentGetAllCourseOrMockTestsService({
             studentId: req.user?.userId,
             test_type: testType,
+            test_mode: req.query.test_mode as string || null,
             search,
             page,
             limit,
