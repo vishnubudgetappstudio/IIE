@@ -9,7 +9,7 @@ import {
 import { extractS3BucketAndKeySize } from "../../utils/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import s3 from "../../config/s3Config";
-import { TestType } from "@prisma/client";
+import { TestType, MockTestMode } from "@prisma/client";
 
 interface Params {
     studentId: string;
@@ -17,7 +17,14 @@ interface Params {
     search: string | null;
     page: number;
     limit: number;
-     test_mode?: string | null; // ✅ included
+   //  test_mode?: string | null; // ✅ included
+}
+
+interface Params {
+  studentId: string;
+  test_mode: string; // easy, medium, hard
+  correct_answer_count: number;
+  test_type: TestType;
 }
 
 export const studentGetAllCourseOrMockTestsService = async ({
@@ -168,7 +175,7 @@ const enhancedTests = await Promise.all(
         total_questions,
       };
     }
-
+console.log("test.test.mockTestId=====>", test.mockTestId);
     if (test.test_type === "mock_test" && test.mockTestId) {
       const rawTestData = await prisma.test_Mock.findFirst({
         where: { id: test.mockTestId, deletedAt: null },
@@ -187,6 +194,7 @@ const enhancedTests = await Promise.all(
           },
         },
       });
+      console.log("rawTestData=====>", rawTestData);
 
       if (!rawTestData)
         throw new AppError({ statusCode: 404, message: "Mock Test not found", data: [] });
@@ -232,7 +240,7 @@ const enhancedTests = await Promise.all(
     return null;
   })
 );
-
+console.log("enhancedTests=====>", enhancedTests);
 
 return {
     enhancedTests: enhancedTests.filter(Boolean),
@@ -242,3 +250,84 @@ return {
     totalPages: Math.ceil(totalTests / perPage),
 };
 };
+
+
+
+export const studentMockTestService = async ({
+  studentId,
+  test_mode,
+  correct_answer_count,
+  test_type
+}: Params) => {
+
+  const nextMode = decideNextMode(test_mode, correct_answer_count);
+  if (!nextMode) {
+    return { message: "No further questions available", questions: [] };
+  }
+
+  const test = await prisma.test_Mock.findFirst({
+    where: {
+       test_mode: nextMode as MockTestMode,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      questions: true,
+    },
+  });
+
+  if (!test) {
+    throw new AppError({ statusCode: 404, message: `No ${nextMode} test found` });
+  }
+
+  let questions: any[] = [];
+  try {
+    questions = typeof test.questions === "string"
+      ? JSON.parse(test.questions)
+      : test.questions;
+    // ✅ Shuffle and select 5 random questions
+    questions = shuffleArray(questions).slice(0, 5);
+  } catch (err) {
+    console.error("Invalid JSON format in test questions");
+    throw new AppError({ statusCode: 400, message: "Invalid questions format" });
+  }
+
+  return {
+    test_mode: nextMode,
+    test_id: test.id,
+    questions,
+  };
+};
+
+// Logic: decide next mode
+function decideNextMode(currentMode: string, correct: number): string | null {
+  if (currentMode === "easy") {
+    if (correct == 5 || correct == 4) return "medium";
+    if (correct == 3) return "easy";
+    return "easy"; // for 2, 1, or 0
+  }
+
+  if (currentMode === "medium") {
+    if (correct == 5 || correct == 4) return "hard";
+    if (correct == 3) return "medium";
+    return "easy"; // for 2, 1, or 0
+  }
+
+  if (currentMode === "hard") {
+    if (correct == 5 || correct == 4) return null; // final stage complete
+    if (correct == 3) return "hard";
+    return "medium"; // for 2, 1, or 0
+  }
+
+  return null;
+}
+
+// Logic: shuffle array
+function shuffleArray<T>(array: T[]): T[] {
+  return array
+    .map((item) => ({ item, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ item }) => item);
+}
+
+
