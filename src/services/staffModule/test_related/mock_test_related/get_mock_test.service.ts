@@ -7,14 +7,14 @@ import { parseTestCourseOrMock_CSV_Stream } from "../../../../utils/commonUtils"
 import { Readable } from "stream";
 
 interface GetAllMockTestsParams {
-    // batchId: string;
+    batchId: string;
     search: string | null;
     page: number;
     limit: number;
 }
 
 export const getAllMockTestsService = async ({
-    // batchId,
+    batchId,
     search,
     page,
     limit,
@@ -25,14 +25,18 @@ export const getAllMockTestsService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
-    // const existingBatch = await prisma.batchDetail.findUnique({
-    //     where: { id: batchId, deletedAt: null },
-    // });
+    const existingBatch = await prisma.batchDetail.findUnique({
+        where: { id: batchId, deletedAt: null },
+    });
 
     // if (!existingBatch) throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
 
+    // if (!existingBatch) {
+    //     throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
+    // }
+
     const whereCondition: any = {
-        // batch_id: existingBatch.id,
+        batch_id: existingBatch?.id,
         deletedAt: null,
     };
 

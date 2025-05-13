@@ -16,7 +16,8 @@ export const getAllCourseTestsController = async (
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const search = req.query.searchQuery as string || null;
-        const batchId = req.query.batch_id as string || null;
+        // const batchId = req.query.batch_id as string || null;
+        const userId = req.user?.userId as string;
 
         if (!req.user) throw new AppError({ statusCode: 404, message: "User not found", data: [] });
 
@@ -31,9 +32,24 @@ export const getAllCourseTestsController = async (
         //     });
         // }
 
+        const batch = await prisma.batchDetail.findFirst({
+            where: {
+                mentor_id: userId,
+            },
+            select: {
+                id: true,
+            },
+        });
+
+        if (!batch) {
+            throw new AppError({ statusCode: 404, message: "Batch not found for this mentor", data: [] });
+        }
+
+        const batchId = batch.id;
+
         // Call service
         const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await getAllCourseTestsService({
-            // batchId,
+            batchId,
             search,
             page,
             limit,
@@ -83,7 +99,7 @@ export const getTestResultsController = async (
       // Step 1: Fetch test results (students who attended)
       const testResults = await prisma.test_Course_Or_Mock_With_Student.findMany({
         where: {
-          // batchId: batchId,
+          batchId: batchId,
           courseTestId: testId,
         },
         select: {
