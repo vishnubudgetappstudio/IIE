@@ -7,7 +7,7 @@ import { formatDateOnly, formatDurationFromTimeString, parseTestCourseOrMock_CSV
 import { Readable } from "stream";
 
 interface GetAllCourseTestsParams {
-    batchId: string;
+    batchId: string | string[];
     search: string | null;
     page: number;
     limit: number;
@@ -27,15 +27,15 @@ export const getAllCourseTestsService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
-    const existingBatch = await prisma.batchDetail.findUnique({
-        where: { id: batchId, deletedAt: null },
-    });
+    // const existingBatch = await prisma.batchDetail.findUnique({
+    //     where: { id: Array.isArray(batchId) ? batchId[0] : batchId, deletedAt: null },
+    // });
     console.log("studentId ===>", studentId);
 
     // if (!existingBatch) throw new AppError({ statusCode: 404, message: "Batch not found", data: [] });
 
     const whereCondition: any = {
-        batch_id: existingBatch?.id,
+        batch_id: Array.isArray(batchId) ? { in: batchId } : batchId,
         deletedAt: null,
     };
 

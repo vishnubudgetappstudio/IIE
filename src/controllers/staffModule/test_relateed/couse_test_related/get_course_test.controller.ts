@@ -32,7 +32,7 @@ export const getAllCourseTestsController = async (
         //     });
         // }
 
-        const batch = await prisma.batchDetail.findFirst({
+        const batches = await prisma.batchDetail.findMany({
             where: {
                 mentor_id: userId,
             },
@@ -41,15 +41,15 @@ export const getAllCourseTestsController = async (
             },
         });
 
-        if (!batch) {
+        if (!batches) {
             throw new AppError({ statusCode: 404, message: "Batch not found for this mentor", data: [] });
         }
 
-        const batchId = batch.id;
+        const batchIds = batches.map((b) => b.id);
 
         // Call service
         const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await getAllCourseTestsService({
-            batchId,
+            batchId: batchIds,
             search,
             page,
             limit,
