@@ -1,10 +1,11 @@
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "../../../config/database";
 import { extractS3BucketAndKeySize } from "../../../utils/s3";
 import s3 from "../../../config/s3Config";
 import { AppError } from "../../../utils/errorHandler";
 import { formatDateTime, parseSessionSheet_CSV_Stream } from "../../../utils/commonUtils";
 import { Readable } from "stream";
+import { stringify } from "csv-stringify/sync"; // for converting JSON to CSV
 
 export const getSessionSheetDataService = async ({
     batch_id,
@@ -13,15 +14,13 @@ export const getSessionSheetDataService = async ({
     statusParam,
     page,
     limit,
-    //userId,
 }: {
     batch_id: string;
     search?: string;
-    noParam: string;       // e.g., from URL like ?no=102
-    statusParam: string; // e.g., ?status=completed
+    noParam: string;
+    statusParam: string;
     page: number;
     limit: number;
-   // userId: string;
 }): Promise<{
     session_file_name: string;
     session_file_size: string;
@@ -31,15 +30,15 @@ export const getSessionSheetDataService = async ({
     totalPages: number;
     currentPage: number;
 }> => {
-    
-    // ✅ Fetch session sheet URL from database
+
+    // ✅ 1. Fetch session sheet info from DB
     const sessionSheet = await prisma.sessionSheetDetail.findFirst({
         where: { batch_id, deletedAt: null },
         select: {
             id: true,
             session_file_name: true,
             session_file_url: true,
-            createdAt: true
+            createdAt: true,
         },
     });
 
@@ -47,11 +46,12 @@ export const getSessionSheetDataService = async ({
         throw new AppError({ statusCode: 404, message: "Session sheet not found for the given batch.", data: {} });
     }
 
-    // ✅ Extract S3 details
-    const { Bucket, Key, FileSize } = await extractS3BucketAndKeySize({ fileUrl: sessionSheet.session_file_url });
-    // console.log(`📥 Fetching CSV from S3: ${Bucket}/${Key}`);
+    // ✅ 2. Get S3 bucket, key, size
+    const { Bucket, Key, FileSize } = await extractS3BucketAndKeySize({
+        fileUrl: sessionSheet.session_file_url,
+    });
 
-    // ✅ Fetch file from S3
+    // ✅ 3. Get the CSV file from S3
     const command = new GetObjectCommand({ Bucket, Key });
     const response = await s3.send(command);
 
@@ -59,28 +59,52 @@ export const getSessionSheetDataService = async ({
         throw new AppError({ statusCode: 400, message: "Failed to retrieve file from S3.", data: {} });
     }
 
-    // ✅ Parse CSV data from the S3 stream
-    const allData = await parseSessionSheet_CSV_Stream(response.Body as Readable, noParam,statusParam              // The "No." value you want to target
-         ).catch((error) => {
+    // ✅ 4. Parse the CSV file
+    const allData = await parseSessionSheet_CSV_Stream(response.Body as Readable).catch((error) => {
         console.error("❌ Error parsing CSV from S3:", error);
         throw new AppError({ statusCode: 400, message: "Failed to parse CSV file from S3." });
     });
-    console.log("Parsed CSV Data:", allData);
 
-    // ✅ Search Filtering Based on Topics with Explicit Type Casting
+    // ✅ 5. Update status if applicable
+    if (noParam && statusParam) {
+        let isUpdated = false;
+
+        allData.forEach((row) => {
+            if (row["No."] === noParam) {
+                row.Status = statusParam;
+                isUpdated = true;
+            }
+        });
+
+        if (isUpdated) {
+            // Convert updated JSON to CSV string
+            const updatedCsv = stringify(allData, { header: true });
+
+            // Upload updated file back to S3
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket,
+                    Key,
+                    Body: updatedCsv,
+                    ContentType: "text/csv",
+                })
+            );
+        }
+    }
+
+    // ✅ 6. Filter by search keyword in "Topics"
     const filteredData = search
         ? allData.filter((row) =>
-            row.Topics.toLowerCase().includes(search.toLowerCase())
+            row.Topics?.toLowerCase().includes(search.toLowerCase())
         )
         : allData;
 
-    // ✅ Pagination Logic
+    // ✅ 7. Paginate
     const totalRecords = filteredData.length;
     const totalPages = Math.ceil(totalRecords / limit);
     const paginatedData = filteredData.slice((page - 1) * limit, page * limit);
 
     return {
-       // id: sessionSheet.id,
         session_file_name: sessionSheet.session_file_name,
         session_file_size: FileSize,
         createdAt: formatDateTime(sessionSheet.createdAt),
