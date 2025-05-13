@@ -40,6 +40,7 @@ import { getTestResultsController } from "../controllers/staffModule/test_relate
 
 
 import { studentGetAllCourseOrMockTestsController } from "../controllers/studentModule/get_course_or_mock_tests.controller";
+import { studentMockTestController  } from "../controllers/studentModule/get_course_or_mock_tests.controller";
 import { getQuestionsListController } from "../controllers/studentModule/get_test_qustions.controller";
 import { testSubmitController } from "../controllers/studentModule/test_submit.controller";
 import { getMockTestQuestionsController } from "../controllers/studentModule/get_mock_test_questions.controller";
@@ -80,6 +81,7 @@ router.get("/get-attendance-detail", getStudentAttendanceController);
 router.get("/get-course-or-mock-tests", studentGetAllCourseOrMockTestsController);
 router.get("/get-questions-list", getQuestionsListController);
 router.post("/submit-test", testSubmitController);
+router.post("/result-mock-test-questions", studentMockTestController);
 router.get("/get-mock-test-questions", getMockTestQuestionsController);
 
 //Staff API routes
