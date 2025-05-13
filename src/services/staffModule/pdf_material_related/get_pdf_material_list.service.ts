@@ -51,6 +51,8 @@ export const getPDFMaterialFileListService = async ({
         },
     };
 
+    
+
     const [material_files_count, draft_files_count] = await Promise.all([
         prisma.materialFileDetail.count({ where: whereCondition }),
         prisma.materialFileDetail.count({
@@ -76,6 +78,7 @@ export const getPDFMaterialFileListService = async ({
                 id: true,
                 material_title: true,
                 material_file_url: true,
+                batch_id: true,
                 createdAt: true,
                 status: true,
 
@@ -90,6 +93,7 @@ export const getPDFMaterialFileListService = async ({
                 id: true,
                 material_title: true,
                 material_file_url: true,
+                batch_id: true,
                 createdAt: true,
                 status: true,
             },
@@ -103,11 +107,22 @@ export const getPDFMaterialFileListService = async ({
     const resolvedFiles = await Promise.allSettled(
         allFiles.map(async (file) => {
             const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: file.material_file_url });
+            const batch = await prisma.batchDetail.findFirst({
+                where: {
+                    id: file.batch_id ?? undefined,
+                },
+                select: {
+                    id: true,
+                    batchName: true,
+                },
+            });
             return {
                 material_file_id: file.id,
                 material_file_name: file.material_title,
                 material_file_url: file.material_file_url,
                 material_file_size: FileSize,
+                batch_id : file.batch_id,
+                batch_name: batch?.batchName ?? "Unknown",
                 createdAt: formatDateTime(file.createdAt),
                 status: file.status,
             };
