@@ -44,7 +44,7 @@ export const EditStudentMaterialFileAccessService = async ({
     }
 
     // ✅ Step 2: Handle draft update (title and/or file URL) if batch not provided
-    if (existMaterial.status === "draft" && !batchId) {
+    // if (existMaterial.status === "draft" && !batchId) {
         const updatedMaterial = await prisma.materialFileDetail.update({
             where: { id: existMaterial.id },
             data: {
@@ -57,14 +57,7 @@ export const EditStudentMaterialFileAccessService = async ({
                 material_file_url: true,
             },
         });
-
-        return {
-            material_title: updatedMaterial.material_title,
-            material_file_url: updatedMaterial.material_file_url,
-            batchId: null,
-            studentIds: [],
-        };
-    }
+    // }
 
     // ✅ Step 3: Validate batch and students
     if (batchId && (!studentIds || studentIds.length === 0)) {
