@@ -92,11 +92,13 @@ export const createCourseTestService = async ({
         });
     }
 
-    // Step 5: Handle CSV file upload (if any)
+    // Step 5: Handle CSV file upload (parse & extract questions, upload to S3)
     if (test_csv_file) {
         try {
             const fileStream = Readable.from(test_csv_file.buffer);
-            await parseTestCourseOrMock_CSV_Stream(fileStream);
+
+            // Parse and assign extracted questions from CSV
+            questions = await parseTestCourseOrMock_CSV_Stream(fileStream);
 
             const { s3url } = await uploadBufferToS3({
                 buffer: test_csv_file.buffer,
@@ -117,7 +119,7 @@ export const createCourseTestService = async ({
         }
     }
 
-    // Step 6: Create Course Test
+    // Step 6: Create Course Test (with extracted questions stored as JSON)
     const courseTest = await prisma.test_Course.create({
         data: {
             batch_id: existingBatch?.id || "",
@@ -155,7 +157,7 @@ export const createCourseTestService = async ({
     }).catch((error) => {
         throw new AppError({
             statusCode: 400,
-            message: "Something went wrong while creating the course test with student.",
+            message: "Something went wrong while assigning the course test to students.",
             data: {}
         });
     });
@@ -165,6 +167,7 @@ export const createCourseTestService = async ({
         questions: JSON.parse(courseTest.questions || "[]"),
     };
 };
+
 
 export const deleteCourseTestService = async (testId: string) => {
     const existingTest = await prisma.test_Course.findUnique({
@@ -201,4 +204,3 @@ export const deleteCourseTestService = async (testId: string) => {
 
     return true;
 };
-
