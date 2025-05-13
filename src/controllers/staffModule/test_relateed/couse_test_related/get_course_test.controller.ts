@@ -23,17 +23,17 @@ export const getAllCourseTestsController = async (
         if (req.user?.role !== 'staff') throw new AppError({ statusCode: 404, message: "Invalid role", data: [] });
 
         // Validate required param
-        if (!batchId || typeof batchId !== "string") {
-            throw new AppError({
-                statusCode: 400,
-                message: "Batch ID is required and must be a string",
-                data: [],
-            });
-        }
+        // if (!batchId || typeof batchId !== "string") {
+        //     throw new AppError({
+        //         statusCode: 400,
+        //         message: "Batch ID is required and must be a string",
+        //         data: [],
+        //     });
+        // }
 
         // Call service
         const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await getAllCourseTestsService({
-            batchId,
+            // batchId,
             search,
             page,
             limit,
@@ -66,10 +66,10 @@ export const getTestResultsController = async (
 //     const batchId = req.params.batchId;
 // const testId = req.params.testId;
     console.log("batchId ===>", batchId);
-    if (!batchId) {
-      res.status(400).json({ error: "Batch ID is required" });
-      return;
-    }
+    // if (!batchId) {
+    //   res.status(400).json({ error: "Batch ID is required" });
+    //   return;
+    // }
    // const testId = req.query.testId as string || null;
     console.log("testId ===>", testId); 
     
@@ -83,7 +83,7 @@ export const getTestResultsController = async (
       // Step 1: Fetch test results (students who attended)
       const testResults = await prisma.test_Course_Or_Mock_With_Student.findMany({
         where: {
-          batchId: batchId,
+          // batchId: batchId,
           courseTestId: testId,
         },
         select: {

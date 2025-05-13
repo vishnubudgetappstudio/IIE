@@ -22,17 +22,17 @@ export const getAllMockTestsController = async (
         if (req.user?.role !== 'staff') throw new AppError({ statusCode: 404, message: "Invalid role", data: [] });
 
         // Validate required param
-        if (!batchId || typeof batchId !== "string") {
-            throw new AppError({
-                statusCode: 400,
-                message: "Batch ID is required and must be a string",
-                data: [],
-            });
-        }
+        // if (!batchId || typeof batchId !== "string") {
+        //     throw new AppError({
+        //         statusCode: 400,
+        //         message: "Batch ID is required and must be a string",
+        //         data: [],
+        //     });
+        // }
 
         // Call service
         const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await getAllMockTestsService({
-            batchId,
+            // batchId,
             search,
             page,
             limit,
