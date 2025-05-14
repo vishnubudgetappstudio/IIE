@@ -7,6 +7,11 @@ interface PDFMaterialFile {
     material_file_name: string;
     material_file_size: string;
     createdAt: string;
+    material_file_id: string;
+    material_file_url: string;
+    batch_id?: string;
+    batch_name?: string;
+    status: string;
 }
 
 interface PDFMaterialResponse {
@@ -35,33 +40,18 @@ export const getPDFMaterialFileListService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
-    // const whereCondition: any = {
-    //     deletedAt: null,
-    //     staff_id : userId,
-    //    // ...(batch_id && { batch_id }),
-    //     ...(searchTerm && { material_file_name: { startsWith: searchTerm } }),
-    //     studentMaterialAccessModel: {
-    //         some: {
-    //             student_relation: { deletedAt: null },
-    //             material_relation: { deletedAt: null },
-    //         },
-    //     },
-    //     batch_detail_relation: {
-    //         deletedAt: null,
-    //     },
-    // };
-
     const whereCondition: any = {
         deletedAt: null,
         staff_id: userId,
 
-        // ✅ Apply search on material_file_name
-        ...(searchTerm?.trim() && {
-            material_file_name: {
-                contains: searchTerm.trim(), // case-sensitive by default
-                // mode: "insensitive", // ❗only if supported by your DB (e.g., PostgreSQL)
+        ...(searchTerm && {
+            material_title: {
+                contains: searchTerm,
+                // mode: "insensitive", // Optional: for PostgreSQL case-insensitive search
             },
         }),
+
+        ...(batch_id && { batch_id }),
 
         studentMaterialAccessModel: {
             some: {
@@ -75,17 +65,17 @@ export const getPDFMaterialFileListService = async ({
         },
     };
 
-    
-
     const [material_files_count, draft_files_count] = await Promise.all([
         prisma.materialFileDetail.count({ where: whereCondition }),
         prisma.materialFileDetail.count({
-            where: { status: "draft", deletedAt: null },
+            where: {
+                status: "draft",
+                deletedAt: null,
+            },
         }),
     ]);
 
     const totalFiles = material_files_count + draft_files_count;
-    console.log("Total Files: ", totalFiles);
 
     if (totalFiles === 0) {
         throw new AppError({
@@ -105,7 +95,6 @@ export const getPDFMaterialFileListService = async ({
                 batch_id: true,
                 createdAt: true,
                 status: true,
-
             },
             orderBy: { createdAt: "desc" },
             skip,
@@ -127,10 +116,12 @@ export const getPDFMaterialFileListService = async ({
 
     const allFiles = [...activeFiles, ...draftFiles];
 
-
     const resolvedFiles = await Promise.allSettled(
         allFiles.map(async (file) => {
-            const { FileSize } = await extractS3BucketAndKeySize({ fileUrl: file.material_file_url });
+            const { FileSize } = await extractS3BucketAndKeySize({
+                fileUrl: file.material_file_url,
+            });
+
             const batch = await prisma.batchDetail.findFirst({
                 where: {
                     id: file.batch_id ?? undefined,
@@ -140,12 +131,13 @@ export const getPDFMaterialFileListService = async ({
                     batchName: true,
                 },
             });
+
             return {
                 material_file_id: file.id,
                 material_file_name: file.material_title,
                 material_file_url: file.material_file_url,
                 material_file_size: FileSize,
-                batch_id : file.batch_id,
+                batch_id: file.batch_id,
                 batch_name: batch?.batchName ?? "Unknown",
                 createdAt: formatDateTime(file.createdAt),
                 status: file.status,
