@@ -32,12 +32,15 @@ export const editStudentMaterialAccessController = async (
 
         const student_ids = req.body.student_ids || [];
 
+        const file = req.files ? (req.files as Express.Multer.File[])[0] : null;
+
         // 🔹 Call Service Layer
         const updatedMaterial = await EditStudentMaterialFileAccessService({
             material_id,
             batchId: batch_id ? batch_id : null,
             studentIds: student_ids.length ? student_ids as string[] : [],
-            material_title: material_title
+            material_title: material_title,
+            material_file: file || undefined,
         });
 
         // 🔹 Send Response
