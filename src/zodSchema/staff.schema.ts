@@ -51,7 +51,7 @@ export const editStudentMaterialFileAccessSchema = z.object({
 
     batch_id: z.string().optional(),
 
-    student_ids: studentIdsArraySchema, // Custom validation for student_ids
+    // student_ids: studentIdsArraySchema, // Custom validation for student_ids
 });
 
 export const questionObjectSchema = z.object({
