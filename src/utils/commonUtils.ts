@@ -48,7 +48,7 @@ export const parseSessionSheet_CSV_Stream = async (stream: Readable, noParam?: s
 
                 if (
                     validatedData["No."] === noParam &&
-                    (statusParam === "completed" || statusParam === "pending")
+                    (statusParam === "completed" || statusParam === "pending" || statusParam === "Completed" || statusParam === "Pending")
                 ) {
                     validatedData.Status = statusParam;
                 }

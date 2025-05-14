@@ -58,7 +58,7 @@ export const getPDFMaterialFileListService = async ({
         // ✅ Apply search on material_file_name
         ...(searchTerm?.trim() && {
             material_file_name: {
-                contains: searchTerm.trim().toLowerCase(), // case-sensitive by default
+                contains: searchTerm.trim(), // case-sensitive by default
                 // mode: "insensitive", // ❗only if supported by your DB (e.g., PostgreSQL)
             },
         }),

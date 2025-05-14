@@ -23,7 +23,7 @@ export const leaveRequestSchema = z.object({
 
 export const roleSchema = z.enum(["staff", "counsellor", "student", "admin", "guest"], { required_error: "*role is required" }).refine(
     (role) => ["staff", "counsellor", "student", "admin", "guest"].includes(role),
-    { message: "Role must be one of: staff, counsellor, student, admin, guest" }
+    { message: "Role must be one of: staff, counsellor, student, admin, guest" }    
 );
 
 /**
@@ -35,7 +35,7 @@ export const csvSessionSheetSchema = z.object({
     "Course Id": z.string().min(1, "Course Id cannot be empty"),
     "Topics": z.string().min(1, "Topics cannot be empty"),
     "Description": z.string().min(1, "Description cannot be empty"),
-    "Status": z.enum(["completed", "pending"], {
+    "Status": z.enum(["completed", "pending", "Completed", "Pending"], {
         errorMap: () => ({ message: 'Status must be either "completed" or "pending"' }),
     }),
     "Completed Date": z.string().optional().refine((date) => {
