@@ -170,7 +170,7 @@ export const createCourseTestService = async ({
 
 
 export const deleteCourseTestService = async (testId: string) => {
-    const existingTest = await prisma.test_Course.findUnique({
+    const existingTest = await prisma.test_Course.findFirst({
         where: { id: testId, deletedAt: null },
     });
 
