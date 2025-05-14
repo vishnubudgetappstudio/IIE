@@ -3,7 +3,6 @@ import { AppError } from "../../../utils/errorHandler";
 import { EditStudentMaterialFileAccessService } from "../../../services/staffModule/pdf_material_related/edit_student_material_access.service";
 import { AuthRequest } from "../../../middlewares/auth.middleware";
 import { editStudentMaterialFileAccessSchema } from "../../../zodSchema/staff.schema";
-import { moveFileInS3 } from "../../../utils/s3";
 
 /**
  * 🎯 Controller to Edit Student Material Access
@@ -29,28 +28,16 @@ export const editStudentMaterialAccessController = async (
             });
         }
 
-        const { material_title, batch_id, student_ids, material_id } = parsedData.data;
+        const { material_title, batch_id, material_id } = parsedData.data;
+
+        const student_ids = req.body.student_ids || [];
 
         // 🔹 Call Service Layer
-        const material_file = req.body.material_file;
-
-        // Check if a new material_file is provided
-        let materialFileUrl;
-        if (material_file) {
-            // Assume a function `uploadToS3` exists to handle S3 uploads
-            const destinationKey = `new/path/${material_file}`; // Define the destination key
-            materialFileUrl = await moveFileInS3(material_file, destinationKey);
-        } else {
-            // Use the existing material_file URL
-            materialFileUrl = req.body.existing_material_file_url;
-        }
-
         const updatedMaterial = await EditStudentMaterialFileAccessService({
             material_id,
             batchId: batch_id ? batch_id : null,
-            studentIds: student_ids.length ? (student_ids as string[]) : [],
-            material_title: material_title,
-            material_file_url: materialFileUrl,
+            studentIds: student_ids.length ? student_ids as string[] : [],
+            material_title: material_title
         });
 
         // 🔹 Send Response
