@@ -35,17 +35,41 @@ export const getPDFMaterialFileListService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
+    // const whereCondition: any = {
+    //     deletedAt: null,
+    //     staff_id : userId,
+    //    // ...(batch_id && { batch_id }),
+    //     ...(searchTerm && { material_file_name: { startsWith: searchTerm } }),
+    //     studentMaterialAccessModel: {
+    //         some: {
+    //             student_relation: { deletedAt: null },
+    //             material_relation: { deletedAt: null },
+    //         },
+    //     },
+    //     batch_detail_relation: {
+    //         deletedAt: null,
+    //     },
+    // };
+
     const whereCondition: any = {
         deletedAt: null,
-        staff_id : userId,
-       // ...(batch_id && { batch_id }),
-        ...(searchTerm && { material_file_name: { startsWith: searchTerm } }),
+        staff_id: userId,
+
+        // ✅ Apply search on material_file_name
+        ...(searchTerm?.trim() && {
+            material_file_name: {
+                contains: searchTerm.trim().toLowerCase(), // case-sensitive by default
+                // mode: "insensitive", // ❗only if supported by your DB (e.g., PostgreSQL)
+            },
+        }),
+
         studentMaterialAccessModel: {
             some: {
                 student_relation: { deletedAt: null },
                 material_relation: { deletedAt: null },
             },
         },
+
         batch_detail_relation: {
             deletedAt: null,
         },

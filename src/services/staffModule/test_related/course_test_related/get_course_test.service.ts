@@ -39,9 +39,23 @@ export const getAllCourseTestsService = async ({
         deletedAt: null,
     };
 
-    if (searchTerm) {
-        whereCondition.test_title = { startsWith: searchTerm };
+    // if (searchTerm) {
+    //     whereCondition.test_title = { startsWith: searchTerm };
+    // }
+
+    if (searchTerm?.trim()) {
+        whereCondition.test_title = {
+            contains: searchTerm.trim().toLowerCase(),
+        };
     }
+
+    // if (searchTerm?.trim()) {
+    //     console.log("searchTerm ===>", searchTerm);
+    //     whereCondition.test_title = {
+    //         contains: searchTerm.trim(),
+    //         mode: "insensitive", // This makes it case-insensitive
+    //     };
+    // }
 
     const [courseTests, totalTests] = await Promise.all([
         prisma.test_Course.findMany({

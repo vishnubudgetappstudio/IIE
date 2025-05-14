@@ -20,11 +20,20 @@ export const getAllStudentsFromBatchService = async (
             where: {
                 batch_id: batchId,
                 deletedAt: null,
+                // student_relation: {
+                //     ...(search && {
+                //         name: { startsWith: searchTerm } as Prisma.StringFilter,
+                //     }),
+                //     deletedAt: null,
+                // },
                 student_relation: {
-                    ...(search && {
-                        name: { startsWith: searchTerm } as Prisma.StringFilter,
-                    }),
                     deletedAt: null,
+                    ...(searchTerm?.trim() && {
+                        name: {
+                            contains: searchTerm.trim().toLowerCase(), // case-sensitive by default
+                            // mode: "insensitive" // Uncomment if your Prisma + DB supports it
+                        },
+                    }),
                 },
             },
             skip,
