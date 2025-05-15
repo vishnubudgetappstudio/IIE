@@ -87,6 +87,18 @@ export const getAllStudentsListService = async ({
                 });
             }
 
+            let isBatch = 0;
+            const batchCheck = await prisma.batchWithStudent.findFirst({
+                where: {
+                    student_id: student.id,
+                    batch_id: batchId,
+                    deletedAt: null
+                }
+            });
+            if(batchCheck) {
+                isBatch = 1;
+            }
+
             return {
                 id: student.id,
                 name: student.name,
@@ -106,7 +118,8 @@ export const getAllStudentsListService = async ({
                 last_monthly_present: attendanceStats?.lastMonth?.presentPercentage ?? 0,
                 last_monthly_absent: attendanceStats?.lastMonth?.absentPercentage ?? 0,
                 course_test: "14",
-                mock_test: "2"
+                mock_test: "2",
+                is_batch: isBatch,
             };
         })
     );

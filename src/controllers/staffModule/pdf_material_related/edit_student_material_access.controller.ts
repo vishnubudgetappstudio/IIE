@@ -45,7 +45,7 @@ export const editStudentMaterialAccessController = async (
 
         // 🔹 Send Response
         res.status(200).json({
-            success: true,
+            status: true,
             message: "Material file access updated successfully",
             data: updatedMaterial,
         });
