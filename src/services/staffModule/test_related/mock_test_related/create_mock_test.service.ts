@@ -93,9 +93,9 @@ export const createMockTestService = async ({
             const fileStream = Readable.from(test_csv_file.buffer); // Convert Buffer to Stream
 
             // ✅ Read and validate CSV file
-            const parsedData = await parseTestCourseOrMock_CSV_Stream(fileStream);
+            questions = await parseTestCourseOrMock_CSV_Stream(fileStream);
 
-            // console.log("✅ CSV Validation Passed: ", parsedData.length, "rows");
+            // console.log("✅ CSV Validation Passed: ", questions.length, "rows");
 
             const { s3url } = await uploadBufferToS3({
                 buffer: test_csv_file.buffer,
