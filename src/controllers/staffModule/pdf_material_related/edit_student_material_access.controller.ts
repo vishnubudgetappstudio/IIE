@@ -40,7 +40,7 @@ export const editStudentMaterialAccessController = async (
             batchId: batch_id ? batch_id : null,
             studentIds: student_ids.length ? student_ids as string[] : [],
             material_title: material_title,
-            material_file: file || undefined,
+            file: file || undefined,
         });
 
         // 🔹 Send Response

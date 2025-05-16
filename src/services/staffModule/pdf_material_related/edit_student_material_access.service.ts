@@ -8,7 +8,7 @@ interface EditStudentMaterialAccessRequestData {
     batchId?: string | null;
     studentIds?: string[] | [];
     material_title?: string;
-    material_file?: Express.Multer.File;
+    file?: Express.Multer.File;
     // userId: string;
     role?: CommonUserRole;
 }
@@ -25,7 +25,7 @@ export const EditStudentMaterialFileAccessService = async ({
     batchId,
     studentIds,
     material_title,
-    material_file,
+    file,
     // userId,
     role = "staff",
 }: EditStudentMaterialAccessRequestData): Promise<EditStudentMaterialAccessResponseData> => {
@@ -83,12 +83,12 @@ export const EditStudentMaterialFileAccessService = async ({
     // ✅ Step 4: Upload New File If Provided
     let fileUrl = existMaterial.material_file_url;
 
-    if (material_file) {
-        console.log("Uploading new file to S3...", material_file);
+    if (file) {
+        console.log("Uploading new file to S3...", file);
         const userId = "";
 
         const uploadResult = await uploadFileToS3({
-            file: material_file,
+            file: file,
             batchId: batchId!,
             role,
             userId
