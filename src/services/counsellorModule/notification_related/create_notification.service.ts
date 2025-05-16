@@ -7,7 +7,7 @@ interface CreateNotificationData {
     senderId: string;
     title: string;
     message: string;
-    image?: string;
+    file?: string;
     type: NotificationType;
     category?: NotificationCategory | "";
     date: string;
@@ -101,7 +101,7 @@ export const createNotificationService = async (data: CreateNotificationData) =>
             data: {
                 title: data.title,
                 description: data.message,
-                image: data.image,
+                image: data.file,
                 type: data.type as NotificationType,
                 category: data.category ? (data.category as NotificationCategory) : null,
                 batch_ids: batchIdsArray.length ? data.batchIds as string : "",
@@ -142,6 +142,7 @@ export const createNotificationService = async (data: CreateNotificationData) =>
         console.error("Error creating notification:", error);
         throw new AppError({
             statusCode: 400,
+            data: error,
             message: "Can't create new notification. Something went wrong.",
         });
     }
