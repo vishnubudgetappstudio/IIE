@@ -128,8 +128,7 @@ const enhancedTests = await Promise.all(
         },
       });
 
-      if (!testData)
-        throw new AppError({ statusCode: 404, message: "Course Test not found", data: [] });
+       if (!testData) return null;
 
       if (testData.test_url && !testData.questions) {
         try {
