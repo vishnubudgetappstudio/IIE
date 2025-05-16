@@ -18,6 +18,7 @@ import { getStaffAttendanceController } from "../controllers/staffModule/attenda
 import { uploadXlsFileController } from "../controllers/counsellorModule/xls_file_upload.controller";
 import { updateXlsFileNameController } from "../controllers/counsellorModule/xls_fileName_update.controller";
 import { getXLSFileListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
+import { deleteXLSFileController } from "../controllers/counsellorModule/get_xls_fileList.controller";
 import { uploadPDFMaterialFileController } from "../controllers/staffModule/pdf_material_related/upload_pdf_material.controller";
 import { getStudentStudyMaterialsController } from "../controllers/studentModule/get_study_material.controller";
 import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf_material_related/get_pdf_material_list.controller";
@@ -37,6 +38,9 @@ import { getSessionSheetReport } from "../controllers/staffModule/session_sheet/
 import { getTestResultsController } from "../controllers/staffModule/test_relateed/couse_test_related/get_course_test.controller";
 //import { updateSessionSheetStatusController } from "../controllers/staffModule/session_sheet/update_sessionsheet_status.controller";
 
+// import { getGuestHome } from "../controllers/guestModule/getGuestHome.controller";
+// import { updateGuestProfile } from "../controllers/guestModule/getGuestHome.controller";
+// import { guestGetMockTestQuestionsController } from "../controllers/guestModule/getGuestHome.controller";
 
 
 import { studentGetAllCourseOrMockTestsController } from "../controllers/studentModule/get_course_or_mock_tests.controller";
@@ -72,6 +76,7 @@ router.use("/notification", notificationRoutes);// Counsellor Notification Route
 router.post("/upload-xls-file", uploadXlsFileController); // Upload XLS or XLSX route
 router.post("/update-xls-fileName", updateXlsFileNameController); // Update XLS or XLSX route
 router.get("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
+router.delete("/delete-xls-file/:fileId", deleteXLSFileController); // Delete XLS or XLSX route
 
 //Student API routes
 
@@ -104,5 +109,14 @@ router.get("/get-mock-tests", getAllMockTestsController);
 router.get("/getNotificationList", staff_NotificationList);
 router.get("/get-course-tests-results", getTestResultsController);
 router.post("/raise-have-a-doubt", raiseHaveADoubt);
+
+//guest module
+// router.get("/guest/home", getGuestHome);
+// router.post("/guest/update-profile", updateGuestProfile);
+// router.get("/guest/mock-test/questions", guestGetMockTestQuestionsController);
+
+
+
+
 
 export default router;

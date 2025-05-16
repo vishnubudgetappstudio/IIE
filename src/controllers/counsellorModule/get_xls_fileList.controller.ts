@@ -2,6 +2,7 @@ import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { AppError } from "../../utils/errorHandler";
 import { getXLSFileListService } from "../../services/counsellorModule/get_xls_fileList.service";
+import { deleteXLSFileService } from "../../services/counsellorModule/get_xls_fileList.service";
 
 /**
  * ✅ Handles fetching and parsing session sheet data from S3.
@@ -50,6 +51,39 @@ export const getXLSFileListController = async (req: AuthRequest, res: Response, 
         });
     } catch (error) {
         console.error("❌ Error Fetching XLS Files List:", error);
+        next(error);
+    }
+};
+
+
+export const deleteXLSFileController = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { fileId } = req.params;
+
+        if (!req.user) {
+            throw new AppError({ statusCode: 401, message: "Unauthorized access", data: [] });
+        }
+
+        if (req.user.role !== "counsellor") {
+            throw new AppError({ statusCode: 403, message: "Forbidden: Access restricted to counsellors", data: [] });
+        }
+
+        if (!fileId) {
+            throw new AppError({ statusCode: 400, message: "Missing file ID", data: [] });
+        }
+
+        const deletedFile = await deleteXLSFileService({
+            fileId,
+            counsellorId: req.user.userId
+        });
+
+        res.status(200).json({
+            status: true,
+            message: "XLS file deleted successfully",
+            data: deletedFile
+        });
+    } catch (error) {
+        console.error("❌ Error Deleting XLS File:", error);
         next(error);
     }
 };

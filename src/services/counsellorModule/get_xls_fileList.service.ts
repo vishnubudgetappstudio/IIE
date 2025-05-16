@@ -97,3 +97,36 @@ export const getXLSFileListService = async ({
         perPage,
     };
 };
+
+
+interface DeleteXLSFileInput {
+    fileId: string;
+    counsellorId: string;
+}
+
+export const deleteXLSFileService = async ({ fileId, counsellorId }: DeleteXLSFileInput) => {
+    const existingFile = await prisma.xlsFileDetail.findFirst({
+        where: {
+            id: fileId,
+            management_staff_id: counsellorId,
+            deletedAt: null, // Only fetch active files
+        }
+    });
+
+    if (!existingFile) {
+        throw new AppError({ statusCode: 404, message: "File not found or already deleted", data: [] });
+    }
+
+    const deletedFile = await prisma.xlsFileDetail.update({
+        where: {
+            id: fileId,
+        },
+        data: {
+            deletedAt: new Date(), // 👈 soft delete timestamp
+        }
+    });
+
+    return deletedFile;
+};
+
+
