@@ -137,6 +137,7 @@ model SupportTicketDetail {
   id                  String         @id @default(uuid())
   management_staff_id String? // Nullable - If role is staff or counsellor
   student_id          String? // Nullable - If role is student
+  //group_id           String? // Nullable - If role is group
   role                CommonUserRole
   query               String // Reason for raising the ticket
   status              TicketStatus   @default(open)
@@ -145,6 +146,8 @@ model SupportTicketDetail {
   deletedAt           DateTime? // Soft delete column
 
   // One-to-One (Optional): A ticket is linked to only one management staff or student
+  guest_id   String?  // Foreign key for Guest
+  guest      Guest?   @relation(fields: [guest_id], references: [id])
   management_staff_relation ManagementStaff? @relation(fields: [management_staff_id], references: [id], onDelete: Cascade, map: "SupportTicket_ManagementStaff_fkey") // Optional relation
   student_relation          Student?         @relation(fields: [student_id], references: [id], onDelete: Cascade, map: "SupportTicket_Student_fkey") // Optional relation
 
@@ -313,6 +316,7 @@ model Notification {
   deletedAt   DateTime?             // Soft delete field (nullable)
 
   // Relations
+  
   management_staff_relation  ManagementStaff         @relation(fields: [senderId], references: [id], onDelete: Cascade) // Foreign key to ManagementStaff
   notificationRecipientModel NotificationRecipient[] // Related recipients
 
@@ -640,3 +644,20 @@ enum MockTestMode {
   medium
   hard
 }
+
+
+model Guest {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  otpCode   String?
+  name      String?
+  email     String?
+  course    String?
+  area      String?
+  createdAt DateTime @default(now())
+
+  supportTickets SupportTicketDetail[] // 👈 add this line for back relation
+}
+
+
+
