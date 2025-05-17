@@ -19,7 +19,10 @@ export const createSupportTicket = async ({ userId, role, query }: {
     supportTicketData.management_staff_id = userId;
   } else if (role === "student") {
     supportTicketData.student_id = userId;
-  } else {
+  } else if(role === "guest") {
+    supportTicketData.guest_id = userId;
+  }
+  else {
     throw new AppError({
       statusCode: 400,
       data: {},
