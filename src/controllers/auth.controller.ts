@@ -197,14 +197,14 @@ export const sendGuestOtp = async (req: Request, res: Response) => {
     const otpCode = "123456"; // Or Math.floor(100000 + Math.random() * 900000)
 
     // Check if phone exists
-    const [rows] = await db.query('SELECT id FROM guest WHERE phone = ?', [phone]);
+    const [rows] = await db.query('SELECT id FROM Guest WHERE phone = ?', [phone]);
 
     if ((rows as any[]).length > 0) {
       // Update existing record
-      await db.query('UPDATE guest SET otpCode = ? WHERE phone = ?', [otpCode, phone]);
+      await db.query('UPDATE Guest SET otpCode = ? WHERE phone = ?', [otpCode, phone]);
     } else {
       // Insert new guest
-      await db.query('INSERT INTO guest (id, phone, otpCode, createdAt) VALUES (UUID(), ?, ?, NOW())', [phone, otpCode]);
+      await db.query('INSERT INTO Guest (id, phone, otpCode, createdAt) VALUES (UUID(), ?, ?, NOW())', [phone, otpCode]);
     }
 
     return res.status(200).json({ message: "OTP sent successfully." });
