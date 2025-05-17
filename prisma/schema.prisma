@@ -183,6 +183,7 @@ model LeaveDetail {
   // One-to-One (Optional): A leave request is linked to only one management staff or student
   management_staff_relation ManagementStaff? @relation(fields: [management_staff_id], references: [id], onDelete: Cascade, map: "Leave_ManagementStaff_fkey")
   student_relation          Student?         @relation(fields: [student_id], references: [id], onDelete: Cascade, map: "Leave_Student_fkey")
+  notificationRecipients NotificationRecipient[] @relation("LeaveDetailToNotification")
 
   role       CommonUserRole
   leave_type LeaveType
@@ -329,33 +330,35 @@ model Notification {
 
 model NotificationRecipient {
   id                String             @id @default(uuid())
-  notificationId    String // Foreign key for Notification
+  notificationId    String
   title             String
   description       String
-  managementStaffId String? // Foreign key for staff
-  studentId         String? // Foreign key for student
-  batchId           String? // Foreign key for batch
+  managementStaffId String?
+  studentId         String?
+  batchId           String?
   receiverRole      ReceiverRole
   type              NotificationType
   isRead            Boolean            @default(false)
   status            NotificationStatus @default(Scheduled)
   leaveDetailId     String?
-  sentAt            BigInt? // Timestamp of when it was sent
+  sentAt            BigInt?
   createdAt         DateTime           @default(now())
 
-  // Relations
   notification_relation     Notification     @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   management_staff_relation ManagementStaff? @relation(fields: [managementStaffId], references: [id], onDelete: Cascade)
   student_relation          Student?         @relation(fields: [studentId], references: [id], onDelete: Cascade)
   batch_detail_relation     BatchDetail?     @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
-  // Indexing for efficient querying
+  // ✅ Add relation name
+  leaveDetail LeaveDetail? @relation("LeaveDetailToNotification", fields: [leaveDetailId], references: [id])
+
   @@index([notificationId, status])
   @@index([managementStaffId])
   @@index([studentId])
   @@index([batchId])
   @@map("notification_recipient")
 }
+
 
 enum NotificationStatus {
   Scheduled // Notification is scheduled

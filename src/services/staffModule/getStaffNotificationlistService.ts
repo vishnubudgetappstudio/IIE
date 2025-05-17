@@ -19,38 +19,77 @@ export const staff_notificationListService = async ({
 
         // Fetch notifications with pagination
         console.log( "GetNotificationList => ", staff_id, role);
+        // const staff_notificationList = await prisma.notificationRecipient.findMany({
+        //     where: {
+        //         managementStaffId: staff_id,
+        //         receiverRole: role,
+        //         isRead: false,
+        //         status: 'Sent',
+        //         // notification_relation: {
+        //         //     status: 'Sent',
+        //         //     deletedAt: null
+        //         // }
+        //     },
+        //     select: {
+        //         // notificationId: true,
+        //         // notification_relation: {
+        //         // select: {
+        //             id: true,
+        //             title: true,
+        //             description: true,
+        //             type: true,
+        //             createdAt: true,
+        //             leaveDetailId: true,
+        //             // updatedAt: true,
+        //             status: true,
+        //         // }
+        //         // }
+        //     },
+        //     skip, // Skip the first (page - 1) * pageSize records
+        //     take: pageSize, // Limit the number of records per page
+        //     orderBy: {
+        //         createdAt: 'desc' // Order by newest notifications first
+        //     }
+        // });
+
         const staff_notificationList = await prisma.notificationRecipient.findMany({
             where: {
                 managementStaffId: staff_id,
                 receiverRole: role,
                 isRead: false,
                 status: 'Sent',
-                // notification_relation: {
-                //     status: 'Sent',
-                //     deletedAt: null
-                // }
             },
             select: {
-                // notificationId: true,
-                // notification_relation: {
-                // select: {
-                    id: true,
-                    title: true,
-                    description: true,
-                    type: true,
-                    createdAt: true,
-                    leaveDetailId: true,
-                    // updatedAt: true,
-                    status: true,
-                // }
-                // }
+                id: true,
+                title: true,
+                description: true,
+                type: true,
+                createdAt: true,
+                leaveDetailId: true,
+                status: true,
+
+                // ✅ Include the leaveDetail relation
+                leaveDetail: {
+                select: {
+                    // Only select student and its required fields
+                    student_relation: {
+                    select: {
+                        name: true,
+                        profile_img_url: true,
+                        roll_number: true,
+                    }
+                    }
+                }
+                }
             },
-            skip, // Skip the first (page - 1) * pageSize records
-            take: pageSize, // Limit the number of records per page
+            skip,
+            take: pageSize,
             orderBy: {
-                createdAt: 'desc' // Order by newest notifications first
+                createdAt: 'desc'
             }
-        });
+            });
+
+
 
         // Get total count for pagination
         const totalNotifications = await prisma.notificationRecipient.count({
