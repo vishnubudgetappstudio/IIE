@@ -20,7 +20,7 @@ export const studentGetAllCourseOrMockTestsController = async (
 
         if (!req.user) throw new AppError({ statusCode: 404, message: "User not found", data: [] });
 
-        if (req.user?.role !== 'student') throw new AppError({ statusCode: 404, message: "Invalid role", data: [] });
+        if (req.user?.role !== 'student' && req.user?.role !== 'guest') throw new AppError({ statusCode: 404, message: "Invalid roleee", data: [] });
 
         if (!testType || testType !== "mock_test" && testType !== "course_test") {
             throw new AppError({
@@ -33,6 +33,7 @@ export const studentGetAllCourseOrMockTestsController = async (
         // Call service
         const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await studentGetAllCourseOrMockTestsService({
             studentId: req.user?.userId,
+            role: req.user?.role,
             test_type: testType,
             test_mode: (req.query.test_mode as string) || "default_mode",
              correct_answer_count: 0, // Default value added
@@ -81,6 +82,7 @@ export const studentMockTestController = async (
 
     const result = await studentMockTestService({
       studentId: req.user.userId,
+      role: req.user.role,
       test_mode,
       correct_answer_count,
       test_type,

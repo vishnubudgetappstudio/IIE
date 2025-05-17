@@ -13,6 +13,7 @@ import { TestType, MockTestMode } from "@prisma/client";
 
 interface Params {
     studentId: string;
+    role: string;
     test_type: TestType;
     search: string | null;
     page: number;
@@ -22,6 +23,7 @@ interface Params {
 
 interface Params {
   studentId: string;
+  role: string;
   test_mode: string; // easy, medium, hard
   correct_answer_count: number;
   test_type: TestType;
@@ -29,6 +31,7 @@ interface Params {
 
 export const studentGetAllCourseOrMockTestsService = async ({
     studentId,
+    role,
     test_type,
     search,
     page,
@@ -41,11 +44,14 @@ export const studentGetAllCourseOrMockTestsService = async ({
     const searchTerm = search?.trim();
 
     // ✅ Validate Student
-    const student = await prisma.student.findUnique({
-        where: { id: studentId, deletedAt: null },
-        select: { id: true },
-    });
-    if (!student) throw new AppError({ statusCode: 404, message: "Student not found" });
+    console.log("studentId=====>", studentId);
+    if(studentId !== "undefined" && role === "student"){
+      const student = await prisma.student.findUnique({
+          where: { id: studentId, deletedAt: null },
+          select: { id: true },
+      });
+      if (!student) throw new AppError({ statusCode: 404, message: "Student not found" });
+    // }
 
     // ✅ Get Batch ID
     const batch = await prisma.batchWithStudent.findFirst({
@@ -60,12 +66,18 @@ export const studentGetAllCourseOrMockTestsService = async ({
     if (!batchId) throw new AppError({ statusCode: 404, message: "Batch not found" });
 
     // ✅ Build where condition
-    const whereCondition: any = {
+    var whereCondition: any = {
         studentId,
         test_type,
         batchId,
         deletedAt: null,
     };
+  }else{
+    var whereCondition: any = {
+        test_type,
+        deletedAt: null,
+    };
+  }
     console.log("test_mode=====>", test_mode);
      if (test_type === "mock_test" && test_mode) {
     whereCondition.mock_test_relation = {
