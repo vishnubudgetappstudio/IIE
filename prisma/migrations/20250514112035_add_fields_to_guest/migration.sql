@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `guest` ADD COLUMN `area` VARCHAR(191) NULL,
+    ADD COLUMN `course` VARCHAR(191) NULL,
+    ADD COLUMN `email` VARCHAR(191) NULL,
+    ADD COLUMN `name` VARCHAR(191) NULL;
