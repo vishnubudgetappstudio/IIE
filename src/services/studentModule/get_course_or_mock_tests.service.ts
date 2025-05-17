@@ -290,19 +290,29 @@ export const studentMockTestService = async ({
   if (!test) {
     throw new AppError({ statusCode: 404, message: `No ${nextMode} test found` });
   }
-
-  let questions: any[] = [];
+let questions: any[] = [];
+if (!test.questions) {
+  // If questions is null, return empty list — not an error
+  questions = [];
+} else {
   try {
-    questions = typeof test.questions === "string"
+    const parsed = typeof test.questions === "string"
       ? JSON.parse(test.questions)
       : test.questions;
-    // ✅ Shuffle and select 5 random questions
-    questions = shuffleArray(questions).slice(0, 5);
+
+    if (Array.isArray(parsed)) {
+      // Shuffle and take top 5
+      questions = shuffleArray(parsed).slice(0, 5);
+    } else {
+      // If parsed result is not an array, return empty
+      questions = [];
+    }
   } catch (err) {
-    console.error("Invalid JSON format in test questions");
+    console.error("Error parsing test questions JSON:", err);
+    // Only throw if JSON is broken — not just null
     throw new AppError({ statusCode: 400, message: "Invalid questions format" });
   }
-
+}
   return {
     test_mode: nextMode,
     test_id: test.id,

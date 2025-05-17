@@ -72,7 +72,8 @@ export const studentMockTestController = async (
       throw new AppError({ statusCode: 400, message: "test_mode, correct_answer_count and test_type are required" });
     }
 
-    if (!req.user || req.user.role !== 'student') {
+   
+    if (!req.user || (req.user.role !== 'student' && req.user.role !== 'guest')) {
       throw new AppError({ statusCode: 403, message: "Unauthorized access" });
     }
 
