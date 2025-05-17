@@ -18,6 +18,7 @@ export const staff_notificationListService = async ({
         const skip = (page - 1) * pageSize;
 
         // Fetch notifications with pagination
+        console.log( "GetNotificationList => ", staff_id, role);
         const staff_notificationList = await prisma.notificationRecipient.findMany({
             where: {
                 managementStaffId: staff_id,
@@ -30,18 +31,18 @@ export const staff_notificationListService = async ({
                 // }
             },
             select: {
-                notificationId: true,
-                notification_relation: {
-                    select: {
-                        id: true,
-                        title: true,
-                        description: true,
-                        type: true,
-                        createdAt: true,
-                        updatedAt: true,
-                        status: true,
-                    }
-                }
+                // notificationId: true,
+                // notification_relation: {
+                // select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    type: true,
+                    createdAt: true,
+                    // updatedAt: true,
+                    status: true,
+                // }
+                // }
             },
             skip, // Skip the first (page - 1) * pageSize records
             take: pageSize, // Limit the number of records per page
