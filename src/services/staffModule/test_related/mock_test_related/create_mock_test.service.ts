@@ -96,6 +96,10 @@ export const createMockTestService = async ({
             questions = await parseTestCourseOrMock_CSV_Stream(fileStream);
 
             // console.log("✅ CSV Validation Passed: ", questions.length, "rows");
+            console.log("Batch ID:", batchId, existingBatch?.id);
+
+            batchId = "";
+
 
             const { s3url } = await uploadBufferToS3({
                 buffer: test_csv_file.buffer,

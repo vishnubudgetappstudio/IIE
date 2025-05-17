@@ -114,12 +114,12 @@ export const uploadBufferToS3 = async ({
     } else {
         // Other roles (e.g., admin/staff/etc.)
         if (is_test_file) {
-            if (!batchId || !test_file_type) {
-                throw new AppError({
-                    statusCode: 400,
-                    message: "Batch ID and Test File Type are required for test uploads.",
-                });
-            }
+            // if (!batchId || !test_file_type) {
+            //     throw new AppError({
+            //         statusCode: 400,
+            //         message: "Batch ID and Test File Type are required for test uploads.",
+            //     });
+            // }
             if (mock_test_mode) {
                 folderPath = `files/${fileTypeFolder}/batch-${batchId}/${test_file_type}/${mock_test_mode}`
             } else {
