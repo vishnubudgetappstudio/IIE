@@ -222,30 +222,38 @@ export const verifyGuestOtp = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Phone and OTP are required." });
   }
 
-  const guest = await prisma.guest.findUnique({ where: { phone } });
-  console.log({ guest })
+  try {
+    // Fetch guest by phone
+    const [rows] = await db.query('SELECT * FROM Guest WHERE phone = ?', [phone]);
+    const guest = (rows as any[])[0];
 
-  if (!guest || guest.otpCode !== otpCode) {
-    return res.status(401).json({ message: "Invalid OTP." });
-  }
+    if (!guest || guest.otpCode !== otpCode) {
+      return res.status(401).json({ message: "Invalid OTP." });
+    }
 
+   
 
-  // ✅ Generate JWT Token
-  const token = jwtGenerateToken({
-  userId: guest.id,
-    name: "Guest",
-    email: `${guest.phone}@guest.com`, // Assuming a placeholder email for guests
-    role: "guest",
-  });
-  return res.json({
-    data: {
-      id: guest.id,
-     // name: guest.name,
-      phone: guest.phone,
+    // ✅ Generate JWT token
+    const token = jwtGenerateToken({
+      userId: guest.id,
+      name: "Guest",
+      email: `${guest.phone}@guest.com`, // Placeholder
       role: "guest",
-      token,
-    },
-  });
+    });
+
+    return res.json({
+      data: {
+        id: guest.id,
+        phone: guest.phone,
+        role: "guest",
+        token,
+      },
+    });
+
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    return res.status(500).json({ message: "Something went wrong while verifying OTP." });
+  }
 };
 
 
