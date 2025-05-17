@@ -87,12 +87,40 @@ export const getAllStudentsFromBatchService = async (
                 studentId: student.id,
             });
 
+            let is_present = false;
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const endOfDay = new Date();
+            endOfDay.setHours(23, 59, 59, 999);
+
+            // Query
+            let checkTodayAttendance = await prisma.studentAttendanceDetail.findFirst({
+            where: {
+                student_id: student.id,
+                batch_id: batchId,
+                attendance_date: {
+                gte: startOfDay,
+                lte: endOfDay,
+                },
+            },
+            select: {
+                student_id: true,
+                is_present: true,
+            }
+            });
+
+            if (checkTodayAttendance && checkTodayAttendance.is_present) {
+                is_present = true;
+            }
+
             return {
                 id: student.id,
                 name: student.name,
                 roll_number: student.roll_number,
                 image: student.profile_img_url,
                 over_all_present: stats.overAll.presentPercentage,
+                is_present: is_present,
             };
         })
     );
