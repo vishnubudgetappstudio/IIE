@@ -339,6 +339,7 @@ model NotificationRecipient {
   type              NotificationType
   isRead            Boolean            @default(false)
   status            NotificationStatus @default(Scheduled)
+  leaveDetailId     String?
   sentAt            BigInt? // Timestamp of when it was sent
   createdAt         DateTime           @default(now())
 
