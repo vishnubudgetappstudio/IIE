@@ -38,9 +38,9 @@ import { getSessionSheetReport } from "../controllers/staffModule/session_sheet/
 import { getTestResultsController } from "../controllers/staffModule/test_relateed/couse_test_related/get_course_test.controller";
 //import { updateSessionSheetStatusController } from "../controllers/staffModule/session_sheet/update_sessionsheet_status.controller";
 
-// import { getGuestHome } from "../controllers/guestModule/getGuestHome.controller";
-// import { updateGuestProfile } from "../controllers/guestModule/getGuestHome.controller";
-// import { guestGetMockTestQuestionsController } from "../controllers/guestModule/getGuestHome.controller";
+import { getGuestHome } from "../controllers/guestModule/getGuestHome.controller";
+import { updateGuestProfile } from "../controllers/guestModule/getGuestHome.controller";
+import { guestGetMockTestQuestionsController } from "../controllers/guestModule/getGuestHome.controller";
 
 
 import { studentGetAllCourseOrMockTestsController } from "../controllers/studentModule/get_course_or_mock_tests.controller";
@@ -111,9 +111,9 @@ router.get("/get-course-tests-results", getTestResultsController);
 router.post("/raise-have-a-doubt", raiseHaveADoubt);
 
 //guest module
-// router.get("/guest/home", getGuestHome);
-// router.post("/guest/update-profile", updateGuestProfile);
-// router.get("/guest/mock-test/questions", guestGetMockTestQuestionsController);
+router.get("/guest/home", getGuestHome);
+router.post("/guest/update-profile", updateGuestProfile);
+router.get("/guest/mock-test/questions", guestGetMockTestQuestionsController);
 
 
 
