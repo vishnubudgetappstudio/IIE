@@ -185,32 +185,36 @@ export const resetPasswordManagementStaffController = async (
 
 //guest module signup
 export const sendGuestOtp = async (req: Request, res: Response) => {
-  const { phone } = req.body;
-  // Validate phone number
+  try {
+    const { phone } = req.body;
 
+    // Validate phone number
+    if (!phone || phone.length !== 10 || !/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ message: "Valid 10-digit phone number is required." });
+    }
 
-  if (!phone || phone.length !== 10) {
-    return res.status(400).json({ message: "Valid phone number is required." });
+    // Generate OTP
+    // const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = "123456";
+
+    // Save or update guest in the database
+    await prisma.guest.upsert({
+      where: { phone },
+      update: { otpCode },
+      create: {
+        phone,
+        otpCode,
+      },
+    });
+
+    // Send OTP (uncomment when ready to integrate)
+    // await sendOtpViaFast2SMS(phone, otpCode);
+
+    return res.status(200).json({ message: "OTP sent successfully." });
+  } catch (error) {
+    console.error("Error sending guest OTP:", error);
+    return res.status(500).json({ message: "Something went wrong while sending OTP." });
   }
-
- // const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
- const otpCode = "123456";
-
-  // Save or update guest
-  await prisma.guest.upsert({
-    where: { phone },
-    update: { otpCode },
-    create: {
-      phone,
-      otpCode,
-    
-    },
-  });
-
-  // Send OTP via Fast2SMS
- // await sendOtpViaFast2SMS(phone, otpCode);
-
-  return res.json({ message: "OTP sent successfully." });
 };
 
 
