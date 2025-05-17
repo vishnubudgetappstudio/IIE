@@ -10,6 +10,7 @@ import { forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, v
 import { AppError } from "../utils/errorHandler";
 import { PrismaClient } from "@prisma/client";
 import { jwtGenerateToken } from "../utils/jwtTokenGenerate";
+import { db } from '../utils/db';
 
 const prisma = new PrismaClient();
 //signup controller
@@ -188,31 +189,27 @@ export const sendGuestOtp = async (req: Request, res: Response) => {
   try {
     const { phone } = req.body;
 
-    // Validate phone number
+    // Validation
     if (!phone || phone.length !== 10 || !/^\d{10}$/.test(phone)) {
       return res.status(400).json({ message: "Valid 10-digit phone number is required." });
     }
 
-    // Generate OTP
-    // const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpCode = "123456";
+    const otpCode = "123456"; // Or Math.floor(100000 + Math.random() * 900000)
 
-    // Save or update guest in the database
-    await prisma.guest.upsert({
-      where: { phone },
-      update: { otpCode },
-      create: {
-        phone,
-        otpCode,
-      },
-    });
+    // Check if phone exists
+    const [rows] = await db.query('SELECT id FROM guest WHERE phone = ?', [phone]);
 
-    // Send OTP (uncomment when ready to integrate)
-    // await sendOtpViaFast2SMS(phone, otpCode);
+    if ((rows as any[]).length > 0) {
+      // Update existing record
+      await db.query('UPDATE guest SET otpCode = ? WHERE phone = ?', [otpCode, phone]);
+    } else {
+      // Insert new guest
+      await db.query('INSERT INTO guest (id, phone, otpCode, createdAt) VALUES (UUID(), ?, ?, NOW())', [phone, otpCode]);
+    }
 
     return res.status(200).json({ message: "OTP sent successfully." });
   } catch (error) {
-    console.error("Error sending guest OTP:", error);
+    console.error("Error sending OTP:", error);
     return res.status(500).json({ message: "Something went wrong while sending OTP." });
   }
 };
