@@ -132,6 +132,7 @@ export const requestLeaveController = async (
           type: 'leave',
           isRead: false,
           status: 'Sent',
+          leaveDetailId: leave.id,
           managementStaffId: mentorId,
         },
       });

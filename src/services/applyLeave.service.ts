@@ -137,6 +137,7 @@ export const applyLeaveService = async ({
     const leave = await prisma.leaveDetail.create({
       data: leaveData,
       select: {
+        id: true,
         reason: true,
         leave_type: true,
         leave_mode: true,

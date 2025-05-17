@@ -39,6 +39,7 @@ export const staff_notificationListService = async ({
                     description: true,
                     type: true,
                     createdAt: true,
+                    leaveDetailId: true,
                     // updatedAt: true,
                     status: true,
                 // }
