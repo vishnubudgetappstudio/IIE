@@ -8,7 +8,10 @@ import {
 } from "../services/auth.service";
 import { forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, verifyOTPSchema } from "../zodSchema/auth.schema";
 import { AppError } from "../utils/errorHandler";
+import { PrismaClient } from "@prisma/client";
+import { jwtGenerateToken } from "../utils/jwtTokenGenerate";
 
+const prisma = new PrismaClient();
 //signup controller
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -177,4 +180,71 @@ export const resetPasswordManagementStaffController = async (
     next(error);
   }
 };
+
+
+
+//guest module signup
+export const sendGuestOtp = async (req: Request, res: Response) => {
+  const { phone } = req.body;
+  // Validate phone number
+
+
+  if (!phone || phone.length !== 10) {
+    return res.status(400).json({ message: "Valid phone number is required." });
+  }
+
+ // const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+ const otpCode = "123456";
+
+  // Save or update guest
+  await prisma.guest.upsert({
+    where: { phone },
+    update: { otpCode },
+    create: {
+      phone,
+      otpCode,
+    
+    },
+  });
+
+  // Send OTP via Fast2SMS
+ // await sendOtpViaFast2SMS(phone, otpCode);
+
+  return res.json({ message: "OTP sent successfully." });
+};
+
+
+export const verifyGuestOtp = async (req: Request, res: Response) => {
+  const { phone, otpCode, fcm_token } = req.body;
+
+  if (!phone || !otpCode) {
+    return res.status(400).json({ message: "Phone and OTP are required." });
+  }
+
+  const guest = await prisma.guest.findUnique({ where: { phone } });
+  console.log({ guest })
+
+  if (!guest || guest.otpCode !== otpCode) {
+    return res.status(401).json({ message: "Invalid OTP." });
+  }
+
+
+  // ✅ Generate JWT Token
+  const token = jwtGenerateToken({
+  userId: guest.id,
+    name: "Guest",
+    email: `${guest.phone}@guest.com`, // Assuming a placeholder email for guests
+    role: "guest",
+  });
+  return res.json({
+    data: {
+      id: guest.id,
+     // name: guest.name,
+      phone: guest.phone,
+      role: "guest",
+      token,
+    },
+  });
+};
+
 
