@@ -3,7 +3,18 @@ import { z } from "zod";
 export const attendanceSchema = z.object({
     batchId: z.string().min(1, "Batch ID is required"),
     studentId: z.string().min(1, "Student ID is required"),
-    isPresent: z.boolean(),
+isPresent: z.coerce.boolean().optional(),
+
+});
+// export const markStudentAttendanceSchema = z.object({
+//   batchId: z.string().uuid(),
+//   studentId: z.string().uuid(),
+//   isPresent: z.boolean(),
+// });
+
+export const markBatchAttendanceFlagSchema = z.object({
+  batchId: z.string().uuid(),
+  isMarked: z.boolean(),
 });
 
 // Custom transformation & validation for `student_ids Array`
