@@ -237,6 +237,7 @@ model BatchDetail {
   end_time         String 
   batch_status     String?
   course           String
+    is_marked       Boolean   @default(false)
   slot             BatchSlotsType
 
   // One-to-Many: One mentor can manage multiple batches
