@@ -60,6 +60,21 @@ export const getStaffBatchesListService = async ({
         },
     });
 
+      // ✅ Reset is_marked if updatedAt is not today
+    await prisma.batchDetail.updateMany({
+        where: {
+            is_marked: true,
+            NOT: {
+                updatedAt: {
+                    gte: new Date(new Date().setHours(0, 0, 0, 0)), // start of today
+                },
+            },
+        },
+        data: {
+            is_marked: false,
+        },
+    });
+
     for (const batch of batchesToUpdate) {
         await prisma.batchDetail.update({
             where: { id: batch.id },
