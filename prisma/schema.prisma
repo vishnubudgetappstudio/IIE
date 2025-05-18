@@ -48,6 +48,8 @@ model ManagementStaff {
   // One-to-Many: One staff can receive multiple files
   xlsFileDetailModel         XlsFileDetail[]
 
+  materialFileDetails        MaterialFileDetail[]
+
   @@index([id])
   @@index([email])
   @@index([employeeId])
@@ -342,6 +344,8 @@ model NotificationRecipient {
   isRead            Boolean            @default(false)
   status            NotificationStatus @default(Scheduled)
   leaveDetailId     String?
+  material_id       String?
+  test_id           String?
   sentAt            BigInt?
   createdAt         DateTime           @default(now())
 
@@ -352,6 +356,10 @@ model NotificationRecipient {
 
   // ✅ Add relation name
   leaveDetail LeaveDetail? @relation("LeaveDetailToNotification", fields: [leaveDetailId], references: [id])
+
+  materialDetail MaterialFileDetail? @relation("MaterialDetailToNotification", fields: [material_id], references: [id])
+
+  testCourseDetailRelation      Test_Course?       @relation("TestDetailToNotification", fields: [test_id], references: [id])
 
   @@index([notificationId, status])
   @@index([managementStaffId])
@@ -467,6 +475,10 @@ model MaterialFileDetail {
   // Relation: Many-to-Many with Students via `StudentMaterialAccess`
   studentMaterialAccessModel StudentMaterialAccess[]
 
+  notificationRecipients NotificationRecipient[] @relation("MaterialDetailToNotification")
+
+  staff ManagementStaff @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+
   @@index([id, batch_id, material_title])
   @@map("material_file_detail")
 }
@@ -562,6 +574,8 @@ model Test_Course {
 
   batch_detail_relation            BatchDetail?                       @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   TestCourseOrMockWithStudentModel Test_Course_Or_Mock_With_Student[]
+
+  notificationRecipients NotificationRecipient[] @relation("TestDetailToNotification")
 
   @@index([batch_id, test_title])
   @@map("test_course")

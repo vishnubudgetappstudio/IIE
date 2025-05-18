@@ -39,6 +39,28 @@ export const student_notificationListService = async ({
                         type: true,
                         createdAt: true,
                         status: true,
+                        materialDetail: {
+                            select: {   
+                                staff_id: true,
+                                createdAt: true,
+                                staff: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                    }
+                                }
+                            }
+                        },
+                        testCourseDetailRelation: {
+                            select: {
+                                id: true,
+                                start_date: true,
+                                end_date: true,
+                                timer: true,
+                                test_title: true,
+                                test_description: true,
+                            }
+                        }
                     },
             //     }
             // },
