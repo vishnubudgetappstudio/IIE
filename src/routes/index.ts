@@ -13,6 +13,7 @@ import { studentHomeScreenController } from "../controllers/studentModule/homeSc
 import { createNewStudentController } from "../controllers/counsellorModule/student_related/create_new_student.controller";
 import { getAllStudentsController } from "../controllers/counsellorModule/student_related/get_all_students.controller";
 import { markStudentAttendanceController } from "../controllers/staffModule/attendance_related/mark_student_attendance.controller";
+import { updateBatchAttendanceFlagController } from "../controllers/staffModule/attendance_related/mark_student_attendance.controller";
 import { getStudentAttendanceStatsController } from "../controllers/staffModule/attendance_related/get_student_attendance_stats.controller";
 import { getStaffAttendanceController } from "../controllers/staffModule/attendance_related/get_student_attendance_stats.controller";
 import { uploadXlsFileController } from "../controllers/counsellorModule/xls_file_upload.controller";
@@ -97,6 +98,8 @@ router.get("/get-session-sheet", getSessionSheetDataController);
 router.get('/session-sheet-report', getSessionSheetReport);
 //router.post("/update-session-sheet-status", updateSessionSheetStatusController); // Get Batches List route
 router.post("/attendance/mark", markStudentAttendanceController);
+router.post("/attendance/submit", updateBatchAttendanceFlagController);
+
 router.get("/attendance/percentage", getStudentAttendanceStatsController);
 router.get("/get-staff-attendance-details", getStaffAttendanceController); // Get Batch Students Attendance route
 router.post("/upload-pdfMaterial-students", uploadPDFMaterialFileController);

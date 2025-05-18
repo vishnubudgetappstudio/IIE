@@ -118,6 +118,7 @@ export const getStaffBatchesListService = async ({
             batch_status: batch.batch_status,
             course: batch.course,
             slot: batch.slot,
+            is_marked: batch.is_marked,
             createdAt: batch.createdAt,
             updatedAt: batch.updatedAt,
             deletedAt: batch.deletedAt,

@@ -4,6 +4,11 @@ import { formatDateToDDMMYYYY, parseDDMMYYYYToDate } from "../../../utils/common
 
 const prisma = new PrismaClient();
 
+interface UpdateFlagInput {
+  batchId: string;
+  isMarked: boolean;
+}
+
 /**
  * ✅ Mark Attendance & Update Student's Attendance Percentage
  */
@@ -115,4 +120,38 @@ export const markAttendanceService = async ({
             status: isPresent ? "present" : "absent",
         },
     });
+};
+
+export const updateBatchIsMarkedService = async (batchId: string, isMarked: boolean) => {
+  const batch = await prisma.batchDetail.findUnique({
+    where: { id: batchId },
+  });
+
+  if (!batch) {
+    throw new AppError({ statusCode: 404, message: "Batch not found" });
+  }
+
+  // Check if already marked today
+  if (batch.is_marked) {
+    const lastMarkedDate = new Date(batch.updatedAt).toDateString();
+    const todayDate = new Date().toDateString();
+    console.log("Last Marked Date:", lastMarkedDate, "Today Date:", todayDate);
+
+    if (lastMarkedDate === todayDate) {
+      throw new AppError({
+        statusCode: 400,
+        message: "Attendance already marked for today",
+      });
+    }
+  }
+
+  // Update the flag
+  const updatedBatch = await prisma.batchDetail.update({
+    where: { id: batchId },
+    data: {
+      is_marked: isMarked,
+    },
+  });
+
+  return updatedBatch;
 };
