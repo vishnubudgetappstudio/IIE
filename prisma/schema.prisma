@@ -346,6 +346,7 @@ model NotificationRecipient {
   leaveDetailId     String?
   material_id       String?
   test_id           String?
+  session_id        String?
   sentAt            BigInt?
   createdAt         DateTime           @default(now())
 
