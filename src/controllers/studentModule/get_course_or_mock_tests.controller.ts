@@ -45,7 +45,7 @@ export const studentGetAllCourseOrMockTestsController = async (
         // Send response
         res.status(200).json({
             status: true,
-            data: enhancedTests,
+            data: enhancedTests.flat(),
             totalTestCount: totalTests,
             limit: perPage,
             page: currentPage,

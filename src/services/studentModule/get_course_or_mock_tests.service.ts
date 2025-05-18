@@ -45,7 +45,7 @@ export const studentGetAllCourseOrMockTestsService = async ({
 
     // ✅ Validate Student
     console.log("studentId=====>", studentId);
-    if(studentId !== "undefined" && role === "student"){
+    if(studentId !== "undefined" && role === "default"){
       const student = await prisma.student.findUnique({
           where: { id: studentId, deletedAt: null },
           select: { id: true },
@@ -130,6 +130,7 @@ const enhancedTests = await Promise.all(
         select: {
           id: true,
           test_title: true,
+          test_description: true,
           test_url: true,
           end_date: true,
           timer: true,
@@ -239,13 +240,25 @@ console.log("test.test.mockTestId=====>", test.mockTestId);
         total_questions = Array.isArray(parsedQuestions) ? parsedQuestions.length : 0;
       }
 
-      return {
-        test_id: rawTestData.id,
-        test_mode: rawTestData.test_mode,
-        questions: parsedQuestions,
-        test_url: rawTestData.test_url,
-        total_questions,
-      };
+      // return {
+      //   test_id: rawTestData.id,
+      //   test_mode: rawTestData.test_mode,
+      //   questions: parsedQuestions,
+      //   test_url: rawTestData.test_url,
+      //   total_questions,
+      // };
+
+      const flatQuestions = parsedQuestions.flat();
+
+      // Format each question object
+      const formattedRows = flatQuestions.map((row) => ({
+          question: row.question?.trim(),
+          options: row.options?.filter(opt => opt?.trim()), // Removes empty or falsy options
+          explanation: row.explanation?.trim(),
+          correctAnswer: row.correctAnswer?.trim(),
+      }));
+
+      return formattedRows;
     }
 
     return null;
