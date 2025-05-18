@@ -29,20 +29,19 @@ export const student_notificationListService = async ({
                 //     deletedAt: null
                 // }
             },
-            select: {
-                notificationId: true,
-                notification_relation: {
+            // select: {
+            //     notificationId: true,
+            //     notification_relation: {
                     select: {
                         id: true,
                         title: true,
                         description: true,
                         type: true,
                         createdAt: true,
-                        updatedAt: true,
                         status: true,
-                    }
-                }
-            },
+                    },
+            //     }
+            // },
             skip, // Skip the first (page - 1) * pageSize records
             take: pageSize, // Limit the number of records per page
             orderBy: {
