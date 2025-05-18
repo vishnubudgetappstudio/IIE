@@ -8,6 +8,14 @@ import { csvSessionSheetSchema, csvTestCourseOrMockSchema } from "../zodSchema/c
  * Parses and validates CSV stream into JSON.
  * If an error occurs, it stops processing immediately.
  */
+
+interface ParsedQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation?: string;
+}
+
 export const parseSessionSheet_CSV_Stream = async (stream: Readable, noParam?: string,
     statusParam?: string): Promise<any[]> => {
     return new Promise((resolve, reject) => {
@@ -63,49 +71,124 @@ export const parseSessionSheet_CSV_Stream = async (stream: Readable, noParam?: s
     });
 };
 
-export const parseTestCourseOrMock_CSV_Stream = async (stream: Readable): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-        const results: any[] = [];
-        const noSet = new Set(); // Track uniqueness of "No."
+// export const parseTestCourseOrMock_CSV_Stream = async (stream: Readable): Promise<any[]> => {
+//     return new Promise((resolve, reject) => {
+//         const results: any[] = [];
+//         const noSet = new Set(); // Track uniqueness of "No."
 
-        const csvStream = stream.pipe(csvParser());
+//         const csvStream = stream.pipe(csvParser());
 
-        csvStream
-            .on("data", (data) => {
-                // Validate row using safeParse
-                const validationResult = csvTestCourseOrMockSchema.safeParse(data);
+//         csvStream
+//             .on("data", (data) => {
+//                 // Validate row using safeParse
+//                 const validationResult = csvTestCourseOrMockSchema.safeParse(data);
 
-                if (!validationResult.success) {
-                    const firstErrorMessage = validationResult.error.errors[0].message;
-                    csvStream.destroy(); // Stop stream immediately
-                    return reject(new AppError({
-                        statusCode: 400,
-                        message: `Validation Error in row: ${firstErrorMessage}`,
-                        data: {}
-                    }));
-                }
+//                 if (!validationResult.success) {
+//                     const firstErrorMessage = validationResult.error.errors[0].message;
+//                     csvStream.destroy(); // Stop stream immediately
+//                     return reject(new AppError({
+//                         statusCode: 400,
+//                         message: `Validation Error in row: ${firstErrorMessage}`,
+//                         data: {}
+//                     }));
+//                 }
 
-                const validatedData = validationResult.data;
+//                 const validatedData = validationResult.data;
 
-                // Check uniqueness of "No."
-                if (noSet.has(validatedData["No."])) {
-                    csvStream.destroy(); // Stop stream immediately
-                    return reject(new AppError({
-                        statusCode: 400,
-                        message: `Duplicate "No." found: ${validatedData["No."]}`,
-                        data: {},
-                    }));
-                }
-                noSet.add(validatedData["No."]);
+//                 // Check uniqueness of "No."
+//                 if (noSet.has(validatedData["No."])) {
+//                     csvStream.destroy(); // Stop stream immediately
+//                     return reject(new AppError({
+//                         statusCode: 400,
+//                         message: `Duplicate "No." found: ${validatedData["No."]}`,
+//                         data: {},
+//                     }));
+//                 }
+//                 noSet.add(validatedData["No."]);
 
-                results.push(validatedData);
+//                 results.push(validatedData);
+//             })
+//             .on("end", () => resolve(results))
+//             .on("error", (error) => {
+//                 console.error("❌ Error parsing TestCourseOrMockCSV CSV:", error);
+//                 reject(new AppError({ statusCode: 400, message: "Failed to parse TestCourseOrMockCSV file.", data: {} }));
+//             });
+//     });
+// };
+
+export const parseTestCourseOrMock_CSV_Stream = async (
+  stream: Readable
+): Promise<ParsedQuestion[]> => {
+  return new Promise((resolve, reject) => {
+    const results: ParsedQuestion[] = [];
+    const noSet = new Set<string | number>();
+
+    const csvStream = stream.pipe(csvParser());
+
+    csvStream
+      .on("data", (row) => {
+        const validationResult = csvTestCourseOrMockSchema.safeParse(row);
+
+        if (!validationResult.success) {
+          const firstErrorMessage = validationResult.error.errors[0].message;
+          csvStream.destroy(); // stop stream on error
+          return reject(
+            new AppError({
+              statusCode: 400,
+              message: `Validation Error in row: ${firstErrorMessage}`,
+              data: {},
             })
-            .on("end", () => resolve(results))
-            .on("error", (error) => {
-                console.error("❌ Error parsing TestCourseOrMockCSV CSV:", error);
-                reject(new AppError({ statusCode: 400, message: "Failed to parse TestCourseOrMockCSV file.", data: {} }));
-            });
-    });
+          );
+        }
+
+        const validatedData = validationResult.data;
+
+        // Uniqueness check
+        const no = validatedData["No."];
+        if (noSet.has(no)) {
+          csvStream.destroy();
+          return reject(
+            new AppError({
+              statusCode: 400,
+              message: `Duplicate "No." found: ${no}`,
+              data: {},
+            })
+          );
+        }
+        noSet.add(no);
+
+        // Construct transformed object
+        const question: ParsedQuestion = {
+          question: validatedData["Question"]?.trim(),
+          options: [],
+          correctAnswer: validatedData["Correct Answer"]?.trim(),
+        };
+
+        for (let i = 1; i <= 4; i++) {
+          const optionValue = validatedData[`Option_${i}`]?.trim();
+          if (optionValue) {
+            question.options.push(optionValue);
+          }
+        }
+
+        if (validatedData["Explanation"]) {
+          question.explanation = validatedData["Explanation"].trim();
+        }
+
+        results.push(question);
+      })
+      .on("end", () => resolve(results))
+      .on("error", (error) => {
+        console.error("❌ Error parsing TestCourseOrMockCSV CSV:", error);
+        reject(
+          new AppError({
+            statusCode: 400,
+            message: "Failed to parse TestCourseOrMockCSV file.",
+            data: {},
+          })
+        );
+      });
+  });
 };
 
 /**

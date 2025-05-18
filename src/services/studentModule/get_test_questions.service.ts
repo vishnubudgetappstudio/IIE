@@ -58,16 +58,23 @@ export const getTestQuestionsListService = async ({
                 if (response.Body) {
                     const parsedRows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
 
+                    // const formattedRows = parsedRows.map((row) => ({
+                    //     question: row.Question?.trim(),
+                    //     options: [
+                    //         row.Option_1?.trim(),
+                    //         row.Option_2?.trim(),
+                    //         row.Option_3?.trim(),
+                    //         row.Option_4?.trim(),
+                    //     ].filter(Boolean), // removes empty strings
+                    //     explanation: row.Explanation?.trim(),
+                    //     correctAnswer: row['Correct Answer']?.trim(),
+                    // }));
+
                     const formattedRows = parsedRows.map((row) => ({
-                        question: row.Question?.trim(),
-                        options: [
-                            row.Option_1?.trim(),
-                            row.Option_2?.trim(),
-                            row.Option_3?.trim(),
-                            row.Option_4?.trim(),
-                        ].filter(Boolean), // removes empty strings
-                        explanation: row.Explanation?.trim(),
-                        correctAnswer: row['Correct Answer']?.trim(),
+                        question: row.question?.trim(),
+                        options: row.options, // removes empty strings
+                        explanation: row.explanation?.trim(),
+                        correctAnswer: row.correctAnswer?.trim(),
                     }));
                     return formattedRows;
                 }
