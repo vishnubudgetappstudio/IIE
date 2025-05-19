@@ -92,6 +92,8 @@ export const getAllBatchesListService = async ({
         to_date: batch.to_date,
         course: batch.course,
         slot: batch.slot,
+        start_time: batch.start_time,
+        end_time: batch.end_time,
         createdAt: batch.createdAt,
         updatedAt: batch.updatedAt,
         deletedAt: batch.deletedAt,
