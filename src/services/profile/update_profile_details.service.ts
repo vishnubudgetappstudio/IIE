@@ -77,34 +77,60 @@ export const updateProfileDetailsService = async ({
     }
 
     // Step 3: Default to existing image URL
-    let profileImageUrl = profile.profile_img_url;
+    // let profileImageUrl = profile.profile_img_url;
 
     // Step 4: Handle profile image upload (if present)
-    if (profile_img) {
+    // if (profile_img) {
+    //     try {
+    //         // Validate file type/size
+    //         validateFile(profile_img, true);
+
+    //         // Compress image buffer
+    //         const optimizedBuffer = await compressImage(profile_img);
+
+    //         // Upload to S3 and get public URL
+    //         const { s3url } = await uploadBufferToS3({
+    //             buffer: optimizedBuffer,
+    //             file: profile_img,
+    //             userId: profile.id,
+    //             role,
+    //         });
+
+    //         profileImageUrl = s3url;
+    //     } catch (err) {
+    //         // Throw error if image processing/upload fails
+    //         throw new AppError({
+    //             statusCode: 400,
+    //             message: "Failed to process and upload profile image.",
+    //             data: {},
+    //         });
+    //     }
+    // }
+
+    const isFileUpload = profile_img && typeof profile_img !== 'string' && profile_img.buffer;
+
+    let profileImageUrl: string | null | undefined;
+
+    if (isFileUpload) {
         try {
-            // Validate file type/size
             validateFile(profile_img, true);
-
-            // Compress image buffer
             const optimizedBuffer = await compressImage(profile_img);
-
-            // Upload to S3 and get public URL
             const { s3url } = await uploadBufferToS3({
                 buffer: optimizedBuffer,
                 file: profile_img,
                 userId: profile.id,
                 role,
             });
-
             profileImageUrl = s3url;
         } catch (err) {
-            // Throw error if image processing/upload fails
             throw new AppError({
                 statusCode: 400,
                 message: "Failed to process and upload profile image.",
                 data: {},
             });
         }
+    } else {
+        profileImageUrl = typeof profile_img === 'string' ? profile_img : profile.profile_img_url;
     }
 
     // Step 5: Prepare data for update (fallback to existing values)
