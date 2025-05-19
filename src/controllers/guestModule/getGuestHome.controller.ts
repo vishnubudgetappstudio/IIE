@@ -24,7 +24,9 @@ export const getGuestHome = async (
     }
 
     res.json({
-      guest: {
+     
+      data: {
+         guest: {
         id: guest.id,
         name: guest.name,
         phone: guest.phone,
@@ -33,7 +35,7 @@ export const getGuestHome = async (
         area: guest.area,
         createdAt: guest.createdAt,
       },
-      data: {
+
         aboutTitle: "About IIE",
         aboutDesc:
           "Indra Institute of Education is a leading technical education platform...",
