@@ -136,7 +136,7 @@ export const staff_notificationListService = async ({
         const totalNotifications = await prisma.notificationRecipient.count({
             where: {
                 managementStaffId: staff_id,
-                receiverRole: role,
+                receiverRole: 'staff',
                 isRead: false,
                 status: 'Sent',
                 notification_relation: {
