@@ -44,8 +44,8 @@ export const studentGetAllCourseOrMockTestsService = async ({
     const searchTerm = search?.trim();
 
     // ✅ Validate Student
-    console.log("studentId=====>", studentId);
-    if(studentId !== "undefined" && role === "default"){
+   
+    if(studentId !== "undefined" && role === "student"){
       const student = await prisma.student.findUnique({
           where: { id: studentId, deletedAt: null },
           select: { id: true },
