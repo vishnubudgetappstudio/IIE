@@ -22,7 +22,7 @@ const processScheduledNotifications = async () => {
     where: {
       date: date,
       time: time,
-      status: "Pending",
+      status: "Scheduled",
     },
   });
 
