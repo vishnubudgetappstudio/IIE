@@ -16,6 +16,7 @@ export const getPDFMaterialFileListController = async (req: AuthRequest, res: Re
         const limit = parseInt(req.query.limit as string) || 10;
         const search = (req.query.searchQuery as string) || undefined; // Extract search query
         const batchId = (req.query.batch_id as string) || undefined;
+        const role = req.user?.role as string;
 
         if (page < 1 || limit < 1) {
             throw new AppError({ statusCode: 400, message: "Invalid page or limit", data: [] });
@@ -35,6 +36,7 @@ export const getPDFMaterialFileListController = async (req: AuthRequest, res: Re
         // ✅ Fetch and parse session sheet data
         const { material_files, material_files_count, currentPage, totalPages, perPage } = await getPDFMaterialFileListService({
             batch_id: batchId,
+            role: role,
             search: search,
             userId: req.user.userId,
             page: page,

@@ -24,6 +24,7 @@ interface PDFMaterialResponse {
 
 export const getPDFMaterialFileListService = async ({
     batch_id,
+    role,
     search,
     userId,
     page,
@@ -31,6 +32,7 @@ export const getPDFMaterialFileListService = async ({
 }: {
     batch_id?: string;
     search?: string;
+    role?: string;
     page: number;
     userId?: string;
     limit: number;
@@ -40,30 +42,63 @@ export const getPDFMaterialFileListService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
-    const whereCondition: any = {
-        deletedAt: null,
-        staff_id: userId,
+    console.log("Batch ID:", batch_id);
+    // console.log("Search Term:", searchTerm);
+    console.log("Role:", role);
 
-        ...(searchTerm && {
-            material_title: {
-                contains: searchTerm,
-                // mode: "insensitive", // Optional: for PostgreSQL case-insensitive search
-            },
-        }),
-
-        ...(batch_id && { batch_id }),
-
-        studentMaterialAccessModel: {
-            some: {
-                student_relation: { deletedAt: null },
-                material_relation: { deletedAt: null },
-            },
-        },
-
-        batch_detail_relation: {
+    if(role !== "counsellor") {
+        var whereCondition: any = {
             deletedAt: null,
-        },
-    };
+            staff_id: userId,
+
+            ...(searchTerm && {
+                material_title: {
+                    contains: searchTerm,
+                    // mode: "insensitive", // Optional: for PostgreSQL case-insensitive search
+                },
+            }),
+
+            ...(batch_id && { batch_id }),
+
+            studentMaterialAccessModel: {
+                some: {
+                    student_relation: { deletedAt: null },
+                    material_relation: { deletedAt: null },
+                },
+            },
+
+            batch_detail_relation: {
+                deletedAt: null,
+            },
+        };
+    }else{
+        var whereCondition: any = {
+            deletedAt: null,
+            batch_id: batch_id,
+
+            ...(searchTerm && {
+                material_title: {
+                    contains: searchTerm,
+                    // mode: "insensitive", // Optional: for PostgreSQL case-insensitive search
+                },
+            }),
+
+            // ...(batch_id && { batch_id }),
+
+            studentMaterialAccessModel: {
+                some: {
+                    student_relation: { deletedAt: null },
+                    material_relation: { deletedAt: null },
+                },
+            },
+
+            batch_detail_relation: {
+                deletedAt: null,
+            },
+        };
+    }
+
+    console.log("Where Condition:", whereCondition);
 
     const [material_files_count, draft_files_count] = await Promise.all([
         prisma.materialFileDetail.count({ where: whereCondition }),
