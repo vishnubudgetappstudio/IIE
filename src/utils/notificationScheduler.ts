@@ -8,11 +8,15 @@ const processScheduledNotifications = async () => {
   const pad = (n: number) => n.toString().padStart(2, "0");
   const date = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
 
-  let hours = now.getHours();
-  const minutes = pad(now.getMinutes());
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
-  const time = `${pad(hours)}:${minutes} ${ampm}`;
+  const { DateTime } = require('luxon');
+
+  const curTime = DateTime.now().setZone("Asia/Kolkata"); // or "Asia/Dubai", etc.
+  const hours24 = curTime.hour;
+  const minutes = String(curTime.minute).padStart(2, '0');
+  const ampm = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 || 12;
+
+  const time = `${String(hours12).padStart(2, '0')}:${minutes} ${ampm}`;
 
   const notifications = await prisma.notification.findMany({
     where: {

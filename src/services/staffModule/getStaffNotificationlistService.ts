@@ -18,7 +18,7 @@ export const staff_notificationListService = async ({
         const skip = (page - 1) * pageSize;
 
         // Fetch notifications with pagination
-        console.log( "GetNotificationList => ", staff_id, role);
+        console.log("GetNotificationList => ", staff_id, role);
         // const staff_notificationList = await prisma.notificationRecipient.findMany({
         //     where: {
         //         managementStaffId: staff_id,
@@ -52,42 +52,83 @@ export const staff_notificationListService = async ({
         //     }
         // });
 
-        const staff_notificationList = await prisma.notificationRecipient.findMany({
-            where: {
-                managementStaffId: staff_id,
-                receiverRole: role,
-                isRead: false,
-                status: 'Sent',
-            },
-            select: {
-                id: true,
-                title: true,
-                description: true,
-                type: true,
-                createdAt: true,
-                leaveDetailId: true,
-                status: true,
+        if (role == "staff") {
 
-                // ✅ Include the leaveDetail relation
-                leaveDetail: {
+            var staff_notificationList = await prisma.notificationRecipient.findMany({
+                where: {
+                    managementStaffId: staff_id,
+                    receiverRole: role,
+                    isRead: false,
+                    status: 'Sent',
+                },
                 select: {
-                    // Only select student and its required fields
-                    student_relation: {
-                    select: {
-                        name: true,
-                        profile_img_url: true,
-                        roll_number: true,
+                    id: true,
+                    title: true,
+                    description: true,
+                    type: true,
+                    createdAt: true,
+                    leaveDetailId: true,
+                    status: true,
+
+                    // ✅ Include the leaveDetail relation
+                    leaveDetail: {
+                        select: {
+                            // Only select student and its required fields
+                            student_relation: {
+                                select: {
+                                    name: true,
+                                    profile_img_url: true,
+                                    roll_number: true,
+                                }
+                            }
+                        }
                     }
-                    }
+                },
+                skip,
+                take: pageSize,
+                orderBy: {
+                    createdAt: 'desc'
                 }
-                }
-            },
-            skip,
-            take: pageSize,
-            orderBy: {
-                createdAt: 'desc'
-            }
             });
+        } else {
+            var staff_notificationList = await prisma.notificationRecipient.findMany({
+                where: {
+                    managementStaffId: staff_id,
+                    receiverRole: 'staff',
+                    isRead: false,
+                    status: 'Sent',
+                    type: 'message',
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    type: true,
+                    createdAt: true,
+                    leaveDetailId: true,
+                    status: true,
+
+                    // ✅ Include the leaveDetail relation
+                    leaveDetail: {
+                        select: {
+                            // Only select student and its required fields
+                            student_relation: {
+                                select: {
+                                    name: true,
+                                    profile_img_url: true,
+                                    roll_number: true,
+                                }
+                            }
+                        }
+                    }
+                },
+                skip,
+                take: pageSize,
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            });
+        }
 
 
 

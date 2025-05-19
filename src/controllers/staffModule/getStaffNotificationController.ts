@@ -15,14 +15,14 @@ export const staff_NotificationList = async (req: AuthRequest, res: Response, ne
         const limit = parseInt(req.query.limit as string) || 10;
 
         // Validate StudentId - Request query params (based on schema)
-        const validatedStudentId = studentIdSchema.safeParse(userId);
-        if (!validatedStudentId.success) {
-            return next(new AppError({
-                statusCode: 400,
-                data: [],
-                message: validatedStudentId.error.errors[0].message, // First Zod error message
-            }));
-        }
+        // const validatedStudentId = studentIdSchema.safeParse(userId);
+        // if (!validatedStudentId.success) {
+        //     return next(new AppError({
+        //         statusCode: 400,
+        //         data: [],
+        //         message: validatedStudentId.error.errors[0].message, // First Zod error message
+        //     }));
+        // }
 
         // Validate Role - Request query params (based on schema)
         const validatedRole = roleSchema.safeParse(role);
