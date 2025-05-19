@@ -27,9 +27,10 @@ export const getPDFMaterialFileListController = async (req: AuthRequest, res: Re
         }
         console.log("sdfsdfsd");
 
-        if (!req.user?.role || req.user?.role !== 'staff') {
+        if (!req.user?.role || (req.user.role !== 'staff' && req.user.role !== 'counsellor')) {
             throw new AppError({ statusCode: 401, message: "Invalid role", data: [] });
         }
+
 
         // ✅ Fetch and parse session sheet data
         const { material_files, material_files_count, currentPage, totalPages, perPage } = await getPDFMaterialFileListService({
