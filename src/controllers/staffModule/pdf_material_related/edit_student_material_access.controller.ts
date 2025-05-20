@@ -3,10 +3,12 @@ import { AppError } from "../../../utils/errorHandler";
 import { EditStudentMaterialFileAccessService } from "../../../services/staffModule/pdf_material_related/edit_student_material_access.service";
 import { AuthRequest } from "../../../middlewares/auth.middleware";
 import { editStudentMaterialFileAccessSchema } from "../../../zodSchema/staff.schema";
+import { PrismaClient } from "@prisma/client";
 
 /**
  * 🎯 Controller to Edit Student Material Access
  */
+const prisma = new PrismaClient();
 export const editStudentMaterialAccessController = async (
     req: AuthRequest,
     res: Response,
@@ -52,5 +54,54 @@ export const editStudentMaterialAccessController = async (
     } catch (error) {
         console.error("Error editing student material access:", error);
         next(error); // Pass to global error handler
+    }
+};
+
+
+export const requestDeleteMaterialFileController = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        // Step 1: Auth Check
+        if (!req.user) {
+            throw new AppError({ statusCode: 401, message: "Unauthorized", data: {} });
+        }
+
+        // Step 2: Validate Input
+        const { material_file_id } = req.body;
+        if (!material_file_id) {
+            throw new AppError({ statusCode: 400, message: "Material file ID is required", data: {} });
+        }
+
+        // Step 3: Check if Material Exists
+        const material = await prisma.materialFileDetail.findUnique({
+            where: { id: material_file_id }
+        });
+
+        if (!material) {
+            throw new AppError({ statusCode: 404, message: "Material file not found", data: {} });
+        }
+
+        // Step 4: Update Delete Request Status
+        await prisma.materialFileDetail.update({
+            where: { id: material_file_id },
+            data: { delete_request: 'pending' }
+        });
+
+        // Step 5: Response
+        res.status(200).json({
+            status: true,
+            message: "Delete request sent successfully",
+            data: {
+                material_file_id,
+                delete_request: "pending"
+            }
+        });
+
+    } catch (error) {
+        console.error("❌ Error in requestDeleteMaterialFileController:", error);
+        next(error);
     }
 };
