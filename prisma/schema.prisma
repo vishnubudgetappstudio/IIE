@@ -466,6 +466,7 @@ model MaterialFileDetail {
   material_title    String                   @unique
   material_file_url String                   @db.Text
   status            MaterialFileDetailStatus @default(draft)
+  delete_request    String?  // 'pending' | 'approved' | null
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime?
   deletedAt         DateTime?

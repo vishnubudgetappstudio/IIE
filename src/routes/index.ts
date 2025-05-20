@@ -24,6 +24,7 @@ import { uploadPDFMaterialFileController } from "../controllers/staffModule/pdf_
 import { getStudentStudyMaterialsController } from "../controllers/studentModule/get_study_material.controller";
 import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf_material_related/get_pdf_material_list.controller";
 import { editStudentMaterialAccessController } from "../controllers/staffModule/pdf_material_related/edit_student_material_access.controller";
+import { requestDeleteMaterialFileController } from "../controllers/staffModule/pdf_material_related/edit_student_material_access.controller";
 import { updateUserFcmTokenController } from "../controllers/update_user_fcm_token.controller";
 import { getStudentAttendanceController } from "../controllers/studentModule/get_attendance.controller";
 //import { getAllBatchesListController } from "../controllers/studentModule/get_attendance.controller";deleteCourseTestController
@@ -104,6 +105,7 @@ router.get("/attendance/percentage", getStudentAttendanceStatsController);
 router.get("/get-staff-attendance-details", getStaffAttendanceController); // Get Batch Students Attendance route
 router.post("/upload-pdfMaterial-students", uploadPDFMaterialFileController);
 router.post("/edit-pdfMaterial-students-access", editStudentMaterialAccessController);
+router.post("/material-file/delete-request", requestDeleteMaterialFileController);
 router.get("/get-pdf-Materials", getPDFMaterialFileListController);
 router.post("/create-course-test", createCourseTestController);
 router.get("/get-course-tests", getAllCourseTestsController);
