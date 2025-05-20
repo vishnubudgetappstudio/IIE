@@ -99,6 +99,28 @@ export const getAllStudentsListService = async ({
                 isBatch = 1;
             }
 
+            let courseTestCount = await prisma.test_Course_Or_Mock_With_Student.count({
+                where: {
+                    studentId: student.id,
+                    test_type: "course_test",
+                    deletedAt: null,
+                    status: "completed"
+                }
+            });
+
+            let courseTestCountStrAlt = String(courseTestCount) ?? "0";
+
+            let mockTestCount = await prisma.test_Course_Or_Mock_With_Student.count({
+                where: {
+                    studentId: student.id,
+                    test_type: "mock_test",
+                    deletedAt: null,
+                    status: "completed"
+                }
+            });
+
+            let mockTestCountStrAlt = String(mockTestCount) ?? "0";
+
             return {
                 id: student.id,
                 name: student.name,
@@ -117,8 +139,8 @@ export const getAllStudentsListService = async ({
                 this_monthly_absent: attendanceStats?.thisMonth?.absentPercentage ?? 0,
                 last_monthly_present: attendanceStats?.lastMonth?.presentPercentage ?? 0,
                 last_monthly_absent: attendanceStats?.lastMonth?.absentPercentage ?? 0,
-                course_test: "14",
-                mock_test: "2",
+                course_test: courseTestCountStrAlt,
+                mock_test: mockTestCountStrAlt,
                 is_batch: isBatch,
             };
         })
