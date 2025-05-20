@@ -1,6 +1,9 @@
 import { BatchSlotsType } from "@prisma/client";
 import { AppError } from "../../../utils/errorHandler";
 import { prisma } from "../../../config/database";
+import fetch from "node-fetch";
+import csv from "csv-parser";
+import { Readable } from "stream";
 
 export const getAllBatchesListService = async ({
     limit, page, slot, search
@@ -69,7 +72,69 @@ export const getAllBatchesListService = async ({
     });
 
     // Format response
-    const formattedBatches = batches.map((batch) => ({
+    // const formattedBatches = batches.map((batch) => ({
+    //     id: batch.id,
+    //     batch_number: batch.batch_number,
+    //     batchName: batch.batchName,
+    //     from_date: batch.from_date,
+    //     to_date: batch.to_date,
+    //     course: batch.course,
+    //     slot: batch.slot,
+    //     createdAt: batch.createdAt,
+    //     updatedAt: batch.updatedAt,
+    //     deletedAt: batch.deletedAt,
+    //     students_count: batch.batchWithStudentModel.length,
+    //     student_image: batch.batchWithStudentModel
+    //         .map((s) => s.student_relation?.profile_img_url ?? "null")
+    //         .join(","),
+    //     mentor: {
+    //         ...batch.management_staff_relation,
+    //         progress: null,
+    //     },
+    // }));
+
+    const extractStatusesFromCSV = async (url: string): Promise<string[]> => {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+
+    const buffer = await res.buffer();
+    const stream = Readable.from(buffer.toString());
+
+    return new Promise((resolve, reject) => {
+        const statuses: string[] = [];
+        stream
+        .pipe(csv())
+        .on("data", (row) => {
+            if (row.Status) {
+            statuses.push(row.Status.trim().toLowerCase());
+            }
+        })
+        .on("end", () => resolve(statuses))
+        .on("error", reject);
+    });
+    };
+
+    const formattedBatches = await Promise.all(
+    batches.map(async (batch) => {
+        const sessionDetails = await prisma.sessionSheetDetail.findMany({
+        where: { batch_id: batch.id },
+        select: { session_file_url: true },
+        });
+
+        let total = 0;
+        let completed = 0;
+
+        for (const session of sessionDetails) {
+        if (session.session_file_url) {
+            const statuses = await extractStatusesFromCSV(session.session_file_url);
+            total += statuses.length;
+            completed += statuses.filter((s) => s === "completed").length;
+        }
+        }
+
+        const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+        return {
         id: batch.id,
         batch_number: batch.batch_number,
         batchName: batch.batchName,
@@ -86,9 +151,11 @@ export const getAllBatchesListService = async ({
             .join(","),
         mentor: {
             ...batch.management_staff_relation,
-            progress: null,
+            progress: progress, // ✅ based on CSV Status column
         },
-    }));
+        };
+    })
+    );
 
     return { batches: formattedBatches, total };
 };
