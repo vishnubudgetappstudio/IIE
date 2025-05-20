@@ -1,6 +1,7 @@
 import { prisma } from "../../config/database"; // Adjust based on your setup
 import { BatchSlotsType } from "@prisma/client";
-import { parse, format } from 'date-fns';
+// import { parse, format } from 'date-fns';
+import { parse, format, isBefore, isAfter, isWithinInterval } from "date-fns";
 
 export const getStaffBatchesListService = async ({
     page,
@@ -30,8 +31,8 @@ export const getStaffBatchesListService = async ({
         ...(mentorIds
             ? { management_staff_id: { in: mentorIds } }
             : mentorId
-            ? { management_staff_id: mentorId }
-            : {}),
+                ? { management_staff_id: mentorId }
+                : {}),
         ...(slot !== "all" && { slot }),
         ...(search && {
             OR: [
@@ -60,7 +61,7 @@ export const getStaffBatchesListService = async ({
         },
     });
 
-      // ✅ Reset is_marked if updatedAt is not today
+    // ✅ Reset is_marked if updatedAt is not today
     await prisma.batchDetail.updateMany({
         where: {
             is_marked: true,
@@ -111,6 +112,42 @@ export const getStaffBatchesListService = async ({
 
     const total = await prisma.batchDetail.count({ where: whereCondition });
 
+    // const formattedBatches = batches.map((batch) => {
+    //     const formatDate = (dateStr: string | null) => {
+    //         try {
+    //             if (!dateStr) return null;
+    //             const parsedDate = parse(dateStr, "dd/MM/yyyy", new Date());
+    //             return format(parsedDate, "dd MMM, yyyy");
+    //         } catch {
+    //             return dateStr; // fallback if invalid
+    //         }
+    //     };
+
+    //     return {
+    //         id: batch.id,
+    //         batch_number: batch.batch_number,
+    //         batchName: batch.batchName,
+    //         from_date: formatDate(batch.from_date),
+    //         to_date: formatDate(batch.to_date),
+    //         start_time: batch.start_time,
+    //         end_time: batch.end_time,
+    //         batch_status: batch.batch_status,
+    //         course: batch.course,
+    //         slot: batch.slot,
+    //         is_marked: batch.is_marked,
+    //         createdAt: batch.createdAt,
+    //         updatedAt: batch.updatedAt,
+    //         deletedAt: batch.deletedAt,
+    //         students_count: batch.batchWithStudentModel.length,
+    //         student_image: batch.batchWithStudentModel
+    //             .map((s) => s.student_relation?.profile_img_url ?? "null")
+    //             .join(","),
+    //         mentor: {
+    //             ...batch.management_staff_relation,
+    //             progress: null,
+    //         },
+    //     };
+    // });
     const formattedBatches = batches.map((batch) => {
         const formatDate = (dateStr: string | null) => {
             try {
@@ -122,6 +159,31 @@ export const getStaffBatchesListService = async ({
             }
         };
 
+        const parseDate = (dateStr: string | null) => {
+            try {
+                if (!dateStr) return null;
+                return parse(dateStr, "dd/MM/yyyy", new Date());
+            } catch {
+                return null;
+            }
+        };
+
+        const now = new Date();
+        const fromDate = parseDate(batch.from_date);
+        const toDate = parseDate(batch.to_date);
+
+        let calculatedStatus: string = "upcoming";
+
+        if (fromDate && toDate) {
+            if (isBefore(toDate, now)) {
+                calculatedStatus = "complete";
+            } else if (isAfter(fromDate, now)) {
+                calculatedStatus = "upcoming";
+            } else if (isWithinInterval(now, { start: fromDate, end: toDate })) {
+                calculatedStatus = "progress";
+            }
+        }
+
         return {
             id: batch.id,
             batch_number: batch.batch_number,
@@ -130,7 +192,7 @@ export const getStaffBatchesListService = async ({
             to_date: formatDate(batch.to_date),
             start_time: batch.start_time,
             end_time: batch.end_time,
-            batch_status: batch.batch_status,
+            batch_status: calculatedStatus, // <- override with logic
             course: batch.course,
             slot: batch.slot,
             is_marked: batch.is_marked,
@@ -147,6 +209,5 @@ export const getStaffBatchesListService = async ({
             },
         };
     });
-
     return { batches: formattedBatches, total };
 };

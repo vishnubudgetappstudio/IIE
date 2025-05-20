@@ -76,6 +76,8 @@ export const createCourseTestService = async ({
     }
 
     // Step 4: Parse & validate dates
+    console.log("Start date:", startDate);
+    console.log("End date:", endDate);
     const formattedStartDate = parseDDMMYYYYToDate(startDate);
     const formattedEndDate = parseDDMMYYYYToDate(endDate);
     const today = new Date();
@@ -85,7 +87,7 @@ export const createCourseTestService = async ({
             message: `Start date (${startDate}) cannot be in the past.`,
         });
     }
-    if (formattedEndDate <= formattedStartDate) {
+    if (formattedEndDate < formattedStartDate) {
         throw new AppError({
             statusCode: 400,
             message: `End date (${endDate}) must be after start date (${startDate})`,

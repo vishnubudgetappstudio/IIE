@@ -264,7 +264,7 @@ export const parseDDMMYYYYToDate = (dateStr: string): Date => {
     const month = Number(monthStr) - 1; // JavaScript months are 0-indexed
     const year = Number(yearStr);
 
-    const date = new Date(year, month, day);
+    const date = new Date(Date.UTC(year, month, day));
 
     // Additional sanity check: ensure JS Date object matches input (prevents invalid dates like 32/01/2025)
     if (
