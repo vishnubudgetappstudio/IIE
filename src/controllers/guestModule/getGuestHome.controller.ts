@@ -47,6 +47,9 @@ export const getGuestHome = async (
         socialLinks: {
           instagram: "https://instagram.com/iie_indra_institute",
           facebook: "https://facebook.com/IndraInstitute",
+          privacy_url: "http://54.159.60.204/IIE-admin/IIE/public/index.php/privacy-policy",
+          terms_url: "http://54.159.60.204/IIE-admin/IIE/public/index.php/terms-and-conditions",
+          cancellation_url: "http://54.159.60.204/IIE-admin/IIE/public/index.php/cancellation"
         },
       },
     });

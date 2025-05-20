@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 
 // Common URLs (to avoid duplication)
 const COMMON_RESPONSE_DATA = {
-    privacy_url: "https://privacy.url.com",
-    terms_url: "https://terms.url.com",
-    cancellation_url: "https://cancellation.url.com",
+    privacy_url: "http://54.159.60.204/IIE-admin/IIE/public/index.php/privacy-policy",
+    terms_url: "http://54.159.60.204/IIE-admin/IIE/public/index.php/terms-and-conditions",
+    cancellation_url: "http://54.159.60.204/IIE-admin/IIE/public/index.php/cancellation",
 };
 
 // Get Generic Function for Management Staff Profiles
