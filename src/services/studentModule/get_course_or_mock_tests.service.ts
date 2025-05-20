@@ -91,7 +91,6 @@ export const studentGetAllCourseOrMockTestsService = async ({
     }
 
     // ✅ Fetch test records and count
-    if(test_type === "course_test"){
       var [tests, totalTests] = await Promise.all([
           prisma.test_Course_Or_Mock_With_Student.findMany({
               where: whereCondition,
@@ -117,33 +116,6 @@ export const studentGetAllCourseOrMockTestsService = async ({
           }),
           prisma.test_Course_Or_Mock_With_Student.count({ where: whereCondition }),
       ]);
-    }else{
-      var [tests, totalTests] = await Promise.all([
-          prisma.test_Course_Or_Mock_With_Student.findMany({
-              where: {deletedAt: null, test_type: "mock_test"},
-              skip,
-              take: perPage,
-              orderBy: { createdAt: "desc" },
-              select: {
-                  id: true,
-                  courseTestId: true,
-                  mockTestId: true,
-                  test_type: true,
-                  status: true,
-                  course_test_relation: {
-                      select: { test_title: true },
-                  },
-                  mock_test_relation: {
-            select: {
-              test_mode: true,
-            },
-          },
-
-              },
-          }),
-          prisma.test_Course_Or_Mock_With_Student.count({ where: whereCondition }),
-      ]);
-    }
 
     // ✅ Map and enrich test data
   // ✅ Map and enrich test data
@@ -218,9 +190,9 @@ const enhancedTests = await Promise.all(
       };
     }
 console.log("test.test.mockTestId=====>", test.mockTestId);
-    if (test.test_type === "mock_test" && test.mockTestId) {
+    if (test_type === "mock_test") {
       const rawTestData = await prisma.test_Mock.findFirst({
-        where: { id: test.mockTestId, deletedAt: null },
+        where: { deletedAt: null },
         select: {
           id: true,
           test_url: true,
