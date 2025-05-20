@@ -100,29 +100,17 @@ export const requestLeaveController = async (
           where: { id: mentorId },
           select: { fcm_token: true },
       });
-  
-      if (!mentor || !mentor.fcm_token) {
-          throw new AppError({
-              statusCode: 404,
-              message: "Mentor FCM token not found",
-              data: {},
-          });
-      }
-  
-      const fcmToken = mentor.fcm_token;
-  
-      // 4. Send push notification to the mentor
+
+      const fcmToken = mentor?.fcm_token;
+
       const message = {
           notification: {
               title: 'Leave Request Submitted',
               body: `A student has submitted a leave request.`,
           },
-          token: fcmToken,
+          token: fcmToken as string,
       };
-  
-      await admin.messaging().send(message);
-  
-      // Optional: Save the notification in DB if needed
+
       await prisma.notificationRecipient.create({
         data: {
           notificationId: '54426469-2bf9-11f0-af62-0affd2ae0401', // Replace with a unique ID generator if needed
@@ -136,6 +124,25 @@ export const requestLeaveController = async (
           managementStaffId: mentorId,
         },
       });
+  
+      if (!mentor || !mentor.fcm_token) {
+          throw new AppError({
+              statusCode: 404,
+              message: "Mentor FCM token not found",
+              data: {},
+          });
+      }
+
+  
+      // 4. Send push notification to the mentor
+      
+
+      await admin.messaging().send({
+        notification: message.notification,
+        token: mentor.fcm_token,
+      });
+  
+      // Optional: Save the notification in DB if needed
   
   } catch (notificationError) {
       console.error('Error sending notification to mentor:', notificationError);

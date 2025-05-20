@@ -1,5 +1,8 @@
 import { prisma } from "../../config/database";
 import { calculateAttendancePercentage, formatDateOnly, getCourseDuration, parseDDMMYYYYToDate } from "../../utils/commonUtils";
+import fetch from "node-fetch";
+import csv from "csv-parser";
+import { Readable } from "stream";
 
 export const studentHomeScreenService = async ({ student_id }: { student_id: string }) => {
     // 1. Fetch student along with batch, mentor, and course details
@@ -30,6 +33,11 @@ export const studentHomeScreenService = async ({ student_id }: { student_id: str
                                     profile_img_url: true,
                                 },
                             },
+                            SessionSheetDetailModel: {
+                                select: {
+                                    session_file_url: true,
+                                }
+                            }
                         },
                     },
                     student_relation: {
@@ -42,11 +50,44 @@ export const studentHomeScreenService = async ({ student_id }: { student_id: str
         },
     });
 
+    const extractStatusesFromCSV = async (url: string): Promise<string[]> => {
+        const res = await fetch(url);
+        if (!res.ok) return [];
+    
+        const buffer = await res.buffer();
+        const stream = Readable.from(buffer.toString());
+    
+        return new Promise((resolve, reject) => {
+            const statuses: string[] = [];
+            stream
+            .pipe(csv())
+            .on("data", (row) => {
+                if (row.Status) {
+                statuses.push(row.Status.trim().toLowerCase());
+                }
+            })
+            .on("end", () => resolve(statuses))
+            .on("error", reject);
+        });
+        };
+
     // 2. Extract required details with null safety
     const batch = student?.batchWithStudentModel?.[0];
     const course = batch?.student_relation?.Course || null;
     const batchDetails = batch?.batch_detail_relation;
     const mentor = batchDetails?.management_staff_relation;
+    const sessionSheet = batchDetails?.SessionSheetDetailModel?.[0];
+
+    let total = 0;
+        let completed = 0;
+
+    if (sessionSheet) {
+        const statuses = await extractStatusesFromCSV(sessionSheet.session_file_url);
+        total += statuses.length;
+        completed += statuses.filter((s) => s === "completed").length;
+    }
+
+    const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
 
     // 3. Handle date formatting and duration safely
     const startDate = batchDetails?.from_date ? parseDDMMYYYYToDate(batchDetails.from_date) : null;
@@ -83,7 +124,8 @@ export const studentHomeScreenService = async ({ student_id }: { student_id: str
             course_start,
             course_end,
             duration,
-            progress: 25, // TODO: Calculate actual progress
+            batcj_id: batchDetails?.id || null,
+            progress: progress, // TODO: Calculate actual progress
         },
         updates: [
             {
