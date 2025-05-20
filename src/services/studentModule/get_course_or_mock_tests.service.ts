@@ -290,7 +290,7 @@ let allQuestions: FormattedQuestion[] = [];
 if (test_type === "mock_test") {
 
   const rawTestDataList = await prisma.test_Mock.findMany({
-    where: { deletedAt: null },
+    where: { deletedAt: null, test_mode: test_mode as MockTestMode },
     skip: (currentPage - 1) * perPage,
     take: perPage,
     select: {
