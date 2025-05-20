@@ -333,7 +333,7 @@ model Notification {
 
 model NotificationRecipient {
   id                String             @id @default(uuid())
-  notificationId    String
+  notificationId    String?
   title             String
   description       String
   managementStaffId String?
@@ -350,7 +350,7 @@ model NotificationRecipient {
   sentAt            BigInt?
   createdAt         DateTime           @default(now())
 
-  notification_relation     Notification     @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  notification_relation     Notification?     @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   management_staff_relation ManagementStaff? @relation(fields: [managementStaffId], references: [id], onDelete: Cascade)
   student_relation          Student?         @relation(fields: [studentId], references: [id], onDelete: Cascade)
   batch_detail_relation     BatchDetail?     @relation(fields: [batchId], references: [id], onDelete: Cascade)

@@ -111,9 +111,12 @@ export const requestLeaveController = async (
           token: fcmToken as string,
       };
 
+      const notiId = await prisma.notification.findFirst({
+        select: { id: true },
+      });
+
       await prisma.notificationRecipient.create({
         data: {
-          notificationId: '', // Replace with a unique ID generator if needed
           title: message.notification.title,
           description: message.notification.body,
           receiverRole: 'staff',
