@@ -10,6 +10,7 @@ import { extractS3BucketAndKeySize } from "../../utils/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import s3 from "../../config/s3Config";
 import { TestType, MockTestMode } from "@prisma/client";
+import { Response } from "express";
 
 interface Params {
     studentId: string;
@@ -28,6 +29,23 @@ interface Params {
   correct_answer_count: number;
   test_type: TestType;
 }
+
+type FormattedQuestion = {
+  question: string;
+  options: string[];
+  explanation: string;
+  correctAnswer: string;
+};
+
+type EnhancedTest = {
+  test_id: string;
+  test_mode: string;
+  test_url: string | null;
+  total_questions: number;
+  batch_number?: string;
+  staff_name: string | null;
+  questions: FormattedQuestion[];
+};
 
 export const studentGetAllCourseOrMockTestsService = async ({
     studentId,
@@ -190,86 +208,188 @@ const enhancedTests = await Promise.all(
       };
     }
 console.log("test.test.mockTestId=====>", test.mockTestId);
-    if (test_type === "mock_test") {
-      const rawTestData = await prisma.test_Mock.findFirst({
-        where: { deletedAt: null },
-        select: {
-          id: true,
-          test_url: true,
-          test_mode: true,
-          questions: true,
-          batch_detail_relation: {
-            select: {
-              batch_number: true,
-              management_staff_relation: {
-                select: { name: true },
-              },
-            },
-          },
-        },
-      });
-      console.log("rawTestData=====>", rawTestData);
+    // if (test_type === "mock_test") {
+    //   const rawTestData = await prisma.test_Mock.findFirst({
+    //     where: { deletedAt: null },
+    //     select: {
+    //       id: true,
+    //       test_url: true,
+    //       test_mode: true,
+    //       questions: true,
+    //       batch_detail_relation: {
+    //         select: {
+    //           batch_number: true,
+    //           management_staff_relation: {
+    //             select: { name: true },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   });
+    //   console.log("rawTestData=====>", rawTestData);
 
-      if (!rawTestData)
-        throw new AppError({ statusCode: 404, message: "Mock Test not found", data: [] });
+    //   if (!rawTestData)
+    //     throw new AppError({ statusCode: 404, message: "Mock Test not found", data: [] });
 
-      let parsedQuestions: any[] = [];
+    //   let parsedQuestions: any[] = [];
 
-      try {
-        parsedQuestions = typeof rawTestData.questions === "string"
-          ? JSON.parse(rawTestData.questions)
-          : rawTestData.questions;
-      } catch (e) {
-        console.error("Invalid JSON in questions field:", e);
-      }
+    //   try {
+    //     parsedQuestions = typeof rawTestData.questions === "string"
+    //       ? JSON.parse(rawTestData.questions)
+    //       : rawTestData.questions;
+    //   } catch (e) {
+    //     console.error("Invalid JSON in questions field:", e);
+    //   }
 
-      if (rawTestData.test_url && (!parsedQuestions || parsedQuestions.length === 0)) {
-        try {
-          const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: rawTestData.test_url });
-          const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
-          if (response.Body) {
-            const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
-            total_questions = rows.length;
-          }
-        } catch (err) {
-          throw new AppError({
-            statusCode: 404,
-            message: `Failed to parse CSV for mock test`,
-            data: [],
-          });
-        }
-      } else {
-        total_questions = Array.isArray(parsedQuestions) ? parsedQuestions.length : 0;
-      }
+    //   if (rawTestData.test_url && (!parsedQuestions || parsedQuestions.length === 0)) {
+    //     try {
+    //       const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: rawTestData.test_url });
+    //       const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
+    //       if (response.Body) {
+    //         const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
+    //         total_questions = rows.length;
+    //       }
+    //     } catch (err) {
+    //       throw new AppError({
+    //         statusCode: 404,
+    //         message: `Failed to parse CSV for mock test`,
+    //         data: [],
+    //       });
+    //     }
+    //   } else {
+    //     total_questions = Array.isArray(parsedQuestions) ? parsedQuestions.length : 0;
+    //   }
 
-      // return {
-      //   test_id: rawTestData.id,
-      //   test_mode: rawTestData.test_mode,
-      //   questions: parsedQuestions,
-      //   test_url: rawTestData.test_url,
-      //   total_questions,
-      // };
+    //   // return {
+    //   //   test_id: rawTestData.id,
+    //   //   test_mode: rawTestData.test_mode,
+    //   //   questions: parsedQuestions,
+    //   //   test_url: rawTestData.test_url,
+    //   //   total_questions,
+    //   // };
 
-      const flatQuestions = parsedQuestions.flat();
+    //   const flatQuestions = parsedQuestions.flat();
 
-      // Format each question object
-      const formattedRows = flatQuestions.map((row) => ({
-          question: row.question?.trim(),
-          options: row.options?.filter(opt => opt?.trim()), // Removes empty or falsy options
-          explanation: row.explanation?.trim(),
-          correctAnswer: row.correctAnswer?.trim(),
-      }));
+    //   // Format each question object
+    //   const formattedRows = flatQuestions.map((row) => ({
+    //       question: row.question?.trim(),
+    //       options: row.options?.filter(opt => opt?.trim()), // Removes empty or falsy options
+    //       explanation: row.explanation?.trim(),
+    //       correctAnswer: row.correctAnswer?.trim(),
+    //   }));
 
-      return formattedRows;
-    }
+    //   return formattedRows;
+    // }
 
     return null;
   })
 );
+
+let allQuestions: FormattedQuestion[] = [];
+
+if (test_type === "mock_test") {
+
+  const rawTestDataList = await prisma.test_Mock.findMany({
+    where: { deletedAt: null },
+    skip: (currentPage - 1) * perPage,
+    take: perPage,
+    select: {
+      id: true,
+      test_url: true,
+      test_mode: true,
+      questions: true,
+      batch_detail_relation: {
+        select: {
+          batch_number: true,
+          management_staff_relation: {
+            select: { name: true },
+          },
+        },
+      },
+    },
+  });
+
+  const mockTestCount = await prisma.test_Mock.count({
+    where: { deletedAt: null },
+  });
+
+  if (!rawTestDataList || rawTestDataList.length === 0) {
+    throw new AppError({
+      statusCode: 404,
+      message: "Mock Test not found",
+      data: [],
+    });
+  }
+
+  const enhancedTests: EnhancedTest[] = [];
+
+  for (const test of rawTestDataList) {
+    let parsedQuestions: any[] = [];
+    let total_questions = 0;
+
+    try {
+      parsedQuestions = typeof test.questions === "string"
+        ? JSON.parse(test.questions)
+        : test.questions || [];
+    } catch (e) {
+      console.error(`Invalid JSON in test ID ${test.id} questions field:`, e);
+      parsedQuestions = [];
+    }
+
+    if (test.test_url && (!parsedQuestions || parsedQuestions.length === 0)) {
+      try {
+        const { Bucket, Key } = await extractS3BucketAndKeySize({ fileUrl: test.test_url });
+        const response = await s3.send(new GetObjectCommand({ Bucket, Key }));
+        if (response.Body) {
+          const rows = await parseTestCourseOrMock_CSV_Stream(response.Body as Readable);
+          parsedQuestions = rows;
+          total_questions = rows.length;
+        }
+      } catch (err) {
+        console.error(`Failed to parse CSV for test ID ${test.id}`, err);
+        parsedQuestions = [];
+      }
+    } else {
+      total_questions = Array.isArray(parsedQuestions) ? parsedQuestions.length : 0;
+    }
+
+    const flatQuestions = parsedQuestions.flat();
+
+    const formattedRows = flatQuestions.map((row) => ({
+      question: row.question?.trim() || "",
+      options: Array.isArray(row.options)
+        ? row.options.filter((opt) => opt?.trim())
+        : [],
+      explanation: row.explanation?.trim() || "",
+      correctAnswer: row.correctAnswer?.trim() || "",
+    }));
+
+    enhancedTests.push({
+      test_id: test.id,
+      test_mode: test.test_mode,
+      test_url: test.test_url ?? null,
+      staff_name: test.batch_detail_relation?.management_staff_relation?.name ?? null,
+      questions: formattedRows,
+      total_questions,
+      batch_number: test.batch_detail_relation?.batch_number ?? undefined,
+    });
+  }
+  // If you want to return only the questions array for each test:
+  allQuestions = enhancedTests.flatMap(test => test.questions);
+  console.log("allQuestions=====>", allQuestions);
+  // return {
+  //   enhancedTests,
+  //   mockTestCount,
+  //   currentPage,
+  //   perPage,
+  //   totalPages: Math.ceil(mockTestCount / perPage),
+  // };
+}
+
 console.log("enhancedTests=====>", enhancedTests);
 
 return {
-    enhancedTests: enhancedTests.filter(Boolean),
+    enhancedTests: test_type === "course_test" ? enhancedTests.filter(Boolean) : allQuestions,
     totalTests,
     currentPage,
     perPage,

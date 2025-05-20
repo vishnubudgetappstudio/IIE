@@ -31,7 +31,7 @@ export const studentGetAllCourseOrMockTestsController = async (
         }
 
         // Call service
-        const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await studentGetAllCourseOrMockTestsService({
+        const { enhancedTests, perPage, currentPage, totalPages, totalTests } = await   studentGetAllCourseOrMockTestsService({
             studentId: req.user?.userId,
             role: req.user?.role,
             test_type: testType,
@@ -45,7 +45,7 @@ export const studentGetAllCourseOrMockTestsController = async (
         // Send response
         res.status(200).json({
             status: true,
-            data: enhancedTests.flat(),
+            data: enhancedTests,
             totalTestCount: totalTests,
             limit: perPage,
             page: currentPage,
@@ -68,7 +68,7 @@ export const studentMockTestController = async (
     const { test_mode, correct_answer_count, test_type } = req.body;
 
     // Validate request body
-    if (!test_mode || !correct_answer_count || !test_type) {
+    if (!test_mode || !correct_answer_count || !test_type) {  
       throw new AppError({ statusCode: 400, message: "test_mode, correct_answer_count and test_type are required" });
     }
 
