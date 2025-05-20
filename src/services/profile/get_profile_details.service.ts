@@ -40,7 +40,7 @@ export const getProfileDetailsService = async ({ userId, role }: { userId: strin
         }
 
         return { ...studentProfile, ...COMMON_RESPONSE_DATA };
-    } else {
+    } else if(role === "staff") {
         // const profile = await prisma.managementStaff.findUnique({
         //     where: { id: userId, role, deletedAt: null },
         //     select: {
@@ -147,5 +147,28 @@ export const getProfileDetailsService = async ({ userId, role }: { userId: strin
 
         return { ...profile, ...COMMON_RESPONSE_DATA };
 
+    }else{
+        const profile = await prisma.managementStaff.findUnique({
+            where: { id: userId, role, deletedAt: null },
+            select: {
+                name: true,
+                email: true,
+                phone: true,
+                role: true,
+                address: true,
+                alt_phone: true,
+                profile_img_url: true,
+            },
+        });
+
+        if (!profile) {
+            throw new AppError({
+                statusCode: 404,
+                data: {},
+                message: `${role.charAt(0).toUpperCase() + role.slice(1)} Profile not found`,
+            });
+        }
+
+        return { ...profile, ...COMMON_RESPONSE_DATA };
     }
 };

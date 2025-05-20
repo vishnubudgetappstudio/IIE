@@ -95,8 +95,10 @@ export const createNotificationService = async (data: CreateNotificationData) =>
 
     // Create notification and recipients
     try {
-        const scheduledDate = formatDateOnly(parseDDMMYYYYToDate(data.date));
-        const scheduledTime = formatTimeOnly(convertTimeToDateFormat(data.time));
+        const scheduledDate = data.date;
+        const scheduledTime = data.time;
+        console.log("Scheduled Date:", scheduledDate);
+        console.log("Scheduled Time:", scheduledTime);
         const newNotification = await prisma.notification.create({
             data: {
                 title: data.title,
@@ -113,20 +115,20 @@ export const createNotificationService = async (data: CreateNotificationData) =>
             },
         });
 
-        await prisma.notificationRecipient.createMany({
-            data: recipients.map((r) => ({
-                notificationId: newNotification.id,
-                studentId: r.studentId || null,
-                managementStaffId: r.managementStaffId || null,
-                batchId: r.batchId || null,
-                type: newNotification.type as NotificationType,
-                receiverRole: r.receiverRole,
-                status: "Pending",
-                createdAt: new Date(),
-                title: newNotification.title,
-                description: newNotification.description,
-            })),
-        });
+        // await prisma.notificationRecipient.createMany({
+        //     data: recipients.map((r) => ({
+        //         notificationId: newNotification.id,
+        //         studentId: r.studentId || null,
+        //         managementStaffId: r.managementStaffId || null,
+        //         batchId: r.batchId || null,
+        //         type: newNotification.type as NotificationType,
+        //         receiverRole: r.receiverRole,
+        //         status: "Pending",
+        //         createdAt: new Date(),
+        //         title: newNotification.title,
+        //         description: newNotification.description,
+        //     })),
+        // });
 
         return {
             title: newNotification.title,
