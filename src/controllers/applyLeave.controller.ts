@@ -113,7 +113,7 @@ export const requestLeaveController = async (
 
       await prisma.notificationRecipient.create({
         data: {
-          notificationId: '54426469-2bf9-11f0-af62-0affd2ae0401', // Replace with a unique ID generator if needed
+          notificationId: '', // Replace with a unique ID generator if needed
           title: message.notification.title,
           description: message.notification.body,
           receiverRole: 'staff',
