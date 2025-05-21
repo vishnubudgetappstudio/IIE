@@ -4,6 +4,7 @@ import { AppError } from "../../../utils/errorHandler";
 import { parseSessionSheet_CSV_Stream, parseDDMMYYYYToDate } from "../../../utils/commonUtils";
 import { uploadFileToS3 } from "../../s3/uploadFiles.service";
 import { CommonUserRole } from "@prisma/client";
+import { SessionSheetStatus } from '@prisma/client';
 
 // ✅ Define batch creation request type
 interface CreateBatchRequest {
@@ -199,7 +200,7 @@ export const createNewBatchService = async ({
                     batch_id: newBatch.id,
                     session_file_url: fileUrl,
                     session_file_name: fileName,
-                    status: "inComplete",
+                    status: SessionSheetStatus.Incomplete,
                 },
             }).catch((error) => {
                 console.error("Error to create session sheet details:", error);
