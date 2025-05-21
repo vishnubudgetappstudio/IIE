@@ -81,17 +81,17 @@ export const getProfileDetailsService = async ({ userId, role }: { userId: strin
         const batchIds = batches.map(batch => batch.id);
 
         // Default counts if no batches found
-        if (batchIds.length === 0) {
-            return {
-            profile: {
-                id: profile.id,
-                name: profile.name,
-                easy_count: 0,
-                medium_count: 0,
-                hard_count: 0,
-            },
-            };
-        }
+        // if (batchIds.length === 0) {
+        //     return {
+        //     profile: {
+        //         id: profile.id,
+        //         name: profile.name,
+        //         easy_count: 0,
+        //         medium_count: 0,
+        //         hard_count: 0,
+        //     },
+        //     };
+        // }
 
         // Step 3: Fetch test mocks for those batches
         const mockTests = await prisma.test_Mock.findMany({
