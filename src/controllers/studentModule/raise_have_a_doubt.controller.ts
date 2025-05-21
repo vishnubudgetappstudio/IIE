@@ -14,13 +14,22 @@ export const raiseHaveADoubt = async (
 ) => {
   try {
     const studentId = req.user?.userId as string;
+    const sessionId = req.body.session_id as string;
     // Import the enum from Prisma client
 
     const newStatus: SessionSheetStatus = req.body.status === "Have doubt" ? SessionSheetStatus.HaveDoubt : SessionSheetStatus.Completed;
 
     const result = await prisma.sessionSheetStudentReportDetail.updateMany({
-      where: { student_id: studentId },
+      where: { student_id: studentId, id: sessionId },
       data: { status: newStatus },
+    });
+
+    const deleteNotificatioin = await prisma.notificationRecipient.deleteMany({
+      where: {
+        studentId: studentId,
+        session_id: sessionId,
+        type: "session_completed",
+      },
     });
 
     if (result.count === 0) {
