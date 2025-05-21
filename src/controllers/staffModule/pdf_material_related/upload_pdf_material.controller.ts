@@ -80,7 +80,6 @@ export const uploadPDFMaterialFileController = async (req: AuthRequest, res: Res
                 // Optional: Save notification
                 await prisma.notificationRecipient.create({
                     data: {
-                        notificationId: 'PDF_' + Date.now().toString(), // Use UUID or timestamp
                         title: message.notification.title,
                         description: message.notification.body,
                         receiverRole: 'student',
