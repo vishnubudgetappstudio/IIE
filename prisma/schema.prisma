@@ -423,7 +423,8 @@ model SessionSheetDetail {
 }
 
 enum SessionSheetStatus {
-  completed
+  Completed
+  Have doubt
   inComplete
 }
 
