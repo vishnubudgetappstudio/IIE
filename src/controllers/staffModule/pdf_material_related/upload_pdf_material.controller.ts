@@ -53,49 +53,7 @@ export const uploadPDFMaterialFileController = async (req: AuthRequest, res: Res
             });
 
         // ✅ Step 6: Send Notification to Students
-        try {
-            const fcmTokens = await prisma.student.findMany({
-                where: { id: { in: studentIds } },
-                select: { fcm_token: true, id: true }
-            });
-
-            const validTokens = fcmTokens
-                .filter(student => student.fcm_token)
-                .map(student => ({
-                    token: student.fcm_token!,
-                    studentId: student.id
-                }));
-
-            const sendPromises = validTokens.map(async ({ token, studentId }) => {
-                const message = {
-                    notification: {
-                        title: "New Material Uploaded",
-                        body: `${materialTitle} has been uploaded.`,
-                    },
-                    token,
-                };
-
-                await admin.messaging().send(message);
-
-                // Optional: Save notification
-                await prisma.notificationRecipient.create({
-                    data: {
-                        title: message.notification.title,
-                        description: message.notification.body,
-                        receiverRole: 'student',
-                        type: 'material_uploaded',
-                        isRead: false,
-                        status: 'Sent',
-                        studentId: studentId,
-                    },
-                });
-            });
-
-            await Promise.all(sendPromises);
-
-        } catch (notificationErr) {
-            console.error("❌ Error sending notification to students:", notificationErr);
-        }
+        
 
         // ✅ Step 7: Response
         res.status(201).json({

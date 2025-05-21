@@ -2,6 +2,7 @@ import { CommonUserRole } from "@prisma/client";
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
 import { uploadBufferToS3, uploadFileToS3 } from "../../s3/uploadFiles.service";
+import admin from '../../../config/firebase';
 
 interface MaterialUploadRequestData {
     material_title: string;
@@ -114,6 +115,51 @@ export const uploadPDFMaterialFileService = async ({
             });
         } else {
             console.log("No valid student IDs found. Skipping insert.");
+        }
+
+        try {
+            const fcmTokens = await prisma.student.findMany({
+                where: { id: { in: studentIds } },
+                select: { fcm_token: true, id: true }
+            });
+
+            const validTokens = fcmTokens
+                .filter(student => student.fcm_token)
+                .map(student => ({
+                    token: student.fcm_token!,
+                    studentId: student.id
+                }));
+
+            const sendPromises = validTokens.map(async ({ token, studentId }) => {
+                const message = {
+                    notification: {
+                        title: "New Material Uploaded",
+                        body: `${material.material_title} has been uploaded.`,
+                    },
+                    token,
+                };
+
+                await admin.messaging().send(message);
+
+                // Optional: Save notification
+                await prisma.notificationRecipient.create({
+                    data: {
+                        title: message.notification.title,
+                        description: message.notification.body,
+                        receiverRole: 'student',
+                        type: 'material_uploaded',
+                        isRead: false,
+                        status: 'Sent',
+                        studentId: studentId,
+                        material_id: material.id, // or use the actual material ID if available
+                    },
+                });
+            });
+
+            await Promise.all(sendPromises);
+
+        } catch (notificationErr) {
+            console.error("❌ Error sending notification to students:", notificationErr);
         }
     }
     
