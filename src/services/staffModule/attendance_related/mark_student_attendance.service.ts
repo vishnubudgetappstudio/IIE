@@ -137,13 +137,47 @@ export const updateBatchIsMarkedService = async (batchId: string, isMarked: bool
     const todayDate = new Date().toDateString();
     console.log("Last Marked Date:", lastMarkedDate, "Today Date:", todayDate);
 
-    if (lastMarkedDate === todayDate) {
-      throw new AppError({
-        statusCode: 400,
-        message: "Attendance already marked for today",
-      });
-    }
+    // if (lastMarkedDate === todayDate) {
+    //   throw new AppError({
+    //     statusCode: 400,
+    //     message: "Attendance already marked for today",
+    //   });
+    // }
   }
+
+  const studentIds = await prisma.batchWithStudent.findMany({
+    where:{
+        batch_id: batchId,
+        deletedAt: null,
+    },
+    select: {
+        student_id: true,
+    }
+  });
+
+  const markedStudentIds = await prisma.studentAttendanceDetail.findMany({
+    where: {
+        student_id: { in: studentIds.map(s => s.student_id) },
+    },
+    select: {
+        student_id: true,
+    }
+  });
+
+  const allStudentIds = studentIds.map(s => s.student_id);
+  const alreadyMarkedIds = new Set(markedStudentIds.map(s => s.student_id));
+
+    // Filter out the ones that are already marked
+  const unmarkedStudentIds = allStudentIds.filter(id => !alreadyMarkedIds.has(id));
+
+  const createAttendance = await prisma.studentAttendanceDetail.createMany({ 
+    data: unmarkedStudentIds.map(studentId => ({
+      batch_id: batchId,
+      student_id: studentId,
+      is_present: true,
+      status: "present",
+    })),
+  });
 
   // Update the flag
   const updatedBatch = await prisma.batchDetail.update({

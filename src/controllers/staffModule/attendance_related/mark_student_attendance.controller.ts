@@ -36,7 +36,7 @@ export const markStudentAttendanceController = async (req: AuthRequest, res: Res
         });
 
         // ✅ Send success response
-        res.status(201).json({ data: attendance, message: "Attendance marked successfully" });
+        res.status(201).json({ status: true, data: attendance, message: "Attendance marked successfully" });
     } catch (error) {
         console.error("Error in markStudentAttendance ===>", error);
         next(error);
