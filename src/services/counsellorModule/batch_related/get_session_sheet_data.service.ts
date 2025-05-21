@@ -130,7 +130,7 @@ export const getSessionSheetDataService = async ({
                     // Store notification record in DB
                     await prisma.notificationRecipient.create({
                         data: {
-                            notificationId: 'SESSION_' + Date.now().toString() + '_' + id,
+                            // notificationId: 'SESSION_' + Date.now().toString() + '_' + id,
                             title: messageTitle,
                             description: messageBody,
                             receiverRole: 'student',
@@ -138,6 +138,7 @@ export const getSessionSheetDataService = async ({
                             isRead: false,
                             status: 'Sent',
                             studentId: id,
+                            session_id: sessionSheet.id,
                         },
                     });
                 } catch (err) {
