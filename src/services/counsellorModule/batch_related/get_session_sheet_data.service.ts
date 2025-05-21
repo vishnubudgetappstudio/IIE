@@ -24,6 +24,7 @@ export const getSessionSheetDataService = async ({
     page: number;
     limit: number;
 }): Promise<{
+    session_sheet_id: string;
     session_file_name: string;
     session_file_size: string;
     session_sheet_data: any[];
@@ -173,6 +174,7 @@ export const getSessionSheetDataService = async ({
     const paginatedData = filteredData.slice((page - 1) * limit, page * limit);
 
     return {
+        session_sheet_id: sessionSheet.id,
         session_file_name: sessionSheet.session_file_name,
         session_file_size: FileSize,
         createdAt: formatDateTime(sessionSheet.createdAt),
