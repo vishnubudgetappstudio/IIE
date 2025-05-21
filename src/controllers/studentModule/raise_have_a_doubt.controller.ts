@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { NextFunction, Response } from "express";
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import { AppError } from "../../utils/errorHandler";
+import { SessionSheetStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -13,7 +14,9 @@ export const raiseHaveADoubt = async (
 ) => {
   try {
     const studentId = req.user?.userId as string;
-    const newStatus = req.body.status;
+    // Import the enum from Prisma client
+
+    const newStatus: SessionSheetStatus = req.body.status === "Have doubt" ? SessionSheetStatus.HaveDoubt : SessionSheetStatus.Completed;
 
     const result = await prisma.sessionSheetStudentReportDetail.updateMany({
       where: { student_id: studentId },
