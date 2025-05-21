@@ -7,6 +7,7 @@ import { deleteCourseTestService } from "../../../../services/staffModule/test_r
 import { validateFile } from "../../../../utils/s3";
 import admin from '../../../../config/firebase';
 import { getFCMTokensByBatchId } from '../../../../services/notification.service'; // implement this service
+import { prisma } from "../../../../config/database";
 
 export const createCourseTestController = async (
     req: AuthRequest,
@@ -81,6 +82,37 @@ export const createCourseTestController = async (
 
         try {
             const fcmTokens = await getFCMTokensByBatchId(batchId); // You must implement this logic
+
+            const students = await prisma.batchWithStudent.findMany({
+                where: { batch_id: batchId },
+                select: { student_id: true },
+            });
+
+            const messageTitle = "New Course Test Available";
+            const messageBody = `A new test "${test_title}" has been scheduled.`;
+
+            const notifyPromises = students.map(async ({ student_id }) => {
+                try {
+
+                    // Store notification record in DB
+                    await prisma.notificationRecipient.create({
+                        data: {
+                            title: messageTitle,
+                            description: messageBody,
+                            receiverRole: 'student',
+                            type: 'course_test',
+                            isRead: false,
+                            status: 'Sent',
+                            studentId: student_id,
+                            test_id: response.id,
+                        },
+                    });
+                } catch (err) {
+                    console.error(`❌ Notification failed for student ${student_id}:`, err);
+                }
+            });
+
+            await Promise.all(notifyPromises);
         
             const sendPromises = fcmTokens.map(token => {
                 const message = {
