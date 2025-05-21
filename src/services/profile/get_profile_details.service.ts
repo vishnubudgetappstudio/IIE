@@ -108,7 +108,11 @@ export const getProfileDetailsService = async ({ userId, role }: { userId: strin
         let easy_count = 0, medium_count = 0, hard_count = 0;
 
         for (const test of mockTests) {
-            const count = Array.isArray(test.questions) ? test.questions.length : 0;
+            const questions = typeof test.questions === 'string'
+            ? JSON.parse(test.questions)
+            : test.questions;
+
+            const count = Array.isArray(questions) ? questions.length : 0;
 
             if (test.test_mode === 'easy') {
             easy_count += count;
