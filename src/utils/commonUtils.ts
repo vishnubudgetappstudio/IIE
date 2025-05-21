@@ -311,10 +311,10 @@ export const calculateAttendancePercentage = ({ present, total }: { present: big
 } => {
     const presentCount = Number(present || 0);
     const totalCount = Number(total || 0);
-    const presentPercentage = totalCount > 0 ? +(presentCount / totalCount * 100).toFixed(2) : 0;
+    const presentPercentage = totalCount > 0 ? +(presentCount / totalCount * 100) : 0;
     return {
         presentPercentage,
-        absentPercentage: +(100 - presentPercentage).toFixed(2),
+        absentPercentage: +(100 - presentPercentage),
     };
 };
 
