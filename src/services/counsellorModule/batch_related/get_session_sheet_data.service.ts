@@ -7,6 +7,7 @@ import { formatDateTime, parseSessionSheet_CSV_Stream } from "../../../utils/com
 import { Readable } from "stream";
 import { stringify } from "csv-stringify/sync"; // for converting JSON to CSV
 import admin from "firebase-admin"; // Make sure firebase-admin is initialized properly somewhere
+import { SessionSheetStatus } from '@prisma/client';
 
 export const getSessionSheetDataService = async ({
     batch_id,
@@ -139,6 +140,15 @@ export const getSessionSheetDataService = async ({
                             status: 'Sent',
                             studentId: id,
                             session_id: sessionSheet.id,
+                        },
+                    });
+
+                    await prisma.sessionSheetStudentReportDetail.create({
+                        data: {
+                            batch_id: batch_id,
+                            student_id: id,
+                            session_sheet_id: sessionSheet.id,
+                            status: SessionSheetStatus.NotMarked,
                         },
                     });
                 } catch (err) {

@@ -426,6 +426,7 @@ enum SessionSheetStatus {
   Completed
   HaveDoubt @map("Have doubt")
   Incomplete @map("inComplete")
+  NotMarked @map("Not Marked")
 }
 
 // =======================================
