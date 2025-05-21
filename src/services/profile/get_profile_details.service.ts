@@ -96,7 +96,6 @@ export const getProfileDetailsService = async ({ userId, role }: { userId: strin
         // Step 3: Fetch test mocks for those batches
         const mockTests = await prisma.test_Mock.findMany({
             where: {
-            batch_id: { in: batchIds },
             deletedAt: null,
             },
             select: {
