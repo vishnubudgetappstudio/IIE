@@ -47,7 +47,7 @@ export const uploadPDFMaterialFileController = async (req: AuthRequest, res: Res
                 material_file: file,
                 material_title,
                 batchId: batch_id,
-                studentIds: student_ids.length ? student_ids as string[] : [],
+                studentIds: student_ids as string[],
                 role: req.user.role,
                 userId: req.user.userId
             });

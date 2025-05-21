@@ -32,6 +32,13 @@ export const uploadPDFMaterialFileService = async ({
 }: MaterialUploadRequestData): Promise<MaterialUploadResponseData> => {
 
     // ✅ Step 1: Validate if Material Title already exists
+    var studentIds = studentIds.flatMap(idString =>
+    idString
+        .replace(/[\[\]\s]/g, '')  // remove brackets and spaces
+        .split(',')                // handle comma-separated values
+        .filter(id => id)          // remove any empty entries
+    );
+
     const existingMaterial = await prisma.materialFileDetail.findFirst({
         where: { material_title, deletedAt: null },
         select: { id: true },

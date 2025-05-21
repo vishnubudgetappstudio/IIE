@@ -87,7 +87,7 @@ export const requestDeleteMaterialFileController = async (
         // Step 4: Update Delete Request Status
         await prisma.materialFileDetail.update({
             where: { id: material_file_id },
-            data: { delete_request: 'pending' }
+            data: { delete_request: 'Pending' }
         });
 
         // Step 5: Response
