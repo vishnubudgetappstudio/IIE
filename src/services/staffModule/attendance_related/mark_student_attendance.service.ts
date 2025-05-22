@@ -135,51 +135,72 @@ export const updateBatchIsMarkedService = async (batchId: string, isMarked: bool
   if (batch.is_marked) {
     const lastMarkedDate = new Date(batch.updatedAt).toDateString();
     const todayDate = new Date().toDateString();
-    console.log("Last Marked Date:", lastMarkedDate, "Today Date:", todayDate);
-
-    // if (lastMarkedDate === todayDate) {
-    //   throw new AppError({
-    //     statusCode: 400,
-    //     message: "Attendance already marked for today",
-    //   });
-    // }
+    if (lastMarkedDate === todayDate) {
+      throw new AppError({
+        statusCode: 400,
+        message: "Attendance already marked for today",
+      });
+    }
   }
 
+  // Get student IDs for the batch
   const studentIds = await prisma.batchWithStudent.findMany({
-    where:{
-        batch_id: batchId,
-        deletedAt: null,
-    },
-    select: {
-        student_id: true,
-    }
-  });
-
-  const markedStudentIds = await prisma.studentAttendanceDetail.findMany({
     where: {
-        student_id: { in: studentIds.map(s => s.student_id) },
+      batch_id: batchId,
+      deletedAt: null,
     },
     select: {
-        student_id: true,
-    }
+      student_id: true,
+    },
   });
 
   const allStudentIds = studentIds.map(s => s.student_id);
-  const alreadyMarkedIds = new Set(markedStudentIds.map(s => s.student_id));
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-    // Filter out the ones that are already marked
-  const unmarkedStudentIds = allStudentIds.filter(id => !alreadyMarkedIds.has(id));
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
 
-  const createAttendance = await prisma.studentAttendanceDetail.createMany({ 
-    data: unmarkedStudentIds.map(studentId => ({
-      batch_id: batchId,
-      student_id: studentId,
-      is_present: true,
-      status: "present",
-    })),
+  // Find students already marked today
+  const markedStudentIds = await prisma.studentAttendanceDetail.findMany({
+    where: {
+      student_id: { in: allStudentIds },
+      attendance_date: {
+        gte: todayStart,
+        lte: todayEnd,
+      },
+    },
+    select: {
+      student_id: true,
+    },
   });
+  console.log("Marked student IDs:", markedStudentIds);
 
-  // Update the flag
+  const alreadyMarkedSet = new Set(markedStudentIds.map(s => s.student_id));
+  console.log("Already marked student IDs:", alreadyMarkedSet);
+  const unmarkedStudentIds = allStudentIds.filter(id => !alreadyMarkedSet.has(id));
+    console.log("Unmarked student IDs:", unmarkedStudentIds);
+try {
+  if (unmarkedStudentIds.length > 0) {
+    console.log("Creating attendance for:", unmarkedStudentIds.length);
+    await prisma.studentAttendanceDetail.createMany({
+      data: unmarkedStudentIds.map(studentId => ({
+        batch_id: batchId,
+        student_id: studentId,
+        is_present: true,
+        status: "present", // Must be present for all records
+        attendance_date: new Date(),
+      })),
+      skipDuplicates: true, // optional: skips records violating unique constraint
+    });
+    console.log("createMany success");
+  }
+} catch (err: any) {
+  console.error("createMany error:", err);
+}
+
+
+  // Update batch is_marked flag
   const updatedBatch = await prisma.batchDetail.update({
     where: { id: batchId },
     data: {
