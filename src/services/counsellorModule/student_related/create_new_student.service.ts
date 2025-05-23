@@ -1,6 +1,8 @@
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
 import bcrypt from "bcrypt";
+// Update the import path below if your nodemailer config is in a different location
+import { sendEmail } from "../../../config/nodemailer";
 
 interface CreateNewStudentResponse {
     data: {
@@ -77,19 +79,19 @@ export const createNewStudentService = async (
         }
     }
 
-    const randomPassword = 'BudgetApp@123'
-    // const randomPassword = generateRandomPassword();
+    //const randomPassword = 'BudgetApp@123'
+    const randomPassword = generateRandomPassword();
 
     // Hash Password
     const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
     // Send email
-    // await sendEmail({
-    //     to: email,
-    //     text: `Your IIE Login Password - ${randomPassword}.`,
-    //     html: `<h2>Your IIE Login Password is ${randomPassword}.</h2>`,
-    //     subject: 'IIE - Login Password',
-    // });
+    await sendEmail({
+        to: email,
+        text: `Your IIE Login Password - ${randomPassword}.`,
+        html: `<h2>Your IIE Login Password is ${randomPassword}.</h2>`,
+        subject: 'IIE - Login Password',
+    });
 
     // Create Counsellor in Database
     const newStudent = await prisma.student.create({
@@ -140,3 +142,12 @@ export const createNewStudentService = async (
         },
     };
 };
+function generateRandomPassword(length: number = 10): string {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+

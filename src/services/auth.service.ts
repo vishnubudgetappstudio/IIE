@@ -220,8 +220,8 @@ export const forgotPasswordManagementStaff = async ({ email, role }: { email: st
   }
 
   // Generate OTP
-  // const otp = Math.floor(1000 + Math.random() * 9000).toString();
-  const otp = '1234';
+  const otp = Math.floor(1000 + Math.random() * 9000).toString();
+  //const otp = '1234';
 
   const existingUserStoredTOP = await prisma.storedOTPDetail.findMany({
     where: { email: email, deletedAt: null },
@@ -244,12 +244,12 @@ export const forgotPasswordManagementStaff = async ({ email, role }: { email: st
   });
 
   // Send email
-  // await sendEmail({
-  //   to: user.email,
-  //   subject: "Password Reset OTP",
-  //   text: `Your OTP is: ${otp}`,
-  //   html: `<h2>Password Reset OTP</h2></br><p>Your OTP is: ${otp}</p>`,
-  // });
+  await sendEmail({
+    to: user.email,
+    subject: "Password Reset OTP",
+    text: `Your OTP is: ${otp}`,
+    html: `<h2>Password Reset OTP</h2></br><p>Your OTP is: ${otp}</p>`,
+  });
 
   return { email: user.email, otp: otp };
 };
