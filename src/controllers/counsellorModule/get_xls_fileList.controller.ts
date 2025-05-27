@@ -3,6 +3,10 @@ import { AuthRequest } from "../../middlewares/auth.middleware";
 import { AppError } from "../../utils/errorHandler";
 import { getXLSFileListService } from "../../services/counsellorModule/get_xls_fileList.service";
 import { deleteXLSFileService } from "../../services/counsellorModule/get_xls_fileList.service";
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
 
 /**
  * ✅ Handles fetching and parsing session sheet data from S3.
@@ -86,4 +90,26 @@ export const deleteXLSFileController = async (req: AuthRequest, res: Response, n
         console.error("❌ Error Deleting XLS File:", error);
         next(error);
     }
+};
+
+export const getCoursesListController = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+
+    
+    const courses = await prisma.$queryRawUnsafe(`
+      SELECT id,course_name FROM courses ORDER BY created_at DESC
+    `);
+
+    res.status(200).json({
+      success: true,
+      message: 'Courses fetched successfully',
+      data: courses,
+    });
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch courses',
+    });
+  }
 };

@@ -20,6 +20,7 @@ import { uploadXlsFileController } from "../controllers/counsellorModule/xls_fil
 import { updateXlsFileNameController } from "../controllers/counsellorModule/xls_fileName_update.controller";
 import { getXLSFileListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
 import { deleteXLSFileController } from "../controllers/counsellorModule/get_xls_fileList.controller";
+import { getCoursesListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
 import { uploadPDFMaterialFileController } from "../controllers/staffModule/pdf_material_related/upload_pdf_material.controller";
 import { getStudentStudyMaterialsController } from "../controllers/studentModule/get_study_material.controller";
 import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf_material_related/get_pdf_material_list.controller";
@@ -38,6 +39,7 @@ import { getAllStudentsFromBatchController } from "../controllers/staffModule/at
 import { getSessionSheetDataController } from "../controllers/staffModule/session_sheet/get_batch_session_sheet.controller";
 import { getSessionSheetReport } from "../controllers/staffModule/session_sheet/get_batch_session_sheet.controller";
 import { getTestResultsController } from "../controllers/staffModule/test_relateed/couse_test_related/get_course_test.controller";
+
 //import { updateSessionSheetStatusController } from "../controllers/staffModule/session_sheet/update_sessionsheet_status.controller";
 
 import { getGuestHome } from "../controllers/guestModule/getGuestHome.controller";
@@ -80,6 +82,8 @@ router.post("/upload-xls-file", uploadXlsFileController); // Upload XLS or XLSX 
 router.post("/update-xls-fileName", updateXlsFileNameController); // Update XLS or XLSX route
 router.get("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
 router.delete("/delete-xls-file/:fileId", deleteXLSFileController); // Delete XLS or XLSX route
+router.get('/courses-list', getCoursesListController); // Get Courses List route
+
 
 //Student API routes
 
