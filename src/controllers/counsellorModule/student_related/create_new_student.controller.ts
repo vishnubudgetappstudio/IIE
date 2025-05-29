@@ -32,7 +32,7 @@ export const createNewStudentController = async (
         }
 
         // Extract data from request body
-        const { name, email, roll_number, course_name, course_id, phone_number, alt_phone, preferred_batch } = req.body;
+        const { name, email, roll_number, course_name, course_id, phone_number, alt_phone, preferred_batch, branch } = req.body;
 
         //call create student service
         const response = await createNewStudentService({
@@ -42,6 +42,7 @@ export const createNewStudentController = async (
             email: email,
             roll_number: roll_number,
             phone: phone_number,
+            branch: branch,
             alt_phone: alt_phone,
             counsellor_id: userId,
             counsellor_name: counsellor_name,

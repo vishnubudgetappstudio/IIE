@@ -2,12 +2,12 @@ import { prisma } from "../../config/database";
 import { AppError } from "../../utils/errorHandler";
 
 
-export const getStaff_Student_BatchService = async (search: string) => {
+export const getStaff_Student_BatchService = async (search: string, branch: string) => {
   switch (search.toLowerCase()) {
     case "staff":
       return prisma.managementStaff.findMany({
         orderBy: { createdAt: "desc" },
-        where: { role: "staff", deletedAt: null }, // Exclude soft deleted records
+        where: { role: "staff", deletedAt: null, branch : branch }, // Exclude soft deleted records
         select: { id: true, name: true, profile_img_url: true },
       });
 

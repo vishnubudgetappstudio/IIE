@@ -68,7 +68,7 @@ export const loginService = async (
       // Find user in the database with selected fields (excluding unnecessary data)
       user = await prisma.managementStaff.findUnique({
         where: { email, role: 'counsellor', deletedAt: null },
-        select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
+        select: { id: true, name: true, email: true, role: true, branch: true, password: true }, // Select only required fields
       });
 
       if (!user) {
@@ -152,6 +152,7 @@ export const loginService = async (
     name: user.name,
     email: user.email,
     role: user.role,
+    branch: user.branch,
   });
 
   return {
@@ -160,6 +161,7 @@ export const loginService = async (
       name: user.name,
       email: user.email,
       role: user.role,
+      branch: user.branch,
       token,
     },
   };

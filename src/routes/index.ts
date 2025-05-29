@@ -21,6 +21,7 @@ import { updateXlsFileNameController } from "../controllers/counsellorModule/xls
 import { getXLSFileListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
 import { deleteXLSFileController } from "../controllers/counsellorModule/get_xls_fileList.controller";
 import { getCoursesListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
+import { getBranchesListController } from "../controllers/counsellorModule/get_xls_fileList.controller";
 import { uploadPDFMaterialFileController } from "../controllers/staffModule/pdf_material_related/upload_pdf_material.controller";
 import { getStudentStudyMaterialsController } from "../controllers/studentModule/get_study_material.controller";
 import { getPDFMaterialFileListController } from "../controllers/staffModule/pdf_material_related/get_pdf_material_list.controller";
@@ -83,6 +84,7 @@ router.post("/update-xls-fileName", updateXlsFileNameController); // Update XLS 
 router.get("/get-xls-files", getXLSFileListController); // Get XLS or XLSX List route
 router.delete("/delete-xls-file/:fileId", deleteXLSFileController); // Delete XLS or XLSX route
 router.get('/courses-list', getCoursesListController); // Get Courses List route
+router.get("/get-branch-list", getBranchesListController); // Get Branches List route
 
 
 //Student API routes

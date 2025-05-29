@@ -11,6 +11,7 @@ interface CreateNewStudentResponse {
         course_name: string;
         course_id: string;
         phone?: string;
+        branch?: string;
         alt_phone?: string;
         email: string;
         preferred_batch?: string;
@@ -25,6 +26,7 @@ export const createNewStudentService = async (
         course_name,
         course_id,
         phone,
+        branch,
         alt_phone,
         preferred_batch,
         counsellor_name,
@@ -36,6 +38,7 @@ export const createNewStudentService = async (
         course_name: string,
         course_id: string,
         phone?: string,
+        branch?: string,
         alt_phone?: string,
         preferred_batch?: string,
         counsellor_name: string,

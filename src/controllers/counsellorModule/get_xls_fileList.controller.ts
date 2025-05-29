@@ -113,3 +113,22 @@ export const getCoursesListController = async (req: AuthRequest, res: Response, 
     });
   }
 };
+export const getBranchesListController = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const courses = await prisma.$queryRawUnsafe(`
+      SELECT id,branch_name FROM branches ORDER BY created_at DESC
+    `);
+
+    res.status(200).json({
+      success: true,
+      message: 'branches fetched successfully',
+      data: courses,
+    });
+  } catch (error) {
+    console.error('Error fetching branches:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch courses',
+    });
+  }
+};
