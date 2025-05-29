@@ -25,6 +25,7 @@ model ManagementStaff {
   phone           String?
   alt_phone       String?
   name            String
+  branch          String?
   profile_img_url String?
   address         String?
   emailVerified   Boolean                  @default(false)
@@ -426,7 +427,7 @@ enum SessionSheetStatus {
   Completed
   HaveDoubt @map("Have doubt")
   Incomplete @map("inComplete")
-  NotMarked @map("Not Marked")
+  NotMarked
 }
 
 // =======================================
@@ -539,16 +540,16 @@ model StudentAttendanceDetail {
   attendance_date DateTime         @default(now())
   is_present      Boolean
   status          AttendanceStatus @default(present)
-  createdAt       DateTime         @default(now()) // Automatically stores created time
-  updatedAt       DateTime         @updatedAt // Automatically updates updated time
-  deletedAt       DateTime? // Nullable field for soft delete
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
 
-  // Relations
   batch_detail_relation BatchDetail @relation(fields: [batch_id], references: [id], onDelete: Cascade)
   student_relation      Student     @relation(fields: [student_id], references: [id], onDelete: Cascade)
 
-  // ✅ Ensures one attendance record per student per batch per day
-  @@unique([batch_id, attendance_date])
+  // Unique constraint: One attendance record per student per batch per day
+  @@unique([student_id, batch_id, attendance_date])
+
   @@index([id, batch_id])
   @@map("student_attendance")
 }

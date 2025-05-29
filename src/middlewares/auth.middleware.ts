@@ -6,6 +6,11 @@ import { upload } from "./upload.middleware";
 
 dotenv.config()
 
+export interface JwtUserPayload extends JwtPayload {
+  userId: string;
+  role?: string;
+  branch?: string;
+}
 // ✅ Extend Request Interface (ONLY for user)
 export interface AuthRequest extends Request {
   user?: JwtPayload;
