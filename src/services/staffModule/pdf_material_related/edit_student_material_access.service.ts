@@ -68,17 +68,25 @@ export const EditStudentMaterialFileAccessService = async ({
     // ✅ Step 3: Validate Batch & Students
     const normalizedStudentIds = (studentIds ?? []).flatMap(id => id.split(',').map(s => s.trim()));
 
-    const validStudents = await prisma.batchWithStudent.findMany({
-        where: {
-            batch_id: batchId!,
-            deletedAt: null,
-        },
-        select: { student_id: true },
-    });
+// Normalize batch IDs
+const batchIdArray = batchId?.split(",").map(id => id.trim()).filter(Boolean);
 
-    if (!validStudents.length) {
-        throw new AppError({ statusCode: 404, message: "No valid students found in this batch." });
-    }
+console.log("Normalized batchId array:", batchIdArray);
+
+const validStudents = await prisma.batchWithStudent.findMany({
+    where: {
+        batch_id: { in: batchIdArray },
+        deletedAt: null,
+    },
+    select: { student_id: true },
+});
+
+console.log("Valid Students:", validStudents);
+
+if (!validStudents.length) {
+    throw new AppError({ statusCode: 404, message: "No valid students found in this batch." });
+}
+
 
     // ✅ Step 4: Upload New File If Provided
     let fileUrl = existMaterial.material_file_url;
@@ -104,19 +112,26 @@ export const EditStudentMaterialFileAccessService = async ({
         access_granted: true,
     }));
 
-    await prisma.$transaction([
-        prisma.studentMaterialAccess.createMany({ data: assignedStudents, skipDuplicates: true }),
-        prisma.materialFileDetail.update({
-            where: { id: material_id },
-            data: {
-                material_title: material_title ? material_title : existMaterial.material_title,
-                batch_id: batchId,
-                status: "published",
-                material_file_url: fileUrl,
-                updatedAt: new Date(),
-            },
-        }),
-    ]);
+    const batchIdString = Array.isArray(batchId)
+    ? batchId.join(",")
+    : batchId || null;
+
+await prisma.$transaction([
+    prisma.studentMaterialAccess.createMany({
+        data: assignedStudents,
+        skipDuplicates: true,
+    }),
+    prisma.materialFileDetail.update({
+        where: { id: material_id },
+        data: {
+            material_title: material_title ?? existMaterial.material_title,
+            batch_id: batchIdString,
+            status: "published",
+            material_file_url: fileUrl,
+            updatedAt: new Date(),
+        },
+    }),
+]);
 
     return {
         material_title: material_title ? material_title : existMaterial.material_title,

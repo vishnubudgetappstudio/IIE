@@ -35,8 +35,9 @@ export const pdfMaterialFileUploadSchema = z.object({
         .string({ required_error: "*Material title is required" })
         .min(2, "Material title must be at least 2 characters long"),
 
-    batch_id: z.string().optional(),
-    student_ids: studentIdsArraySchema, // Custom validation for student_ids Array
+    batch_id: z.string().optional().nullable(),
+
+    student_ids: studentIdsArraySchema.optional().nullable(),
 });
 
 // // Custom transformation & validation for `student_ids`

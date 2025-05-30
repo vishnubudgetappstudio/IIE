@@ -23,7 +23,7 @@ interface MaterialUploadResponseData {
 /**
  * ✅ Upload a Material File and Assign to Students
  */
-export const uploadPDFMaterialFileService = async ({
+export const uploadPDFMaterialFileService_old= async ({
     material_title,
     batchId,
     studentIds,
@@ -173,4 +173,153 @@ export const uploadPDFMaterialFileService = async ({
         material_file_url: material.material_file_url,
     };
 };
+
+
+export const uploadPDFMaterialFileService = async ({
+    material_title,
+    batchId,
+    studentIds,
+    material_file,
+    role,
+    userId,
+}: MaterialUploadRequestData): Promise<MaterialUploadResponseData> => {
+
+    // ✅ Normalize studentIds
+   studentIds = (studentIds ?? []).flatMap(idString =>
+    idString
+        .replace(/[\[\]\s]/g, '')  // remove brackets and spaces
+        .split(',')                // handle comma-separated values
+        .filter(Boolean)           // remove empty entries
+    );
+
+
+    // ✅ Check for duplicate material title
+    const existingMaterial = await prisma.materialFileDetail.findFirst({
+        where: { material_title, deletedAt: null },
+        select: { id: true },
+    });
+
+    if (existingMaterial) {
+        throw new AppError({ statusCode: 400, message: "Material title already exists!" });
+    }
+
+    // ✅ Determine status based on both batch and student_ids
+    const hasBatch = !!batchId;
+    const hasStudents = studentIds.length > 0;
+    const materialStatus: 'draft' | 'published' = hasBatch && hasStudents ? 'published' : 'draft';
+
+    // ✅ Upload file to correct S3 path
+    let fileUrl: string;
+
+    if (materialStatus === 'published') {
+        ({ fileUrl } = await uploadFileToS3({
+            file: material_file,
+            batchId: batchId!,
+            role,
+            userId,
+        }));
+    } else {
+        ({ s3url: fileUrl } = await uploadBufferToS3({
+            buffer: material_file.buffer,
+            file: material_file,
+            role,
+            userId,
+        }));
+    }
+
+    // ✅ Save material file record
+    const material = await prisma.materialFileDetail.create({
+        data: {
+            material_title,
+            batch_id: batchId || null,
+            material_file_url: fileUrl,
+            status: materialStatus,
+            staff_id: userId,
+        },
+    });
+
+    // ✅ Proceed only if status is published
+    let allValidStudentIds: string[] = [];
+
+    if (materialStatus === 'published') {
+        // ✅ Get students from batch
+        const batchStudents = await prisma.batchWithStudent.findMany({
+            where: { batch_id: batchId! },
+            select: { student_id: true },
+        });
+
+        const batchStudentIds = batchStudents.map(s => s.student_id);
+
+        // ✅ Validate student_ids
+        const extraStudents = await prisma.student.findMany({
+            where: { id: { in: studentIds } },
+            select: { id: true },
+        });
+
+        const validStudentIds = extraStudents.map(s => s.id);
+
+        // ✅ Combine and de-duplicate
+        allValidStudentIds = [...new Set([...batchStudentIds, ...validStudentIds])];
+
+        // ✅ Assign material access
+        if (allValidStudentIds.length > 0) {
+            await prisma.studentMaterialAccess.createMany({
+                data: allValidStudentIds.map(student_id => ({
+                    student_id,
+                    material_id: material.id,
+                    access_granted: true,
+                })),
+                skipDuplicates: true,
+            });
+        }
+
+        // ✅ Send FCM notification
+        try {
+            const fcmTokens = await prisma.student.findMany({
+                where: { id: { in: allValidStudentIds } },
+                select: { id: true, fcm_token: true },
+            });
+
+            const sendPromises = fcmTokens
+                .filter(s => s.fcm_token)
+                .map(async s => {
+                    const message = {
+                        notification: {
+                            title: "New Material Uploaded",
+                            body: `${material.material_title} has been uploaded.`,
+                        },
+                        token: s.fcm_token!,
+                    };
+
+                    await admin.messaging().send(message);
+
+                    await prisma.notificationRecipient.create({
+                        data: {
+                            title: message.notification.title,
+                            description: message.notification.body,
+                            receiverRole: 'student',
+                            type: 'material_uploaded',
+                            isRead: false,
+                            status: 'Sent',
+                            studentId: s.id,
+                            material_id: material.id,
+                        },
+                    });
+                });
+
+            await Promise.all(sendPromises);
+        } catch (err) {
+            console.error("❌ Notification sending failed:", err);
+        }
+    }
+
+    // ✅ Return final response
+    return {
+        material_title: material.material_title,
+        batchId: material.batch_id,
+        studentIds: allValidStudentIds,
+        material_file_url: material.material_file_url,
+    };
+};
+
 

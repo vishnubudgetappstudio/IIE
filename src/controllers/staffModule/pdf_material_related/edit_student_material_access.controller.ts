@@ -9,7 +9,7 @@ import { PrismaClient } from "@prisma/client";
  * 🎯 Controller to Edit Student Material Access
  */
 const prisma = new PrismaClient();
-export const editStudentMaterialAccessController = async (
+export const editStudentMaterialAccessController_old = async (
     req: AuthRequest,
     res: Response,
     next: NextFunction
@@ -54,6 +54,73 @@ export const editStudentMaterialAccessController = async (
     } catch (error) {
         console.error("Error editing student material access:", error);
         next(error); // Pass to global error handler
+    }
+};
+
+export const editStudentMaterialAccessController = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        // ✅ Step 1: Validate User Authentication
+        if (!req.user) {
+            throw new AppError({ statusCode: 401, message: "Unauthorized access", data: {} });
+        }
+
+        // ✅ Step 2: Validate Request Body (except student_ids and file)
+        const parsedData = editStudentMaterialFileAccessSchema.safeParse(req.body);
+        if (!parsedData.success) {
+            throw new AppError({
+                statusCode: 400,
+                message: parsedData.error.errors[0].message,
+                data: {}
+            });
+        }
+
+        const { material_title, material_id } = parsedData.data;
+
+        // ✅ Step 3: Extract and convert batch_id
+        const rawBatchId = req.body.batch_id;
+        let batch_id: string | null = null;
+
+        if (Array.isArray(rawBatchId)) {
+            batch_id = rawBatchId.join(','); // convert array to comma-separated string
+        } else if (typeof rawBatchId === 'string' && rawBatchId.trim()) {
+            batch_id = rawBatchId;
+        }
+
+        // ✅ Step 4: Normalize student_ids
+        const student_ids: string[] = Array.isArray(req.body.student_ids)
+            ? req.body.student_ids.flatMap(idStr =>
+                idStr
+                    .replace(/[\[\]\s]/g, '')
+                    .split(',')
+                    .filter(Boolean)
+              )
+            : [];
+
+        // ✅ Step 5: Get file if uploaded
+        const file = req.files ? (req.files as Express.Multer.File[])[0] : null;
+
+        // ✅ Step 6: Call Service Layer
+        const updatedMaterial = await EditStudentMaterialFileAccessService({
+            material_id,
+            batchId: batch_id,
+            studentIds: student_ids,
+            material_title,
+            file: file || undefined,
+        });
+
+        // ✅ Step 7: Send Response
+        res.status(200).json({
+            status: true,
+            message: "Material file access updated successfully",
+            data: updatedMaterial,
+        });
+    } catch (error) {
+        console.error("❌ Error editing student material access:", error);
+        next(error); // Forward error to global handler
     }
 };
 
