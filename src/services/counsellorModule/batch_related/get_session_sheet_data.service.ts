@@ -118,17 +118,6 @@ export const getSessionSheetDataService = async ({
             // Send notifications concurrently
             const notifyPromises = students.map(async ({ id, fcm_token }) => {
                 try {
-                    if (fcm_token) {
-                        // Send FCM push notification
-                        await admin.messaging().send({
-                            token: fcm_token,
-                            notification: {
-                                title: messageTitle,
-                                body: messageBody,
-                            },
-                        });
-                    }
-
                     // Store notification record in DB
                     await prisma.notificationRecipient.create({
                         data: {
@@ -152,6 +141,16 @@ export const getSessionSheetDataService = async ({
                             status: SessionSheetStatus.NotMarked,
                         },
                     });
+                    if (fcm_token) {
+                        // Send FCM push notification
+                        await admin.messaging().send({
+                            token: fcm_token,
+                            notification: {
+                                title: messageTitle,
+                                body: messageBody,
+                            },
+                        });
+                    }
                 } catch (err) {
                     console.error(`❌ Notification failed for student ${id}:`, err);
                 }
