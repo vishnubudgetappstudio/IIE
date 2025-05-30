@@ -109,6 +109,7 @@ export const createNewStudentService = async (
             phone: phone ? phone : "",
             alt_phone: alt_phone ? alt_phone : "",
             email: email,
+            Branch: branch,
             address: "",
             preferred_batch: preferred_batch ? preferred_batch : "",
             Dob: "",
