@@ -68,7 +68,7 @@ export const loginService = async (
       // Find user in the database with selected fields (excluding unnecessary data)
       user = await prisma.managementStaff.findUnique({
         where: { email, role: 'counsellor', deletedAt: null },
-        select: { id: true, name: true, email: true, role: true, branch: true, password: true }, // Select only required fields
+        select: { id: true, name: true, email: true, role: true, branch: true, password: true, is_login: true }, // Select only required fields
       });
 
       if (!user) {
@@ -76,6 +76,13 @@ export const loginService = async (
           statusCode: 401,
           data: {},
           message: "Unauthorized: Invalid Email Address."
+        });
+      }
+      if (user.is_login === 1) {
+        throw new AppError({
+          statusCode: 409,
+          data: {},
+          message: "You are already logged in on another device.",
         });
       }
 
@@ -89,7 +96,7 @@ export const loginService = async (
       // Find user in the database with selected fields (excluding unnecessary data)
       user = await prisma.managementStaff.findUnique({
         where: { email, role: 'staff', deletedAt: null },
-        select: { id: true, name: true, email: true, role: true, password: true }, // Select only required fields
+        select: { id: true, name: true, email: true, role: true, password: true, is_login: true }, // Select only required fields
       });
 
       if (!user) {
@@ -99,7 +106,14 @@ export const loginService = async (
           message: "Unauthorized: Invalid Email Address."
         });
       }
-
+      console.log("user.is_login", user.is_login);
+      if (user.is_login === 1) {
+        throw new AppError({
+          statusCode: 409,
+          data: {},
+          message: "You are already logged in on another device.",
+        });
+      }
       //update FcmToken for staff user
       await prisma.managementStaff.update({
         where: { id: user.id },
@@ -110,7 +124,7 @@ export const loginService = async (
       // Find user in the database with selected fields (excluding unnecessary data)
       user = await prisma.student.findUnique({
         where: { email, deletedAt: null },
-        select: { id: true, name: true, email: true, password: true }, // Select only required fields
+        select: { id: true, name: true, email: true, password: true, is_login : true }, // Select only required fields
       });
 
       if (!user) {
@@ -120,7 +134,13 @@ export const loginService = async (
           message: "Unauthorized: Invalid Email Address."
         });
       }
-
+      if (user.is_login === 1) {
+        throw new AppError({
+          statusCode: 409,
+          data: {},
+          message: "You are already logged in on another device.",
+        });
+      }
       //update FcmToken for student user
       await prisma.student.update({
         where: { id: user.id },
@@ -160,6 +180,7 @@ export const loginService = async (
       id: user.id,
       name: user.name,
       email: user.email,
+      is_login: user.is_login,
       role: user.role,
       branch: user.branch,
       token,
