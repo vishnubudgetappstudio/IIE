@@ -30,6 +30,7 @@ model ManagementStaff {
   address         String?
   emailVerified   Boolean                  @default(false)
   fcm_token       String?
+  is_login        Int      @default(0)
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   deletedAt       DateTime?
@@ -99,6 +100,7 @@ model Student {
   Follow_up            DateTime? @db.Date
   Status               String?   @db.VarChar(20)
   Remarks              String?   @db.VarChar(100)
+  is_login             Int      @default(0)
 
   // One-to-One: A student is assigned to one counsellor
   //sessionReports SessionSheetStudentReportDetail[]
