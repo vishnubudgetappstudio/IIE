@@ -14,6 +14,10 @@ const COMMON_RESPONSE_DATA = {
 // Get Generic Function for Management Staff Profiles
 export const getProfileDetailsService = async ({ userId, role }: { userId: string, role: UserRole }) => {
     if (role === "student") {
+        await prisma.student.update({
+            where: { id: userId },
+            data: { is_login: 0 },
+        });
         const studentProfile = await prisma.student.findUnique({
             where: { id: userId, deletedAt: null },
             select: {
@@ -53,7 +57,10 @@ export const getProfileDetailsService = async ({ userId, role }: { userId: strin
         //         profile_img_url: true,
         //     },
         // });
-
+        await prisma.managementStaff.update({
+            where: { id: userId },
+            data: { is_login: 0 },
+            });
         const profile = await prisma.managementStaff.findUnique({
             where: { id: userId, role, deletedAt: null },
             select: {
@@ -151,6 +158,10 @@ export const getProfileDetailsService = async ({ userId, role }: { userId: strin
         return { ...profile, ...COMMON_RESPONSE_DATA };
 
     }else{
+        await prisma.managementStaff.update({
+            where: { id: userId },
+            data: { is_login: 0 },
+        });
         const profile = await prisma.managementStaff.findUnique({
             where: { id: userId, role, deletedAt: null },
             select: {

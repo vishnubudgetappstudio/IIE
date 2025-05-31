@@ -82,7 +82,7 @@ export const loginService = async (
       //update FcmToken for counsellor user
       await prisma.managementStaff.update({
         where: { id: user.id },
-        data: { fcm_token },
+        data: { fcm_token, is_login: 1 },
       });
       break;
     case 'staff':
@@ -103,7 +103,7 @@ export const loginService = async (
       //update FcmToken for staff user
       await prisma.managementStaff.update({
         where: { id: user.id },
-        data: { fcm_token },
+        data: { fcm_token, is_login: 1 },
       });
       break;
     default: // Code to execute if no cases match
@@ -124,7 +124,7 @@ export const loginService = async (
       //update FcmToken for student user
       await prisma.student.update({
         where: { id: user.id },
-        data: { fcm_token },
+        data: { fcm_token, is_login: 1 },
       });
 
       user = { ...user, role: "student" };
