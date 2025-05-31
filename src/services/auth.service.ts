@@ -51,7 +51,8 @@ export const loginService = async (
   email: string,
   role: UserRole,
   password: string,
-  fcm_token: string
+  fcm_token: string,
+   is_login: number
 ) => {
   if (!email || !password) {
     throw new AppError({
@@ -89,7 +90,7 @@ export const loginService = async (
       //update FcmToken for counsellor user
       await prisma.managementStaff.update({
         where: { id: user.id },
-        data: { fcm_token, is_login: 1 },
+        data: { fcm_token, is_login },
       });
       break;
     case 'staff':
@@ -117,7 +118,7 @@ export const loginService = async (
       //update FcmToken for staff user
       await prisma.managementStaff.update({
         where: { id: user.id },
-        data: { fcm_token, is_login: 1 },
+        data: { fcm_token, is_login },
       });
       break;
     default: // Code to execute if no cases match
@@ -144,7 +145,7 @@ export const loginService = async (
       //update FcmToken for student user
       await prisma.student.update({
         where: { id: user.id },
-        data: { fcm_token, is_login: 1 },
+        data: { fcm_token, is_login },
       });
 
       user = { ...user, role: "student" };

@@ -34,6 +34,11 @@ export const loginSchema = z.object({
         .min(6, { message: "Password must be at least 6 characters long" }),
 
     fcm_token: z.string({ required_error: "* fcm token is required" }),
+    is_login: z
+        .number({ required_error: "*is_login is required" }) // ✅ custom required message
+        .int({ message: "is_login must be an integer" })
+        .min(0, { message: "is_login must be 0 or 1" })
+        .max(1, { message: "is_login must be 0 or 1" }),
 });
 
 //forgotPassword request body Schema
