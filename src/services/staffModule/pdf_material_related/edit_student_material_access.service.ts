@@ -2,6 +2,7 @@ import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
 import { uploadFileToS3 } from "../../s3/uploadFiles.service";
 import { CommonUserRole } from "@prisma/client";
+import * as admin from "firebase-admin";
 
 interface EditStudentMaterialAccessRequestData {
     material_id: string;
@@ -132,6 +133,45 @@ await prisma.$transaction([
         },
     }),
 ]);
+
+    // ✅ Step 6: Send notifications
+    try {
+        const fcmTokens = await prisma.student.findMany({
+            where: { id: { in: validStudents.map(({ student_id }) => student_id) } },
+            select: { id: true, fcm_token: true },
+        });
+
+        const sendPromises = fcmTokens
+            .filter(s => s.fcm_token)
+            .map(async s => {
+                const message = {
+                    notification: {
+                        title: "New Material Uploaded",
+                        body: `${material_title ? material_title : existMaterial.material_title} has been uploaded.`,
+                    },
+                    token: s.fcm_token!,
+                };
+
+                await admin.messaging().send(message);
+
+                await prisma.notificationRecipient.create({
+                    data: {
+                        title: message.notification.title,
+                        description: message.notification.body,
+                        receiverRole: 'student',
+                        type: 'material_uploaded',
+                        isRead: false,
+                        status: 'Sent',
+                        studentId: s.id,
+                        material_id: existMaterial.id,
+                    },
+                });
+            });
+
+        await Promise.all(sendPromises);
+    } catch (err) {
+        console.error("❌ Notification sending failed:", err);
+    }
 
     return {
         material_title: material_title ? material_title : existMaterial.material_title,
