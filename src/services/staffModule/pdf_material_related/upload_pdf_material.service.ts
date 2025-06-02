@@ -3,6 +3,7 @@ import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
 import { uploadBufferToS3, uploadFileToS3 } from "../../s3/uploadFiles.service";
 import admin from '../../../config/firebase';
+import { database } from "firebase-admin";
 
 interface MaterialUploadRequestData {
     material_title: string;
@@ -449,6 +450,10 @@ export const uploadPDFMaterialFileService = async ({
                         notification: {
                             title: "New Material Uploaded",
                             body: `${material.material_title} has been uploaded.`,
+                        },
+                        data:{
+                            role: "student",
+                            type: "material_uploaded",
                         },
                         token: s.fcm_token!,
                     };

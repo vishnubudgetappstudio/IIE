@@ -149,6 +149,12 @@ export const getSessionSheetDataService = async ({
                                 title: messageTitle,
                                 body: messageBody,
                             },
+                            data: {
+                                role: 'student',
+                                type: 'session_completed',
+                                session_sheet_id: sessionSheet.id,
+                                session_file_name: sessionSheet.session_file_name,
+                            },
                         });
                     }
                 } catch (err) {
