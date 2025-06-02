@@ -24,9 +24,20 @@ export const approveStudentLeaveController = async (
     }
 
     const statusUpdate = await prisma.leaveDetail.update({
-      where: { id: leaveDetailId },
-      data: { status },
-    });
+  where: { id: leaveDetailId },
+  data: {
+    status,
+    notificationRecipients: {
+      updateMany: {
+        where: { leaveDetailId: leaveDetailId },
+        data: {
+          isRead: true,
+        },
+      },
+    },
+  },
+});
+
 
     res.status(200).json({
       message: "Leave status updated successfully.",
