@@ -63,10 +63,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       });
     }
 
-    const { email, role, password, fcm_token } = req.body;
+    const { email, role, password, fcm_token, is_login } = req.body;
 
     // Call login service
-    const response = await loginService(email, role, password, fcm_token);
+    const response = await loginService(email, role, password, fcm_token,  is_login );
 
     // Send Success Response
     res.status(200).json({
@@ -198,6 +198,8 @@ export const sendGuestOtp = async (req: Request, res: Response) => {
 
     // Check if phone exists
     const [rows] = await db.query('SELECT id FROM Guest WHERE phone = ?', [phone]);
+    console.log("rows", rows);
+    console.log((rows as any[]).length > 0)
 
     if ((rows as any[]).length > 0) {
       // Update existing record
@@ -206,6 +208,7 @@ export const sendGuestOtp = async (req: Request, res: Response) => {
       // Insert new guest
       await db.query('INSERT INTO Guest (id, phone, otpCode, createdAt) VALUES (UUID(), ?, ?, NOW())', [phone, otpCode]);
     }
+   // console.log()
 
     return res.status(200).json({ message: "OTP sent successfully." });
   } catch (error) {
