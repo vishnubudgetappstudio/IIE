@@ -468,7 +468,7 @@ model MaterialFileDetail {
   id                String                   @id @unique @default(uuid())
   batch_id          String?
   staff_id          String
-  material_title    String                   @unique
+  material_title    String
   material_file_url String                   @db.Text
   status            MaterialFileDetailStatus @default(draft)
   delete_request    String?  // 'pending' | 'approved' | null
@@ -486,7 +486,6 @@ model MaterialFileDetail {
 
   staff ManagementStaff @relation(fields: [staff_id], references: [id], onDelete: Cascade)
 
-  @@index([id, batch_id, material_title])
   @@map("material_file_detail")
 }
 
