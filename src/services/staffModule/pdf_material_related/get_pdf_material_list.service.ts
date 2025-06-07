@@ -46,7 +46,7 @@ export const getPDFMaterialFileListService = async ({
     // console.log("Search Term:", searchTerm);
     console.log("Role:", role);
 
-    if(role !== "counsellor") {
+    if (role !== "counsellor") {
         var whereCondition: any = {
             deletedAt: null,
             staff_id: userId,
@@ -71,7 +71,7 @@ export const getPDFMaterialFileListService = async ({
                 deletedAt: null,
             },
         };
-    }else{
+    } else {
         var whereCondition: any = {
             deletedAt: null,
             batch_id: batch_id,
@@ -120,9 +120,68 @@ export const getPDFMaterialFileListService = async ({
         });
     }
 
+    // const [activeFiles, draftFiles] = await Promise.all([
+    //     prisma.materialFileDetail.findMany({
+    //         where: whereCondition,
+    //         select: {
+    //             id: true,
+    //             material_title: true,
+    //             material_file_url: true,
+    //             batch_id: true,
+    //             createdAt: true,
+    //             status: true,
+    //         },
+    //         orderBy: { createdAt: "desc" },
+    //         skip,
+    //         take: perPage,
+    //     }),
+    //     prisma.materialFileDetail.findMany({
+    //         where: { status: "draft", deletedAt: null },
+    //         select: {
+    //             id: true,
+    //             material_title: true,
+    //             material_file_url: true,
+    //             batch_id: true,
+    //             createdAt: true,
+    //             status: true,
+    //         },
+    //         orderBy: { createdAt: "desc" },
+    //     }),
+    // ]);
+
+    const [activeGroup, draftGroup] = await Promise.all([
+        prisma.materialFileDetail.groupBy({
+            by: ['material_title'],
+            where: whereCondition,
+            _max: { createdAt: true },
+            orderBy: {
+                _max: {
+                    createdAt: 'desc',
+                },
+            },
+        }),
+        prisma.materialFileDetail.groupBy({
+            by: ['material_title'],
+            where: { status: 'draft', deletedAt: null },
+            _max: { createdAt: true },
+            orderBy: {
+                _max: {
+                    createdAt: 'desc',
+                },
+            },
+        }),
+    ]);
+
     const [activeFiles, draftFiles] = await Promise.all([
         prisma.materialFileDetail.findMany({
-            where: whereCondition,
+            where: {
+                OR: activeGroup
+                    .filter(g => g._max.createdAt !== null)
+                    .map(g => ({
+                        material_title: g.material_title,
+                        createdAt: g._max.createdAt as Date,
+                    })),
+            },
             select: {
                 id: true,
                 material_title: true,
@@ -131,12 +190,19 @@ export const getPDFMaterialFileListService = async ({
                 createdAt: true,
                 status: true,
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: { createdAt: 'desc' },
             skip,
             take: perPage,
         }),
         prisma.materialFileDetail.findMany({
-            where: { status: "draft", deletedAt: null },
+            where: {
+                OR: draftGroup
+                    .filter(g => g._max.createdAt !== null)
+                    .map(g => ({
+                        material_title: g.material_title,
+                        createdAt: g._max.createdAt as Date,
+                    })),
+            },
             select: {
                 id: true,
                 material_title: true,
@@ -145,40 +211,50 @@ export const getPDFMaterialFileListService = async ({
                 createdAt: true,
                 status: true,
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: { createdAt: 'desc' },
         }),
     ]);
 
     const allFiles = [...activeFiles, ...draftFiles];
 
     const resolvedFiles = await Promise.allSettled(
-        allFiles.map(async (file) => {
-            const { FileSize } = await extractS3BucketAndKeySize({
-                fileUrl: file.material_file_url,
-            });
+  allFiles.map(async (file) => {
+    const { FileSize } = await extractS3BucketAndKeySize({
+      fileUrl: file.material_file_url,
+    });
 
-            const batch = await prisma.batchDetail.findFirst({
-                where: {
-                    id: file.batch_id ?? undefined,
-                },
-                select: {
-                    id: true,
-                    batchName: true,
-                },
-            });
+    // Fetch all batches for this material title
+    const batches = await prisma.materialFileDetail.findMany({
+      where: { material_title: file.material_title },
+      select: {
+        batch_detail_relation: {  // Assuming you have a relation named 'batchDetail' to get batch info
+          select: {
+            batchName: true,
+          },
+        },
+      },
+    });
 
-            return {
-                material_file_id: file.id,
-                material_file_name: file.material_title,
-                material_file_url: file.material_file_url,
-                material_file_size: FileSize,
-                batch_id: file.batch_id,
-                batch_name: batch?.batchName ?? "Unknown",
-                createdAt: formatDateTime(file.createdAt),
-                status: file.status,
-            };
-        })
-    );
+    // Extract batch names and join with comma
+    const batchNames = batches
+      .map(b => b.batch_detail_relation?.batchName)
+      .filter(Boolean) // remove null/undefined
+      .filter((v, i, a) => a.indexOf(v) === i) // unique names
+      .join(', ');
+
+    return {
+      material_file_id: file.id,
+      material_file_name: file.material_title,
+      material_file_url: file.material_file_url,
+      material_file_size: FileSize,
+      batch_id: file.batch_id,
+      batch_name: batchNames || 'Unknown',  // multiple batch names comma-separated
+      createdAt: formatDateTime(file.createdAt),
+      status: file.status,
+    };
+  })
+);
+
 
     const material_files: PDFMaterialFile[] = resolvedFiles
         .filter((res) => res.status === "fulfilled")

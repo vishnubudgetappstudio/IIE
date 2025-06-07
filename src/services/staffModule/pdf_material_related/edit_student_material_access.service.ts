@@ -40,6 +40,7 @@ export const EditStudentMaterialFileAccessService = async ({
             material_title: true,
             material_file_url: true,
             status: true,
+            staff_id: true,
         },
     });
 
@@ -69,24 +70,24 @@ export const EditStudentMaterialFileAccessService = async ({
     // ✅ Step 3: Validate Batch & Students
     const normalizedStudentIds = (studentIds ?? []).flatMap(id => id.split(',').map(s => s.trim()));
 
-// Normalize batch IDs
-const batchIdArray = batchId?.split(",").map(id => id.trim()).filter(Boolean);
+    // Normalize batch IDs
+    // const batchIdArray = batchId?.split(",").map(id => id.trim()).filter(Boolean);
 
-console.log("Normalized batchId array:", batchIdArray);
+    // console.log("Normalized batchId array:", batchIdArray);
 
-const validStudents = await prisma.batchWithStudent.findMany({
-    where: {
-        batch_id: { in: batchIdArray },
-        deletedAt: null,
-    },
-    select: { student_id: true },
-});
+    const validStudents = await prisma.batchWithStudent.findMany({
+        where: {
+            batch_id: batchId ?? '',
+            deletedAt: null,
+        },
+        select: { student_id: true },
+    });
 
-console.log("Valid Students:", validStudents);
+    console.log("Valid Students:", validStudents);
 
-if (!validStudents.length) {
-    throw new AppError({ statusCode: 404, message: "No valid students found in this batch." });
-}
+    // if (!validStudents.length) {
+    //     throw new AppError({ statusCode: 404, message: "No valid students found in this batch." });
+    // }
 
 
     // ✅ Step 4: Upload New File If Provided
@@ -113,26 +114,67 @@ if (!validStudents.length) {
         access_granted: true,
     }));
 
-    const batchIdString = Array.isArray(batchId)
-    ? batchId.join(",")
-    : batchId || null;
+    // const batchIdString = Array.isArray(batchId)
+    //     ? batchId.join(",")
+    //     : batchId || null;
 
-await prisma.$transaction([
-    prisma.studentMaterialAccess.createMany({
-        data: assignedStudents,
-        skipDuplicates: true,
-    }),
-    prisma.materialFileDetail.update({
-        where: { id: material_id },
-        data: {
-            material_title: material_title ?? existMaterial.material_title,
-            batch_id: batchIdString,
-            status: "published",
-            material_file_url: fileUrl,
-            updatedAt: new Date(),
-        },
-    }),
-]);
+    const existingMaterial = await prisma.materialFileDetail.findFirst({
+        where: { id: material_id, deletedAt: null },
+        select: {
+            id: true,
+            material_file_url: true,
+            material_title: true,
+            batch_id: true,
+            staff_id: true
+        }
+    });
+
+    if (existingMaterial?.batch_id === batchId) {
+        // Case 1: Material already exists in the same batch
+        await prisma.$transaction([
+            prisma.studentMaterialAccess.createMany({
+                data: assignedStudents,
+                skipDuplicates: true,
+            }),
+            prisma.materialFileDetail.update({
+                where: { id: material_id },
+                data: {
+                    material_title: material_title ?? existingMaterial?.material_title ?? "",
+                    status: "published",
+                    material_file_url: fileUrl,
+                    updatedAt: new Date(),
+                },
+            }),
+        ]);
+    } else if (existingMaterial) {
+        // Case 2: Material exists but for a different batch – reassign it
+        await prisma.$transaction(async (tx) => {
+            const newMaterial = await tx.materialFileDetail.create({
+                data: {
+                    material_title: material_title ?? existingMaterial.material_title,
+                    batch_id: batchId,
+                    status: "published",
+                    material_file_url: existingMaterial.material_file_url,
+                    updatedAt: new Date(),
+                    staff_id: existingMaterial.staff_id,
+                },
+            });
+
+            await tx.studentMaterialAccess.createMany({
+                data: validStudents.map(({ student_id }) => ({
+                    student_id,
+                    material_id: newMaterial.id,
+                    access_granted: true,
+                })),
+            });
+
+            await tx.studentMaterialAccess.createMany({
+                data: assignedStudents,
+                skipDuplicates: true,
+            });
+        });
+    }
+
 
     // ✅ Step 6: Send notifications
     try {
