@@ -6,15 +6,16 @@ import csv from "csv-parser";
 import { Readable } from "stream";
 
 export const getAllBatchesListService = async ({
-    limit, page, slot, search
+    limit, page, slot, search, userId
 }: {
     page: number,
     limit: number,
     slot: "all" | BatchSlotsType,
-    search: string | null
+    search: string | null,
+    userId?: string, // Optional userId for future use
 }) => {
     // Apply default values if page or limit is undefined
-    const currentPage = page && page > 0 ? page : 1;
+    const currentPage = page && page > 0 ? page : 1; 
     const perPage = limit && limit > 0 ? limit : 10;
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
@@ -22,6 +23,7 @@ export const getAllBatchesListService = async ({
     // Shared where condition
     const whereCondition = {
         deletedAt: null,
+        mentor_id: userId,
         ...(slot !== "all" && { slot }),
         ...(search && {
             OR: [

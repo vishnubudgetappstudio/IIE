@@ -10,6 +10,7 @@ export const getAllBatchesListController = async (
 ) => {
     try {
         // Extract query params
+        const userId = (req.user as { userId: string }).userId;
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const slot = req.query.slot as BatchSlotsType || 'all';
@@ -21,6 +22,7 @@ export const getAllBatchesListController = async (
             limit,
             slot,
             search,
+            userId
         });
 
         res.status(200).json({
