@@ -121,6 +121,11 @@ export const createCourseTestService = async ({
         }
     }
 
+    questions = questions?.map(q => ({
+        ...q,
+        options: q.options.filter(opt => opt && opt.trim() !== ''),
+    }));
+
     // Step 6: Create Course Test (with extracted questions stored as JSON)
     const courseTest = await prisma.test_Course.create({
         data: {
