@@ -6,13 +6,14 @@ import csv from "csv-parser";
 import { Readable } from "stream";
 
 export const getAllBatchesListService = async ({
-    limit, page, slot, search, userId
+    limit, page, slot, search, userId, branch
 }: {
     page: number,
     limit: number,
     slot: "all" | BatchSlotsType,
     search: string | null,
     userId?: string, // Optional userId for future use
+    branch?: string, // Optional branch for future use
 }) => {
     // Apply default values if page or limit is undefined
     const currentPage = page && page > 0 ? page : 1; 
@@ -20,10 +21,22 @@ export const getAllBatchesListService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
+    const staffIds = await prisma.managementStaff.findMany({
+        where: {
+            branch: branch || undefined, // Use branch if provided
+            deletedAt: null,
+        },
+        select: {
+            id: true,
+        },
+    });
+
+    const staffIdList = staffIds.map((staff) => staff.id);
+
     // Shared where condition
     const whereCondition = {
         deletedAt: null,
-        mentor_id: userId,
+        // mentor_id: userId,
         ...(slot !== "all" && { slot }),
         ...(search && {
             OR: [
@@ -38,6 +51,9 @@ export const getAllBatchesListService = async ({
                 },
             ],
         }),
+        mentor_id: {
+            in: staffIdList,
+        },
     };
 
     // Fetch batches
