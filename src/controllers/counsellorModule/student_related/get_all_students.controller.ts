@@ -13,6 +13,7 @@ import { getAllStudentsListService } from "../../../services/counsellorModule/st
 
 export const getAllStudentsController = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+        const branch = (req.user as { branch: string }).branch;
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const batchId = req.query.batch_id as string || undefined;
@@ -27,6 +28,7 @@ export const getAllStudentsController = async (req: AuthRequest, res: Response, 
             limit,
             search,
             batchId,
+            branch,
         });
 
         // Return the all students list

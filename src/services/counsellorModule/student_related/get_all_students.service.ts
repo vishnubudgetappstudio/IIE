@@ -14,12 +14,14 @@ export const getAllStudentsListService = async ({
     page,
     limit,
     search,
-    batchId
+    batchId,
+    branch,
 }: {
     page: number;
     limit: number;
     search?: string;
     batchId?: string;
+    branch?: string; // Optional userId for future use
 }) => {
     // Apply default values if page or limit is undefined
     const currentPage = page && page > 0 ? page : 1;
@@ -43,6 +45,7 @@ export const getAllStudentsListService = async ({
     // 🔍 Define search conditions
     const searchCondition = {
         deletedAt: null,
+        Branch: branch, // Use branch if provided
         ...(search && { name: { startsWith: searchTerm } }), // Search by name
         ...(batchId && {
             batchWithStudentModel: {
