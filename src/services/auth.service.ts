@@ -79,6 +79,16 @@ export const loginService = async (
           message: "Unauthorized: Invalid Email Address."
         });
       }
+
+      const isCounsellorPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isCounsellorPasswordValid) {
+        throw new AppError({
+          statusCode: 401,
+          data: {},
+          message: "Unauthorized: Invalid Password."
+        });
+      }
+
       if (user.is_login === 1) {
         throw new AppError({
           statusCode: 409,
@@ -105,6 +115,15 @@ export const loginService = async (
           statusCode: 401,
           data: {},
           message: "Unauthorized: Invalid Email Address."
+        });
+      }
+
+      const isStaffPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isStaffPasswordValid) {
+        throw new AppError({
+          statusCode: 401,
+          data: {},
+          message: "Unauthorized: Invalid Password."
         });
       }
       console.log("user.is_login", user.is_login);
@@ -142,6 +161,15 @@ export const loginService = async (
           message: "You are already logged in on another device.",
         });
       }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        throw new AppError({
+          statusCode: 401,
+          data: {},
+          message: "Unauthorized: Invalid Password."
+        });
+      }
       //update FcmToken for student user
       await prisma.student.update({
         where: { id: user.id },
@@ -152,14 +180,14 @@ export const loginService = async (
   }
 
   // Validate Password securely
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new AppError({
-      statusCode: 401,
-      data: {},
-      message: "Unauthorized: Invalid Password."
-    });
-  }
+  // const isPasswordValid = await bcrypt.compare(password, user.password);
+  // if (!isPasswordValid) {
+  //   throw new AppError({
+  //     statusCode: 401,
+  //     data: {},
+  //     message: "Unauthorized: Invalid Password."
+  //   });
+  // }
 
   // Ensure JWT Secret is available
   const jwtSecret = process.env.JWT_SECRET;
