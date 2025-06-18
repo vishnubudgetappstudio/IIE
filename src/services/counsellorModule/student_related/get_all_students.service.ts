@@ -84,11 +84,15 @@ export const getAllStudentsListService = async ({
     const studentsData = await Promise.all(
         students.map(async (student) => {
             if (batchId) {
+                console.log("Fetching attendance stats for student:", student.id);
                 attendanceStats = await getStudentAttendanceStats({
                     batchId: batchId as string,
                     studentId: student.id as string,
                 });
+            }else{
+                console.log("Fetching failed attendance stats for student:", student.id);
             }
+
 
             let isBatch = 0;
             const batchCheck = await prisma.batchWithStudent.findFirst({
