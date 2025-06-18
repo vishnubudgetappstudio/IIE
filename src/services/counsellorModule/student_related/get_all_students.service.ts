@@ -1,6 +1,7 @@
 import { prisma } from "../../../config/database";
 import { AppError } from "../../../utils/errorHandler";
 import { getStudentAttendanceStats } from "../../staffModule/attendance_related/get_student_attendance_stats.service";
+import { getAllStudentAttendanceStats } from "../../staffModule/attendance_related/get_student_attendance_stats.service";
 
 /**
  * ✅ Fetch batch students with pagination and search query
@@ -91,15 +92,8 @@ export const getAllStudentsListService = async ({
                 });
             }else{
                 console.log("Fetching attendance stats for student:", student.id);
-                let batchWithStudent = await prisma.batchWithStudent.findFirst({
-                    where: {
-                        student_id: student.id,
-                        deletedAt: null
-                    },
-                });
-                attendanceStats = await getStudentAttendanceStats({
+                attendanceStats = await getAllStudentAttendanceStats({
                     studentId: student.id as string,
-                    batchId: batchWithStudent?.batch_id as string,
                 });
             }
 
