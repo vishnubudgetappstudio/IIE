@@ -129,16 +129,16 @@ export const getAllStudentAttendanceStats = async ({ studentId }: { studentId: s
         last_month_present: bigint | null; last_month_total: bigint | null;
     }[]>`
             SELECT 
-                SUM(is_present = true) AS all_present,
+                SUM(is_present = 1) AS all_present,
                 COUNT(*) AS all_total,
 
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN is_present = true END) AS week_present,
+                SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN is_present = 1 END) AS week_present,
                 SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN 1 END) AS week_total,
 
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN is_present = true END) AS month_present,
+                SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN is_present = 1 END) AS month_present,
                 SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN 1 END) AS month_total,
 
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN is_present = true END) AS last_month_present,
+                SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN is_present = 1 END) AS last_month_present,
                 SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 END) AS last_month_total
             FROM student_attendance 
             WHERE student_id = ${studentId} AND attendance_date >= ${joiningDate} 
