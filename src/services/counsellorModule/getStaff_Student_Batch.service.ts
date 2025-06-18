@@ -19,7 +19,7 @@ export const getStaff_Student_BatchService = async (search: string, branch: stri
       // });
       const students = await prisma.student.findMany({
         orderBy: { createdAt: "desc" },
-        where: { deletedAt: null },
+        where: { deletedAt: null, Branch: branch },
         select: {
           id: true,
           name: true,
