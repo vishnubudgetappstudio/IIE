@@ -90,7 +90,17 @@ export const getAllStudentsListService = async ({
                     studentId: student.id as string,
                 });
             }else{
-                console.log("Fetching failed attendance stats for student:", student.id);
+                console.log("Fetching attendance stats for student:", student.id);
+                let batchWithStudent = await prisma.batchWithStudent.findFirst({
+                    where: {
+                        student_id: student.id,
+                        deletedAt: null
+                    },
+                });
+                attendanceStats = await getStudentAttendanceStats({
+                    studentId: student.id as string,
+                    batchId: batchWithStudent?.batch_id as string,
+                });
             }
 
 
