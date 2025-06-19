@@ -122,28 +122,52 @@ export const getAllStudentAttendanceStats = async ({ studentId }: { studentId: s
     const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0); // Last day of last month
 
     // 🔥 Optimized Raw Query (Single Query for All Stats)
+    // const [result] = await prisma.$queryRaw<{
+    //     all_present: bigint; all_total: bigint;
+    //     week_present: bigint; week_total: bigint;
+    //     month_present: bigint; month_total: bigint;
+    //     last_month_present: bigint | null; last_month_total: bigint | null;
+    // }[]>`
+    //         SELECT 
+    //             SUM(is_present = 1) AS all_present,
+    //             COUNT(*) AS all_total,
+
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN is_present = 1 END) AS week_present,
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN 1 END) AS week_total,
+
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN is_present = 1 END) AS month_present,
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN 1 END) AS month_total,
+
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN is_present = 1 END) AS last_month_present,
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 END) AS last_month_total
+    //         FROM student_attendance 
+    //         WHERE student_id = ${studentId} AND attendance_date >= ${joiningDate} 
+    //         AND WEEKDAY(attendance_date) < 6;
+    //     `;
+
     const [result] = await prisma.$queryRaw<{
         all_present: bigint; all_total: bigint;
         week_present: bigint; week_total: bigint;
         month_present: bigint; month_total: bigint;
         last_month_present: bigint | null; last_month_total: bigint | null;
     }[]>`
-            SELECT 
-                SUM(is_present = 1) AS all_present,
-                COUNT(*) AS all_total,
+    SELECT 
+        SUM(CASE WHEN is_present = 1 THEN 1 ELSE 0 END) AS all_present,
+        COUNT(*) AS all_total,
 
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN is_present = 1 END) AS week_present,
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN 1 END) AS week_total,
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} AND is_present = 1 THEN 1 ELSE 0 END) AS week_present,
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN 1 ELSE 0 END) AS week_total,
 
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN is_present = 1 END) AS month_present,
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN 1 END) AS month_total,
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} AND is_present = 1 THEN 1 ELSE 0 END) AS month_present,
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN 1 ELSE 0 END) AS month_total,
 
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN is_present = 1 END) AS last_month_present,
-                SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 END) AS last_month_total
-            FROM student_attendance 
-            WHERE student_id = ${studentId} AND attendance_date >= ${joiningDate} 
-            AND WEEKDAY(attendance_date) < 6;
-        `;
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} AND is_present = 1 THEN 1 ELSE 0 END) AS last_month_present,
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 ELSE 0 END) AS last_month_total
+    FROM student_attendance 
+    WHERE student_id = ${studentId} AND attendance_date >= ${joiningDate} 
+    AND WEEKDAY(attendance_date) < 6;
+`;
+
 
     // ✅ Function to Calculate Attendance Percentages
     const formatAttendance = (present: bigint | null, total: bigint | null) => {
@@ -254,7 +278,7 @@ export const getStaffAttendanceService = async ({ staffId }: { staffId: string }
         approved: leave.status === 'Approved',
     }));
 
-  
+
 
     const finalResult: StaffAttendanceResponse = {
         id: staff.id,
@@ -269,12 +293,12 @@ export const getStaffAttendanceService = async ({ staffId }: { staffId: string }
 
     return finalResult;
 };
-  function formatDateToDDMMYYYY(date: Date): string {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-        const year = date.getFullYear();
-        return `${day}-${month}-${year}`;
-    }
+function formatDateToDDMMYYYY(date: Date): string {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+}
 
 function calculateAttendancePercentage({ present, total }: { present: bigint; total: bigint }): AttendancePercentages {
     const presentCount = Number(present || 0);
