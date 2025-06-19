@@ -205,28 +205,27 @@ export const getAllStudentAttendanceStats = async ({ studentId }: { studentId: s
     }
 
     const joiningDate = new Date(batchStudent.createdAt);
+
+    // ✅ Normalize all dates to YYYY-MM-DD string format (MySQL-friendly)
+    const toDateString = (date: Date) => date.toISOString().split("T")[0];
+
     const today = new Date();
+    const formattedToday = toDateString(today);
 
-    // ✅ Utility to normalize all date comparisons to 00:00:00
-    const toStartOfDay = (date: Date) => {
+    // ✅ Get Monday of current week
+    const getStartOfWeek = (date: Date): string => {
         const d = new Date(date);
-        d.setHours(0, 0, 0, 0);
-        return d;
-    };
-
-    const getStartOfWeek = (date: Date): Date => {
-        const d = new Date(date);
-        const day = d.getDay(); // Sunday = 0, Monday = 1, ...
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+        const day = d.getDay(); // Sunday = 0
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust to Monday
         d.setDate(diff);
-        return toStartOfDay(d);
+        return toDateString(d);
     };
 
-    const formattedToday = toStartOfDay(today);
-    const startOfWeek = getStartOfWeek(formattedToday);
-    const startOfMonth = toStartOfDay(new Date(formattedToday.getFullYear(), formattedToday.getMonth(), 1));
-    const startOfLastMonth = toStartOfDay(new Date(formattedToday.getFullYear(), formattedToday.getMonth() - 1, 1));
-    const endOfLastMonth = toStartOfDay(new Date(formattedToday.getFullYear(), formattedToday.getMonth(), 0));
+    const startOfWeek = getStartOfWeek(today);
+    const startOfMonth = toDateString(new Date(today.getFullYear(), today.getMonth(), 1));
+    const startOfLastMonth = toDateString(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+    const endOfLastMonth = toDateString(new Date(today.getFullYear(), today.getMonth(), 0));
+    const joiningDateStr = toDateString(joiningDate);
 
     const [result] = await prisma.$queryRaw<
         {
@@ -244,17 +243,17 @@ export const getAllStudentAttendanceStats = async ({ studentId }: { studentId: s
             SUM(CASE WHEN is_present = 1 THEN 1 ELSE 0 END) AS all_present,
             COUNT(*) AS all_total,
 
-            SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${formattedToday} AND is_present = 1 THEN 1 ELSE 0 END) AS week_present,
-            SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${formattedToday} THEN 1 ELSE 0 END) AS week_total,
+            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfWeek} AND ${formattedToday} AND is_present = 1 THEN 1 ELSE 0 END) AS week_present,
+            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfWeek} AND ${formattedToday} THEN 1 ELSE 0 END) AS week_total,
 
-            SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${formattedToday} AND is_present = 1 THEN 1 ELSE 0 END) AS month_present,
-            SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${formattedToday} THEN 1 ELSE 0 END) AS month_total,
+            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfMonth} AND ${formattedToday} AND is_present = 1 THEN 1 ELSE 0 END) AS month_present,
+            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfMonth} AND ${formattedToday} THEN 1 ELSE 0 END) AS month_total,
 
-            SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} AND is_present = 1 THEN 1 ELSE 0 END) AS last_month_present,
-            SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 ELSE 0 END) AS last_month_total
+            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} AND is_present = 1 THEN 1 ELSE 0 END) AS last_month_present,
+            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 ELSE 0 END) AS last_month_total
         FROM student_attendance 
         WHERE student_id = ${studentId} 
-        AND attendance_date >= ${joiningDate} 
+        AND DATE(attendance_date) >= ${joiningDateStr}
         AND WEEKDAY(attendance_date) < 6;
     `;
 
