@@ -4,6 +4,7 @@ import { NextFunction, Response } from "express";
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import { AppError } from "../../utils/errorHandler";
 import { SessionSheetStatus } from '@prisma/client';
+import admin from '../../config/firebase';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,60 @@ export const raiseHaveADoubt = async (
     console.log("studentId", studentId, "sessionId", sessionId);
 
     const newStatus: SessionSheetStatus = req.body.status === "Have doubt" ? SessionSheetStatus.HaveDoubt : SessionSheetStatus.Completed;
+
+    const batchId = await prisma.batchWithStudent.findFirst({
+      where: { student_id: studentId },
+      select: { batch_id: true },
+    });
+
+    const mentorId = await prisma.batchDetail.findFirst({
+      where: { id: batchId?.batch_id },
+      select: { mentor_id: true },
+    });
+
+    const mentor = await prisma.managementStaff.findFirst({
+      where: { id: mentorId?.mentor_id },
+      select: { fcm_token: true },
+    });
+
+    const fcmToken = mentor?.fcm_token;
+
+      const message = {
+          notification: {
+              title: 'Session Update',
+              body: `A student has submitted a session update.`,
+          },
+          token: fcmToken as string,
+      };
+
+      await prisma.notificationRecipient.create({
+        data: {
+          title: message.notification.title,
+          description: message.notification.body,
+          receiverRole: 'staff',
+          type: 'message',
+          isRead: false,
+          status: 'Sent',
+          managementStaffId: mentorId?.mentor_id,
+        },
+      });
+  
+      if (!mentor || !mentor.fcm_token) {
+          throw new AppError({
+              statusCode: 404,
+              message: "Mentor FCM token not found",
+              data: {},
+          });
+      }
+
+  
+      // 4. Send push notification to the mentor
+      
+
+      await admin.messaging().send({
+        notification: message.notification,
+        token: mentor.fcm_token,
+      });
 
     const result = await prisma.sessionSheetStudentReportDetail.updateMany({
       where: { student_id: studentId, session_sheet_id: sessionId },
