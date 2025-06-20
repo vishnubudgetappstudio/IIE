@@ -70,10 +70,14 @@ export const raiseHaveADoubt = async (
       // 4. Send push notification to the mentor
       
 
-      await admin.messaging().send({
-        notification: message.notification,
-        token: mentor.fcm_token,
-      });
+      try {
+        await admin.messaging().send({
+          notification: message.notification,
+          token: mentor.fcm_token,
+        });
+      } catch (err) {
+        console.error('FCM push failed:', err);
+      }
 
     const result = await prisma.sessionSheetStudentReportDetail.updateMany({
       where: { student_id: studentId, session_sheet_id: sessionId },
