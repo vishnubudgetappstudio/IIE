@@ -116,9 +116,9 @@ export const getStudentAttendanceService = async ({
             ...leave,
             from_date: formatDateToDDMMYYYY(leave.from_date),
             to_date: formatDateToDDMMYYYY(leave.to_date),
-            applied: leave.status !== 'Approved' ? true : false,
-            review: leave.status !== 'Approved' ? false : true,
-            approved: leave.status !== 'Approved' ? false : true,
+            applied: leave.status === 'Pending' ? true : false,
+            review: leave.status === 'Rejected' ? true : false,
+            approved: leave.status === 'Approved' ? true : false,
         }
 
     })

@@ -88,185 +88,96 @@ export const getStudentAttendanceStats = async ({ batchId, studentId }: { batchI
     };
 };
 
-// export const getAllStudentAttendanceStats = async ({ studentId }: { studentId: string }) => {
-//     // ✅ Step 1: Validate batch existence in one query
-
-//     // ✅ Step 2: Validate batch - student existence in one query
-//     const batchStudent = await prisma.batchWithStudent.findFirst({
-//         where: {
-//             student_id: studentId,
-//             deletedAt: null,
-//         },
-//         select: { createdAt: true } // Fetching only the joining date
-//     });
-
-//     if (!batchStudent) {
-//         // throw new AppError({ statusCode: 404, message: "Student not found any batch", data: {} });
-//         return {
-//             overAll: 0,
-//             weekly: 0,
-//             thisMonth: 0,
-//             lastMonth: 0,
-//         };
-//     }
-
-//     const joiningDate = batchStudent.createdAt;
-//     const today = new Date();
-
-//     // 🗓️ Date Ranges for Attendance Calculation
-//     const startOfWeek = new Date(today);
-//     startOfWeek.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1)); // Monday start
-
-//     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-//     const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-//     const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0); // Last day of last month
-
-//     // 🔥 Optimized Raw Query (Single Query for All Stats)
-//     // const [result] = await prisma.$queryRaw<{
-//     //     all_present: bigint; all_total: bigint;
-//     //     week_present: bigint; week_total: bigint;
-//     //     month_present: bigint; month_total: bigint;
-//     //     last_month_present: bigint | null; last_month_total: bigint | null;
-//     // }[]>`
-//     //         SELECT 
-//     //             SUM(is_present = 1) AS all_present,
-//     //             COUNT(*) AS all_total,
-
-//     //             SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN is_present = 1 END) AS week_present,
-//     //             SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN 1 END) AS week_total,
-
-//     //             SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN is_present = 1 END) AS month_present,
-//     //             SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN 1 END) AS month_total,
-
-//     //             SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN is_present = 1 END) AS last_month_present,
-//     //             SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 END) AS last_month_total
-//     //         FROM student_attendance 
-//     //         WHERE student_id = ${studentId} AND attendance_date >= ${joiningDate} 
-//     //         AND WEEKDAY(attendance_date) < 6;
-//     //     `;
-
-//     const [result] = await prisma.$queryRaw<{
-//         all_present: bigint; all_total: bigint;
-//         week_present: bigint; week_total: bigint;
-//         month_present: bigint; month_total: bigint;
-//         last_month_present: bigint | null; last_month_total: bigint | null;
-//     }[]>`
-//     SELECT 
-//         SUM(CASE WHEN is_present = true THEN 1 ELSE 0 END) AS all_present,
-//         COUNT(*) AS all_total,
-
-//         SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} AND is_present = true THEN 1 ELSE 0 END) AS week_present,
-//         SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN 1 ELSE 0 END) AS week_total,
-
-//         SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} AND is_present = true THEN 1 ELSE 0 END) AS month_present,
-//         SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN 1 ELSE 0 END) AS month_total,
-
-//         SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} AND is_present = true THEN 1 ELSE 0 END) AS last_month_present,
-//         SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 ELSE 0 END) AS last_month_total
-//     FROM student_attendance 
-//     WHERE student_id = ${studentId} AND attendance_date >= ${joiningDate} 
-//     AND WEEKDAY(attendance_date) < 6;
-// `;
-
-
-//     // ✅ Function to Calculate Attendance Percentages
-//     const formatAttendance = (present: bigint | null, total: bigint | null) => {
-//         const presentCount = Number(present || 0);
-//         const totalCount = Number(total || 0);
-//         const presentPercentage = totalCount ? parseFloat(((presentCount / totalCount) * 100).toFixed(2)) : 0;
-//         return { presentPercentage, absentPercentage: 100 - presentPercentage };
-//     };
-
-//     // 🎯 Return Optimized Attendance Stats
-//     return {
-//         overAll: formatAttendance(result.all_present, result.all_total),
-//         weekly: formatAttendance(result.week_present, result.week_total),
-//         thisMonth: formatAttendance(result.month_present, result.month_total),
-//         lastMonth: formatAttendance(result.last_month_present, result.last_month_total),
-//     };
-// };
-
 export const getAllStudentAttendanceStats = async ({ studentId }: { studentId: string }) => {
+    // ✅ Step 1: Validate batch existence in one query
+
+    // ✅ Step 2: Validate batch - student existence in one query
     const batchStudent = await prisma.batchWithStudent.findFirst({
         where: {
             student_id: studentId,
             deletedAt: null,
         },
-        select: { createdAt: true }
+        select: { createdAt: true } // Fetching only the joining date
     });
 
     if (!batchStudent) {
+        // throw new AppError({ statusCode: 404, message: "Student not found any batch", data: {} });
         return {
-            overAll: { presentPercentage: 0, absentPercentage: 100 },
-            weekly: { presentPercentage: 0, absentPercentage: 100 },
-            thisMonth: { presentPercentage: 0, absentPercentage: 100 },
-            lastMonth: { presentPercentage: 0, absentPercentage: 100 },
+            overAll: 0,
+            weekly: 0,
+            thisMonth: 0,
+            lastMonth: 0,
         };
     }
 
-    const joiningDate = new Date(batchStudent.createdAt);
-
-    // ✅ Normalize all dates to YYYY-MM-DD string format (MySQL-friendly)
-    const toDateString = (date: Date) => date.toISOString().split("T")[0];
-
+    const joiningDate = batchStudent.createdAt;
     const today = new Date();
-    const formattedToday = toDateString(today);
 
-    // ✅ Get Monday of current week
-    const getStartOfWeek = (date: Date): string => {
-        const d = new Date(date);
-        const day = d.getDay(); // Sunday = 0
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust to Monday
-        d.setDate(diff);
-        return toDateString(d);
-    };
+    // 🗓️ Date Ranges for Attendance Calculation
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1)); // Monday start
 
-    const startOfWeek = getStartOfWeek(today);
-    const startOfMonth = toDateString(new Date(today.getFullYear(), today.getMonth(), 1));
-    const startOfLastMonth = toDateString(new Date(today.getFullYear(), today.getMonth() - 1, 1));
-    const endOfLastMonth = toDateString(new Date(today.getFullYear(), today.getMonth(), 0));
-    const joiningDateStr = toDateString(joiningDate);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0); // Last day of last month
 
-    const [result] = await prisma.$queryRaw<
-        {
-            all_present: bigint;
-            all_total: bigint;
-            week_present: bigint;
-            week_total: bigint;
-            month_present: bigint;
-            month_total: bigint;
-            last_month_present: bigint | null;
-            last_month_total: bigint | null;
-        }[]
-    >`
-        SELECT 
-            SUM(CASE WHEN is_present = 1 THEN 1 ELSE 0 END) AS all_present,
-            COUNT(*) AS all_total,
+    // 🔥 Optimized Raw Query (Single Query for All Stats)
+    // const [result] = await prisma.$queryRaw<{
+    //     all_present: bigint; all_total: bigint;
+    //     week_present: bigint; week_total: bigint;
+    //     month_present: bigint; month_total: bigint;
+    //     last_month_present: bigint | null; last_month_total: bigint | null;
+    // }[]>`
+    //         SELECT 
+    //             SUM(is_present = 1) AS all_present,
+    //             COUNT(*) AS all_total,
 
-            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfWeek} AND ${formattedToday} AND is_present = 1 THEN 1 ELSE 0 END) AS week_present,
-            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfWeek} AND ${formattedToday} THEN 1 ELSE 0 END) AS week_total,
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN is_present = 1 END) AS week_present,
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN 1 END) AS week_total,
 
-            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfMonth} AND ${formattedToday} AND is_present = 1 THEN 1 ELSE 0 END) AS month_present,
-            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfMonth} AND ${formattedToday} THEN 1 ELSE 0 END) AS month_total,
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN is_present = 1 END) AS month_present,
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN 1 END) AS month_total,
 
-            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} AND is_present = 1 THEN 1 ELSE 0 END) AS last_month_present,
-            SUM(CASE WHEN DATE(attendance_date) BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 ELSE 0 END) AS last_month_total
-        FROM student_attendance 
-        WHERE student_id = ${studentId} 
-        AND DATE(attendance_date) >= ${joiningDateStr}
-        AND WEEKDAY(attendance_date) < 6;
-    `;
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN is_present = 1 END) AS last_month_present,
+    //             SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 END) AS last_month_total
+    //         FROM student_attendance 
+    //         WHERE student_id = ${studentId} AND attendance_date >= ${joiningDate} 
+    //         AND WEEKDAY(attendance_date) < 6;
+    //     `;
 
+    const [result] = await prisma.$queryRaw<{
+        all_present: bigint; all_total: bigint;
+        week_present: bigint; week_total: bigint;
+        month_present: bigint; month_total: bigint;
+        last_month_present: bigint | null; last_month_total: bigint | null;
+    }[]>`
+    SELECT 
+        SUM(CASE WHEN is_present = true THEN 1 ELSE 0 END) AS all_present,
+        COUNT(*) AS all_total,
+
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} AND is_present = true THEN 1 ELSE 0 END) AS week_present,
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfWeek} AND ${today} THEN 1 ELSE 0 END) AS week_total,
+
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} AND is_present = true THEN 1 ELSE 0 END) AS month_present,
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfMonth} AND ${today} THEN 1 ELSE 0 END) AS month_total,
+
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} AND is_present = true THEN 1 ELSE 0 END) AS last_month_present,
+        SUM(CASE WHEN attendance_date BETWEEN ${startOfLastMonth} AND ${endOfLastMonth} THEN 1 ELSE 0 END) AS last_month_total
+    FROM student_attendance 
+    WHERE student_id = ${studentId} AND attendance_date >= ${joiningDate} 
+    AND WEEKDAY(attendance_date) < 6;
+`;
+
+
+    // ✅ Function to Calculate Attendance Percentages
     const formatAttendance = (present: bigint | null, total: bigint | null) => {
         const presentCount = Number(present || 0);
         const totalCount = Number(total || 0);
         const presentPercentage = totalCount ? parseFloat(((presentCount / totalCount) * 100).toFixed(2)) : 0;
-        return {
-            presentPercentage,
-            absentPercentage: parseFloat((100 - presentPercentage).toFixed(2))
-        };
+        return { presentPercentage, absentPercentage: 100 - presentPercentage };
     };
 
+    // 🎯 Return Optimized Attendance Stats
     return {
         overAll: formatAttendance(result.all_present, result.all_total),
         weekly: formatAttendance(result.week_present, result.week_total),
@@ -274,6 +185,7 @@ export const getAllStudentAttendanceStats = async ({ studentId }: { studentId: s
         lastMonth: formatAttendance(result.last_month_present, result.last_month_total),
     };
 };
+
 interface AttendancePercentages {
     presentPercentage: number;
     absentPercentage: number;
@@ -361,9 +273,9 @@ export const getStaffAttendanceService = async ({ staffId }: { staffId: string }
         ...leave,
         from_date: formatDateToDDMMYYYY(leave.from_date),
         to_date: formatDateToDDMMYYYY(leave.to_date),
-        applied: leave.status !== 'Approved',
-        review: leave.status === 'Pending',
-        approved: leave.status === 'Approved',
+        applied: leave.status === 'Pending' ? true : false,
+        review: leave.status === 'Rejected' ? true : false,
+        approved: leave.status === 'Approved' ? true : false,
     }));
 
 
