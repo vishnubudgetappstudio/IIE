@@ -15,6 +15,7 @@ export const raiseHaveADoubt = async (
 ) => {
   try {
     const studentId = req.user?.userId as string;
+    const studnetName = req.user?.name as string;
     const sessionId = req.body.session_id as string;
     // Import the enum from Prisma client
     console.log("studentId", studentId, "sessionId", sessionId);
@@ -41,7 +42,7 @@ export const raiseHaveADoubt = async (
       const message = {
           notification: {
               title: 'Session Update',
-              body: `A student has submitted a session update.`,
+              body: `A ${studnetName} has update the session status to ${newStatus}.`,
           },
           token: fcmToken as string,
       };
