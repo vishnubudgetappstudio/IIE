@@ -114,6 +114,28 @@ export const getAllStudentsFromBatchService = async (
                 is_present = true;
             }
 
+            let courseTestCount = await prisma.test_Course_Or_Mock_With_Student.count({
+                where: {
+                    studentId: student.id,
+                    test_type: "course_test",
+                    deletedAt: null,
+                    status: "completed"
+                }
+            });
+
+            let courseTestCountStrAlt = String(courseTestCount) ?? "0";
+
+            let mockTestCount = await prisma.test_Course_Or_Mock_With_Student.count({
+                where: {
+                    studentId: student.id,
+                    test_type: "mock_test",
+                    deletedAt: null,
+                    status: "completed"
+                }
+            });
+
+            let mockTestCountStrAlt = String(mockTestCount) ?? "0";
+
             return {
                 id: student.id,
                 name: student.name,
@@ -121,6 +143,8 @@ export const getAllStudentsFromBatchService = async (
                 image: student.profile_img_url,
                 over_all_present: stats.overAll.presentPercentage,
                 is_present: is_present,
+                course_test: courseTestCountStrAlt,
+                mock_test: mockTestCountStrAlt,
             };
         })
     );
