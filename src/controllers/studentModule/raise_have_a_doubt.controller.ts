@@ -86,13 +86,16 @@ export const raiseHaveADoubt = async (
     });
     console.log("result", result.count);
 
-    const deleteNotificatioin = await prisma.notificationRecipient.deleteMany({
-      where: {
-        studentId: studentId,
-        session_id: sessionId,
-        type: "session_completed",
-      },
-    });
+    if(newStatus === SessionSheetStatus.Completed) {
+
+      const deleteNotificatioin = await prisma.notificationRecipient.deleteMany({
+        where: {
+          studentId: studentId,
+          session_id: sessionId,
+          type: "session_completed",
+        },
+      });
+    }
 
     if (result.count === 0) {
       res.status(404).json({ message: 'No rows updated for this student ID.' });
