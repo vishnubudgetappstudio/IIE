@@ -2,6 +2,7 @@ import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../middlewares/auth.middleware";
 import { PrismaClient } from '@prisma/client';
 import { AppError } from "../../utils/errorHandler"; // Adjust the path if AppError is located elsewhere
+import admin from '../../config/firebase';
 
 const prisma = new PrismaClient();
 
@@ -76,6 +77,15 @@ export const approveStudentLeaveController = async (
                   message: "Student FCM token not found",
                   data: {},
               });
+          }
+
+          try {
+            await admin.messaging().send({
+              notification: message.notification,
+              token: student.fcm_token,
+            });
+          } catch (err) {
+            console.error('FCM push failed:', err);
           }
 
 
