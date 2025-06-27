@@ -25,6 +25,7 @@ export const getAllBatchesListService = async ({
         where: {
             branch: branch || undefined, // Use branch if provided
             deletedAt: null,
+            role: "staff", // Assuming you want to filter by mentor role
         },
         select: {
             id: true,
@@ -36,7 +37,10 @@ export const getAllBatchesListService = async ({
     // Shared where condition
     const whereCondition = {
         deletedAt: null,
-        // mentor_id: userId,
+        mentor_id: userId,
+        OR: [
+            { management_staff_relation: { id: { in: staffIdList } } },
+        ],
         ...(slot !== "all" && { slot }),
         ...(search && {
             OR: [
@@ -51,9 +55,6 @@ export const getAllBatchesListService = async ({
                 },
             ],
         }),
-        mentor_id: {
-            in: staffIdList,
-        },
     };
 
     // Fetch batches
