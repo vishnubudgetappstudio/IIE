@@ -40,6 +40,11 @@ export const approveStudentLeaveController = async (
       },
     });
 
+    const updateNotification = await prisma.notificationRecipient.updateMany({
+      where: { leaveDetailId: leaveDetailId },
+      data: { type: "message", description: `Leave request updated.` },
+    });
+
     if (!statusUpdate.student_id) {
       res.status(400).json({ message: "Student ID is missing in leave detail." });
       return;
