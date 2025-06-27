@@ -58,7 +58,7 @@ export const staff_notificationListService = async ({
                 where: {
                     managementStaffId: staff_id,
                     receiverRole: role,
-                    isRead: false,
+                    // isRead: false,
                     status: 'Sent',
                 },
                 select: {
@@ -95,7 +95,7 @@ export const staff_notificationListService = async ({
                 where: {
                     managementStaffId: staff_id,
                     receiverRole: 'staff',
-                    isRead: false,
+                    // isRead: false,
                     status: 'Sent',
                     type: 'message',
                 },
@@ -137,7 +137,7 @@ export const staff_notificationListService = async ({
             where: {
                 managementStaffId: staff_id,
                 receiverRole: 'staff',
-                isRead: false,
+                // isRead: false,
                 status: 'Sent',
                 notification_relation: {
                     status: 'Sent',
