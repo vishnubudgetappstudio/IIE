@@ -53,7 +53,7 @@ export const approveStudentLeaveController = async (
 
     const updateNotification = await prisma.notificationRecipient.updateMany({
       where: { leaveDetailId: leaveDetailId },
-      data: { type: "message", description: `${student?.name}Leave request ${status}.` },
+      data: { type: "message", description: `${student?.name} Leave request ${status}.` },
     });
 
     const fcmToken = student?.fcm_token;
