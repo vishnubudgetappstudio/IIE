@@ -40,10 +40,7 @@ export const approveStudentLeaveController = async (
       },
     });
 
-    const updateNotification = await prisma.notificationRecipient.updateMany({
-      where: { leaveDetailId: leaveDetailId },
-      data: { type: "message", description: `Leave request updated.` },
-    });
+    
 
     if (!statusUpdate.student_id) {
       res.status(400).json({ message: "Student ID is missing in leave detail." });
@@ -52,6 +49,11 @@ export const approveStudentLeaveController = async (
     const student = await prisma.student.findUnique({
       where: { id: statusUpdate.student_id },
       select: { fcm_token: true, name: true },
+    });
+
+    const updateNotification = await prisma.notificationRecipient.updateMany({
+      where: { leaveDetailId: leaveDetailId },
+      data: { type: "message", description: `${student?.name}Leave request ${status}.` },
     });
 
     const fcmToken = student?.fcm_token;
