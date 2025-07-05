@@ -21,41 +21,98 @@ export const getAllBatchesListService = async ({
     const skip = (currentPage - 1) * perPage;
     const searchTerm = search?.trim();
 
-    const staffIds = await prisma.managementStaff.findMany({
-        where: {
-            branch: branch || undefined, // Use branch if provided
-            deletedAt: null,
-            role: "counsellor", // Assuming you want to filter by mentor role
-        },
-        select: {
-            id: true,
-        },
-    });
+    // const staffIds = await prisma.managementStaff.findMany({
+    //     where: {
+    //         branch: branch || undefined, // Use branch if provided
+    //         deletedAt: null,
+    //         role: "counsellor", // Assuming you want to filter by mentor role
+    //     },
+    //     select: {
+    //         id: true,
+    //     },
+    // });
 
-    const staffIdList = staffIds.map((staff) => staff.id);
+    // const staffIdList = staffIds.map((staff) => staff.id);
 
-    // Shared where condition
-    const whereCondition = {
-        deletedAt: null,
-        mentor_id: userId,
-        OR: [
-            { management_staff_relation: { id: { in: staffIdList } } },
-        ],
-        ...(slot !== "all" && { slot }),
-        ...(search && {
-            OR: [
-                { batch_number: { startsWith: searchTerm } },
-                { course: { startsWith: searchTerm } },
-                {
-                    management_staff_relation: {
-                        is: {
-                            name: { startsWith: searchTerm },
-                        }
-                    },
+    // // Shared where condition
+    // const whereCondition = {
+    //     deletedAt: null,
+    //     mentor_id: userId,
+    //     OR: [
+    //         { management_staff_relation: { id: { in: staffIdList } } },
+    //     ],
+    //     ...(slot !== "all" && { slot }),
+    //     ...(search && {
+    //         OR: [
+    //             { batch_number: { startsWith: searchTerm } },
+    //             { course: { startsWith: searchTerm } },
+    //             {
+    //                 management_staff_relation: {
+    //                     is: {
+    //                         name: { startsWith: searchTerm },
+    //                     }
+    //                 },
+    //             },
+    //         ],
+    //     }),
+    // };
+
+    const loginUser = await prisma.managementStaff.findFirst({
+            where: {
+                id: userId,
+                deletedAt: null,
+            },
+            select: {
+                role: true,
+                branch: true,
+            }
+        });
+
+        let mentorIdList: string[] = [];
+
+        if (loginUser?.role === "counsellor") {
+            // 2. Find staff in same branch
+            const staffList = await prisma.managementStaff.findMany({
+                where: {
+                    branch: loginUser.branch,
+                    role: "staff",
+                    deletedAt: null,
                 },
-            ],
-        }),
-    };
+                select: {
+                    id: true,
+                },
+            });
+
+            mentorIdList = staffList.map(staff => String(staff.id));
+
+        } else if (loginUser?.role === "staff") {
+            // 3. For staff, only use their own ID
+            if (userId !== undefined) {
+                mentorIdList = [String(userId)];
+            }
+        }
+
+        // 4. Build dynamic where condition
+        const whereCondition = {
+            deletedAt: null,
+            mentor_id: {
+                in: mentorIdList,
+            },
+            ...(slot !== "all" && { slot }),
+            ...(search && {
+                OR: [
+                    { batch_number: { startsWith: searchTerm } },
+                    { course: { startsWith: searchTerm } },
+                    {
+                        management_staff_relation: {
+                            is: {
+                                name: { startsWith: searchTerm },
+                            },
+                        },
+                    },
+                ],
+            }),
+        };
 
     // Fetch batches
     const batches = await prisma.batchDetail.findMany({
