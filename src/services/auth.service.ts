@@ -98,10 +98,14 @@ export const loginService = async (
       }
 
       //update FcmToken for counsellor user
-      await prisma.managementStaff.update({
-        where: { id: user.id },
-        data: { fcm_token, is_login : 1 },
-      });
+      try {
+        await prisma.managementStaff.update({
+          where: { id: user.id },
+          data: { fcm_token, is_login: 1 },
+        });
+      } catch (error) {
+        console.error("Update error:", error);
+      }
       break;
     case 'staff':
       // Find user in the database with selected fields (excluding unnecessary data)
@@ -135,10 +139,14 @@ export const loginService = async (
         });
       }
       //update FcmToken for staff user
-      await prisma.managementStaff.update({
-        where: { id: user.id },
-        data: { fcm_token, is_login : 1 },
-      });
+      try {
+        await prisma.managementStaff.update({
+          where: { id: user.id },
+          data: { fcm_token, is_login: 1 },
+        });
+      } catch (error) {
+        console.error("Update error:", error);
+      }
       break;
     default: // Code to execute if no cases match
       // Find user in the database with selected fields (excluding unnecessary data)
@@ -171,10 +179,18 @@ export const loginService = async (
         });
       }
       //update FcmToken for student user
-      await prisma.student.update({
-        where: { id: user.id },
-        data: { fcm_token, is_login: 1 },
-      });
+      // await prisma.student.update({
+      //   where: { id: user.id },
+      //   data: { fcm_token, is_login: 1 },
+      // });
+      try {
+        await prisma.student.update({
+          where: { id: user.id },
+          data: { fcm_token, is_login: 1 },
+        });
+      } catch (error) {
+        console.error("Update error:", error);
+      }
 
       user = { ...user, role: "student" };
   }
