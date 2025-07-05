@@ -6,7 +6,8 @@ import {
   signup,
   verifyOTPController,
   sendGuestOtp,
-  verifyGuestOtp
+  verifyGuestOtp,
+  logoutUser,
 } from "../controllers/auth.controller";
 import { upload } from "../middlewares/upload.middleware";
 
@@ -37,6 +38,10 @@ router.post("/guest/verify-otp", upload.none(), async (req, res, next) => {
   }
 });//router.post('/auth/guest/send-otp', sendGuestOtp);
 //router.post('/auth/guest/verify-otp', verifyGuestOtp);
+
+router.post("/logout", upload.none(), async (req, res, next) =>  {
+  await logoutUser(req,res);
+});
 
 
 export default router;

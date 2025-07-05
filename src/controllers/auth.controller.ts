@@ -6,6 +6,20 @@ import {
   resetPasswordManagementStaff,
   verifyOTPService,
 } from "../services/auth.service";
+import { UserRole } from "../types/common.type";
+import { AuthRequest } from '../middlewares/auth.middleware';
+
+// Extend Express Request interface to include 'user'
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId?: string;
+        [key: string]: any;
+      };
+    }
+  }
+}
 import { forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, verifyOTPSchema } from "../zodSchema/auth.schema";
 import { AppError } from "../utils/errorHandler";
 import { PrismaClient } from "@prisma/client";
@@ -258,5 +272,38 @@ export const verifyGuestOtp = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Something went wrong while verifying OTP." });
   }
 };
+
+export const logoutUser = async (req: AuthRequest, res: Response) => {
+  const userId = req.body?.userId as string; 
+  const role = req.body?.role as UserRole;
+  console.log("Details Logout => ", userId, role);
+
+  try {
+    if (role === "student") {
+      await prisma.student.update({
+        where: { id: userId },
+        data: { is_login: 0 },
+      });
+    } else {
+      await prisma.managementStaff.update({
+        where: { id: userId },
+        data: { is_login: 0 },
+      });
+    }
+
+    return res.json({
+      status: true,
+      data: [],
+      message: "Logout successfully"
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Logout failed"
+    });
+  }
+};
+
 
 
