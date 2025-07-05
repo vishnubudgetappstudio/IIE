@@ -25,7 +25,7 @@ export const getAllBatchesListService = async ({
         where: {
             branch: branch || undefined, // Use branch if provided
             deletedAt: null,
-            role: "staff", // Assuming you want to filter by mentor role
+            role: "counsellor", // Assuming you want to filter by mentor role
         },
         select: {
             id: true,
