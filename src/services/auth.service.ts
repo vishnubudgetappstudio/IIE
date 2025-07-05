@@ -140,10 +140,11 @@ export const loginService = async (
       }
       //update FcmToken for staff user
       try {
-        await prisma.managementStaff.update({
+        const updated = await prisma.managementStaff.update({
           where: { id: user.id },
           data: { fcm_token, is_login: 1 },
         });
+        console.log("Update Staff IS LOGIN VALUE ------------> ", updated);
       } catch (error) {
         console.error("Update error:", error);
       }
