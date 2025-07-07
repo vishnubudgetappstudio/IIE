@@ -97,6 +97,8 @@ export const getSessionSheetReport = async (req: AuthRequest, res: Response, nex
         id: true,
         student_id: true,
         status: true,
+        session_sheet_id: true,
+        session_index_id: true,
         student: {
           select: {
             name: true,
