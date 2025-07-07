@@ -40,6 +40,7 @@ export const student_notificationListService = async ({
                         createdAt: true,
                         status: true,
                         session_id: true,
+                        session_index_id: true,
                         materialDetail: {
                             select: {   
                                 staff_id: true,
