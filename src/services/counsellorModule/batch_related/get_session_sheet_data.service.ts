@@ -130,6 +130,7 @@ export const getSessionSheetDataService = async ({
                             status: 'Sent',
                             studentId: id,
                             session_id: sessionSheet.id,
+                            session_index_id: noParam
                         },
                     });
 
@@ -138,6 +139,7 @@ export const getSessionSheetDataService = async ({
                             batch_id: batch_id,
                             student_id: id,
                             session_sheet_id: sessionSheet.id,
+                            session_index_id: noParam,
                             status: SessionSheetStatus.NotMarked,
                         },
                     });

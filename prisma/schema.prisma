@@ -350,6 +350,7 @@ model NotificationRecipient {
   material_id       String?
   test_id           String?
   session_id        String?
+  session_index_id  String?
   sentAt            BigInt?
   createdAt         DateTime           @default(now())
 
@@ -441,6 +442,7 @@ model SessionSheetStudentReportDetail {
   session_sheet_id String
   student_id       String
   status           SessionSheetStatus
+  session_index_id String?
   createdAt        DateTime           @default(now()) // Automatically stores created time
   updatedAt        DateTime           @updatedAt // Automatically updates updated time
   deletedAt        DateTime? // Nullable field for soft delete

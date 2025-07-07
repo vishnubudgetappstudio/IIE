@@ -17,6 +17,7 @@ export const raiseHaveADoubt = async (
     const studentId = req.user?.userId as string;
     const studnetName = req.user?.name as string;
     const sessionId = req.body.session_id as string;
+    const sessionIndexId = req.body.session_index_id as string;
     // Import the enum from Prisma client
     console.log("studentId", studentId, "sessionId", sessionId);
 
@@ -81,7 +82,7 @@ export const raiseHaveADoubt = async (
       }
 
     const result = await prisma.sessionSheetStudentReportDetail.updateMany({
-      where: { student_id: studentId, session_sheet_id: sessionId },
+      where: { student_id: studentId, session_sheet_id: sessionId, session_index_id: sessionIndexId },
       data: { status: newStatus },
     });
     console.log("result", result.count);
@@ -92,6 +93,7 @@ export const raiseHaveADoubt = async (
         where: {
           studentId: studentId,
           session_id: sessionId,
+          session_index_id: sessionIndexId,
           type: "session_completed",
         },
       });
