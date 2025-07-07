@@ -83,7 +83,15 @@ export const getSessionSheetReport = async (req: AuthRequest, res: Response, nex
     const transformedRecords = await prisma.sessionSheetStudentReportDetail.findMany({
       where: {
         session_sheet_id: req.query.session_sheet_id as string,
+        session_index_id : req.query.session_index_id as string,
         deletedAt: null,
+        ...(req.query.search_keyword && {
+          status: {
+            in: Object.keys(STATUS_LABELS).filter(
+              key => STATUS_LABELS[key as SessionSheetStatus].toLowerCase().includes(req.query.search_keyword!.toString().toLowerCase())
+            ) as SessionSheetStatus[]
+          }
+        }),
       },
       select: {
         id: true,
