@@ -94,7 +94,7 @@ export const staff_notificationListService = async ({
             var staff_notificationList = await prisma.notificationRecipient.findMany({
                 where: {
                     managementStaffId: staff_id,
-                    receiverRole: 'staff',
+                    receiverRole: role,
                     // isRead: false,
                     status: 'Sent',
                     type: 'message',

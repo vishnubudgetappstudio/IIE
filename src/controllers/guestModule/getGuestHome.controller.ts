@@ -23,6 +23,10 @@ export const getGuestHome = async (
       return;
     }
 
+    const courses = await prisma.$queryRawUnsafe(`
+      SELECT id,course_name,course_link FROM courses ORDER BY created_at DESC
+    `);
+
     res.json({
      
       data: {
@@ -40,10 +44,11 @@ export const getGuestHome = async (
         aboutDesc:
           "Indra Institute of Education is a leading technical education platform...",
         aboutReadMore: "https://indrainstitute.com/about",
-        courseData: [
-          { title: "Python", image: "https://example.com/python.png" },
-          { title: "Java", image: "https://example.com/java.png" },
-        ],
+        // courseData: [
+        //   { title: "Python", image: "https://example.com/python.png" },
+        //   { title: "Java", image: "https://example.com/java.png" },
+        // ],
+        courseData : courses,
         socialLinks: {
           instagram: "https://instagram.com/iie_indra_institute",
           facebook: "https://facebook.com/IndraInstitute",

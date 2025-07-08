@@ -97,7 +97,7 @@ export const getCoursesListController = async (req: AuthRequest, res: Response, 
 
     
     const courses = await prisma.$queryRawUnsafe(`
-      SELECT id,course_name FROM courses ORDER BY created_at DESC
+      SELECT id,course_name,course_link FROM courses ORDER BY created_at DESC
     `);
 
     res.status(200).json({
