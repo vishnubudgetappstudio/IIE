@@ -182,6 +182,17 @@ export const createNewBatchService = async ({
         });
     });
 
+    await prisma.student.updateMany({
+        where: {
+            id: {
+                in: studentIdsArray,
+            },
+        },
+        data: {
+            Course: course,
+        },
+    });
+
     // 🚀 Step 7: Upload session sheet (if provided)
     if (sessionSheetFile) {
         try {
