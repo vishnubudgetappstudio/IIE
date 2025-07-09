@@ -20,7 +20,7 @@ export const testSubmitController = async (
             });
         }
 
-        if (req.user?.role !== "student" || req.user?.role !== "guest") {
+        if (req.user?.role !== "student" && req.user?.role !== "guest") {
             throw new AppError({
                 statusCode: 401,
                 data: {},
