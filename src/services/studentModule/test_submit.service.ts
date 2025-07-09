@@ -102,49 +102,61 @@ export const testSubmitService = async ({
     else score_status = "poor";
 
     // Update the test record
-    let updatedTest = await prisma.test_Course_Or_Mock_With_Student.update({
+    let updatedTest;
+
+    if (test_type === "course_test") {
+    updatedTest = await prisma.test_Course_Or_Mock_With_Student.update({
         where: {
-            id: testWithStudentId,
-            test_type,
-            studentId: student_id,
-            submittedAt: null,
-            deletedAt: null,
+        id: testWithStudentId,
+        test_type,
+        studentId: student_id,
+        submittedAt: null,
+        deletedAt: null,
         },
         data: {
-            total_questions_count,
-            correct_answers_count: total_correct_answers_count,
-            incorrect_answers_count: (totalQuestions - totalCorrect).toString(),
-            status: "completed",
-            score,
-            score_status,
-            submittedAt: new Date(),
-            updatedAt: new Date(),
+        total_questions_count,
+        correct_answers_count: total_correct_answers_count,
+        incorrect_answers_count: (
+            totalQuestions - totalCorrect
+        ).toString(),
+        status: "completed",
+        score,
+        score_status,
+        submittedAt: new Date(),
+        updatedAt: new Date(),
         },
     });
+    }
 
-    if(test_type === "mock_test" && !existingTestSubmit) {
-        // You must provide a valid batchId value here. Replace 'yourBatchId' with the actual batchId.
-        const createData: any = {
+    if (test_type === "mock_test" && !existingTestSubmit) {
+    const createData: any = {
         studentId: student_id,
         test_type,
         total_questions_count,
         correct_answers_count: total_correct_answers_count ?? null,
         incorrect_answers_count: (
-            Number(total_questions_count) - Number(total_correct_answers_count)
+        Number(total_questions_count) - Number(total_correct_answers_count)
         ).toString() ?? null,
         status: "completed",
         score_status: score_status,
         score: score ?? null,
-        };
+        submittedAt: new Date(),
+        updatedAt: new Date(),
+    };
 
-        // ✅ Add batchId only if defined
-        if (studentBatch?.batch_id) {
+    // Add batchId if it exists
+    if (studentBatch?.batch_id) {
         createData.batchId = studentBatch.batch_id;
-        }
+    }
 
-        updatedTest = await prisma.test_Course_Or_Mock_With_Student.create({
+    updatedTest = await prisma.test_Course_Or_Mock_With_Student.create({
         data: createData,
-        });
+    });
+    }
+
+    // Optionally throw error or handle undefined
+    if (!updatedTest) {
+    throw new Error("No test was updated or created.");
     }
 
     return { updatedTest };
