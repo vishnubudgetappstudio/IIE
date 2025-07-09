@@ -88,7 +88,7 @@ export const testSubmitService = async ({
         where: { student_id: student_id, deletedAt: null }, 
     });
 
-    if (!existingTestSubmit) {
+    if (!existingTestSubmit && test_type === "course_test") {
         throw new AppError({
             statusCode: 400,
             message: "Test already submitted or not found",
