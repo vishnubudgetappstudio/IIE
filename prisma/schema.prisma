@@ -391,6 +391,7 @@ enum ReceiverRole {
   staff
   guest
   student
+  counsellor
 }
 
 enum NotificationType {
