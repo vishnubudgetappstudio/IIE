@@ -47,6 +47,19 @@ export const testSubmitController = async (
             total_correct_answers_count,
         } = parseResult.data;
 
+        if (
+            test_id === undefined ||
+            test_type === undefined ||
+            total_questions_count === undefined ||
+            total_correct_answers_count === undefined
+        ) {
+            throw new AppError({
+                statusCode: 400,
+                message: "Missing required test submission fields",
+                data: {},
+            });
+        }
+
         const { updatedTest } = await testSubmitService({
             student_id,
             test_id,
