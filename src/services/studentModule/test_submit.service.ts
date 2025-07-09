@@ -66,18 +66,23 @@ export const testSubmitService = async ({
         });
     }
 
-    const testWithStudentId = test?.TestCourseOrMockWithStudentModel[0].id;
+    let testWithStudentId: string | undefined;
+    let existingTestSubmit: any;
 
-    // Check if test already submitted
-    const existingTestSubmit = await prisma.test_Course_Or_Mock_With_Student.findUnique({
-        where: {
-            id: testWithStudentId,
-            test_type,
-            studentId: student_id,
-            submittedAt: null,
-            deletedAt: null,
-        },
-    });
+    if (test_type === "course_test" && test && test.TestCourseOrMockWithStudentModel.length > 0) {
+        testWithStudentId = test.TestCourseOrMockWithStudentModel[0].id;
+
+        // Check if test already submitted
+        existingTestSubmit = await prisma.test_Course_Or_Mock_With_Student.findUnique({
+            where: {
+                id: testWithStudentId,
+                test_type,
+                studentId: student_id,
+                submittedAt: null,
+                deletedAt: null,
+            },
+        });
+    }
 
     const studentBatch = await prisma.batchWithStudent.findFirst({
         where: { student_id: student_id, deletedAt: null }, 
