@@ -45,8 +45,10 @@ export const testSubmitService = async ({
                     },
                 },
             })
-            : await prisma.test_Mock.findUnique({
-                where: { id: test_id, deletedAt: null },
+            // : await prisma.test_Mock.findUnique({
+               : await prisma.test_Mock.findFirst({
+                // where: { id: test_id, deletedAt: null },
+                where: {deletedAt: null},
                 select: {
                     id: true,
                     TestCourseOrMockWithStudentModel: {
@@ -56,7 +58,7 @@ export const testSubmitService = async ({
                 },
             });
 
-    if (!test || test.TestCourseOrMockWithStudentModel.length === 0) {
+    if ((!test || test.TestCourseOrMockWithStudentModel.length === 0) && test_type === "course_test") {
         throw new AppError({
             statusCode: 404,
             message: `${test_type.replace("_", " ")} not found or not assigned to student`,
@@ -64,7 +66,7 @@ export const testSubmitService = async ({
         });
     }
 
-    const testWithStudentId = test.TestCourseOrMockWithStudentModel[0].id;
+    const testWithStudentId = test?.TestCourseOrMockWithStudentModel[0].id;
 
     // Check if test already submitted
     const existingTestSubmit = await prisma.test_Course_Or_Mock_With_Student.findUnique({
@@ -75,6 +77,10 @@ export const testSubmitService = async ({
             submittedAt: null,
             deletedAt: null,
         },
+    });
+
+    const studentBatch = await prisma.batchWithStudent.findFirst({
+        where: { student_id: student_id, deletedAt: null }, 
     });
 
     if (!existingTestSubmit) {
@@ -96,7 +102,7 @@ export const testSubmitService = async ({
     else score_status = "poor";
 
     // Update the test record
-    const updatedTest = await prisma.test_Course_Or_Mock_With_Student.update({
+    let updatedTest = await prisma.test_Course_Or_Mock_With_Student.update({
         where: {
             id: testWithStudentId,
             test_type,
@@ -115,6 +121,31 @@ export const testSubmitService = async ({
             updatedAt: new Date(),
         },
     });
+
+    if(test_type === "mock_test" && !existingTestSubmit) {
+        // You must provide a valid batchId value here. Replace 'yourBatchId' with the actual batchId.
+        const createData: any = {
+        studentId: student_id,
+        test_type,
+        total_questions_count,
+        correct_answers_count: total_correct_answers_count ?? null,
+        incorrect_answers_count: (
+            Number(total_questions_count) - Number(total_correct_answers_count)
+        ).toString() ?? null,
+        status: "completed",
+        score_status: score_status,
+        score: score ?? null,
+        };
+
+        // ✅ Add batchId only if defined
+        if (studentBatch?.batch_id) {
+        createData.batchId = studentBatch.batch_id;
+        }
+
+        updatedTest = await prisma.test_Course_Or_Mock_With_Student.create({
+        data: createData,
+        });
+    }
 
     return { updatedTest };
 };
