@@ -97,7 +97,7 @@ export const staff_notificationListService = async ({
                     receiverRole: role,
                     // isRead: false,
                     status: 'Sent',
-                    type: 'message',
+                    // type: 'leave',
                 },
                 select: {
                     id: true,
