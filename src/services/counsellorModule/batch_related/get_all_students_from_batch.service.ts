@@ -167,6 +167,8 @@ export const getAllStudentsFromBatchService = async (
                 mock_test: mockTestCountStrAlt,
                 mentor_name: MentorName?.management_staff_relation.name ?? "",
                 mentor_image: MentorName?.management_staff_relation.profile_img_url ?? "",
+                phone: student.phone,
+                alt_phone: student.alt_phone,
             };
         })
     );
