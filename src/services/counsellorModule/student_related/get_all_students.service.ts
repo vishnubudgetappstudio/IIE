@@ -132,8 +132,24 @@ export const getAllStudentsListService = async ({
 
             let mockTestCountStrAlt = String(mockTestCount) ?? "0";
 
-            let MentorName = await prisma.batchDetail.findUnique({
-                where: { id: batchId, deletedAt: null },
+            // let MentorName = await prisma.batchDetail.findUnique({
+            //     where: { id: batchId, deletedAt: null },
+            //     select: {
+            //         management_staff_relation: {
+            //             select: {
+            //                 name: true,
+            //                 profile_img_url: true,
+            //             },
+            //         },
+            //     },
+            // });
+
+            let batchDetails = await prisma.batchWithStudent.findFirst({
+                where: { student_id: student.id, deletedAt: null },
+            });
+
+            let batchDet = await prisma.batchDetail.findUnique({
+                where: { id: batchDetails?.batch_id ?? "", deletedAt: null },
                 select: {
                     management_staff_relation: {
                         select: {
@@ -141,8 +157,8 @@ export const getAllStudentsListService = async ({
                             profile_img_url: true,
                         },
                     },
-                },
-            });
+                }
+            }); 
 
             return {
                 id: student.id,
@@ -165,8 +181,8 @@ export const getAllStudentsListService = async ({
                 course_test: courseTestCountStrAlt,
                 mock_test: mockTestCountStrAlt,
                 is_batch: isBatch,
-                mentor_name: MentorName?.management_staff_relation.name ?? "",
-                mentor_image: MentorName?.management_staff_relation.profile_img_url ?? "",
+                mentor_name: batchDet?.management_staff_relation.name ?? "",
+                mentor_image: batchDet?.management_staff_relation.profile_img_url ?? ""
             };
         })
     );
