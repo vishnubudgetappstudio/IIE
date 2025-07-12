@@ -58,6 +58,18 @@ export const addStudentsToBatchService = async (batch_id: string, student_ids: s
         });
     }
 
+    const CourseName = batchExists.course;
+
+    const updateStudentCourse = await prisma.student.updateMany({
+        where: {
+            id: { in: student_ids },
+            deletedAt: null,
+        },
+        data: {
+            Course: CourseName
+        }
+    });
+
     if (newStudents.length > 0) {
         // **Use `upsert()` to prevent duplicate key errors**
         await Promise.all(
