@@ -134,6 +134,8 @@ export const getAllBatchesListService = async ({
                 include: {
                     student_relation: {
                         select: {
+                            name: true,
+                            phone: true,
                             profile_img_url: true,
                         },
                     },

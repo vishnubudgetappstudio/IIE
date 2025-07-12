@@ -132,6 +132,18 @@ export const getAllStudentsListService = async ({
 
             let mockTestCountStrAlt = String(mockTestCount) ?? "0";
 
+            let MentorName = await prisma.batchDetail.findUnique({
+                where: { id: batchId, deletedAt: null },
+                select: {
+                    management_staff_relation: {
+                        select: {
+                            name: true,
+                            profile_img_url: true,
+                        },
+                    },
+                },
+            });
+
             return {
                 id: student.id,
                 name: student.name,
@@ -153,6 +165,8 @@ export const getAllStudentsListService = async ({
                 course_test: courseTestCountStrAlt,
                 mock_test: mockTestCountStrAlt,
                 is_batch: isBatch,
+                mentor_name: MentorName?.management_staff_relation.name ?? "",
+                mentor_image: MentorName?.management_staff_relation.profile_img_url ?? "",
             };
         })
     );
