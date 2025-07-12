@@ -151,6 +151,8 @@ export const getAllStudentsListService = async ({
             let batchDet = await prisma.batchDetail.findUnique({
                 where: { id: batchDetails?.batch_id ?? "", deletedAt: null },
                 select: {
+                    batchName: true,
+                    course: true,
                     management_staff_relation: {
                         select: {
                             name: true,
@@ -168,7 +170,8 @@ export const getAllStudentsListService = async ({
                 alternate_mobile: student.alt_phone,
                 roll_number: student.roll_number,
                 course_id: student.course_id,
-                course: student.Course,
+                // course: student.Course,
+                course: batchDet?.course,
                 image: student.profile_img_url,
                 over_all_present: attendanceStats?.overAll?.presentPercentage ?? 0,
                 over_all_absent: attendanceStats?.overAll?.absentPercentage ?? 0,
