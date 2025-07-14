@@ -90,8 +90,15 @@ export const student_notificationListService = async ({
         // Calculate total pages
         const totalPages = Math.ceil(totalNotifications / pageSize);
 
+        const adjustedList = student_notificationList.map(notification => {
+            return {
+                ...notification,
+                createdAt: new Date(notification.createdAt.getTime() + 330 * 60 * 1000), // 330 mins = 5.5 hrs
+            };
+        });
+
         return {
-            notifications: student_notificationList,
+            notifications: adjustedList,
             total: totalNotifications,
             page,
             limit: pageSize,

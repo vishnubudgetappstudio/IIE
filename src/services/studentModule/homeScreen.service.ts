@@ -139,8 +139,8 @@ export const studentHomeScreenService = async ({ student_id }: { student_id: str
         ],
 
         follow_us_on: {
-            insta_url: "http://insta.com",
-            facebook_url: "http://facebook.com",
+            insta_url: "https://instagram.com/iie_indra_institute",
+            facebook_url: "https://facebook.com/IndraInstitute",
         },
     };
 };
